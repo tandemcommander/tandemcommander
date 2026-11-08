@@ -418,17 +418,18 @@ inline BOOL SalUpdIsInstallerProcessName(const WCHAR* name)
     return FALSE;
 }
 
+// Feature 422: the installer is started only while the program runs (Install Now, Download & Install,
+// the automatic install, the completion at start-up) - never at the program's exit. One kind remains.
 enum CSalUpdLaunchKind
 {
-    sulkNow, // Install Now and the completion at start-up: progress window, close, restart
-    sulkExit // the program's exit: very silent, no restart
+    sulkNow // progress window, close the program, start it again
 };
 
-inline const char* SalUpdLaunchKindName(CSalUpdLaunchKind k) { return k == sulkNow ? "now" : "exit"; }
+inline const char* SalUpdLaunchKindName(CSalUpdLaunchKind) { return "now"; }
 
 // The arguments after the program path. 'noRestart' (a Debug probe seam only) turns the
 // restart of Install Now off. A log path with a quote cannot be passed and is refused.
-inline BOOL SalUpdBuildInstallerArgs(CSalUpdLaunchKind kind, BOOL allUsers, BOOL noRestart, const WCHAR* logPath,
+inline BOOL SalUpdBuildInstallerArgs(CSalUpdLaunchKind, BOOL allUsers, BOOL noRestart, const WCHAR* logPath,
                                      WCHAR* buf, int bufSize)
 {
     if (buf == NULL || bufSize <= 0)
@@ -436,10 +437,8 @@ inline BOOL SalUpdBuildInstallerArgs(CSalUpdLaunchKind kind, BOOL allUsers, BOOL
     buf[0] = 0;
     if (logPath == NULL || logPath[0] == 0 || wcschr(logPath, L'"') != NULL)
         return FALSE;
-    const WCHAR* fixed = kind == sulkNow
-                             ? (noRestart ? L"/SP- /SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /NORESTARTAPPLICATIONS "
-                                          : L"/SP- /SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS ")
-                             : L"/SP- /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /NORESTARTAPPLICATIONS ";
+    const WCHAR* fixed = noRestart ? L"/SP- /SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /NORESTARTAPPLICATIONS "
+                                   : L"/SP- /SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS ";
     const WCHAR* mode = allUsers ? L"/ALLUSERS " : L"/CURRENTUSER ";
     size_t need = wcslen(fixed) + wcslen(mode) + 7 /* /LOG=" */ + wcslen(logPath) + 1 /* " */ + 1;
     if (need > (size_t)bufSize)
@@ -607,32 +606,8 @@ inline CSalUpdStartupArm SalUpdStartupOfferReachable(CSalUpdStartupArm decision,
     return decision;
 }
 
-// Round 4 SHOULD: can "Install When I Close" still plan 'version' for the exit? Not when its arm used
-// up its launches (the exit decision refuses it, the click would promise what never happens). An arm
-// of another version, or of the other mode (a test arm in a normal session, ...), starts afresh.
-inline BOOL SalUpdExitArmAvailable(BOOL hasArm, const CSalUpdArm& arm, const CSalUpdVersion& version, BOOL testMode)
-{
-    if (!hasArm || !arm.Present || SalUpdVersionCompare(arm.Version, version) != 0 || (arm.Test != 0) != (testMode != 0))
-        return TRUE;
-    return arm.Launches < SALUPD_MAX_LAUNCHES;
-}
-
-// data-model.md, "Exit decision". 'normalExit': not an installer's close, not a critical
-// shutdown, Windows not shutting down or signing out. 'lastInstance': no other instance of
-// this executable runs in the session (an exit must not close the user's other windows).
-inline BOOL SalUpdExitDecision(const CSalUpdArm& arm, BOOL honoured, BOOL normalExit, BOOL lastInstance,
-                               BOOL eligible, BOOL testMode, const CSalUpdVersion& running)
-{
-    if (!arm.Present || !honoured || !normalExit || !lastInstance || !eligible)
-        return FALSE;
-    if (arm.Launches >= SALUPD_MAX_LAUNCHES)
-        return FALSE;
-    if (arm.Launches > arm.ConfirmedAt)
-        return FALSE; // round 6: an installer ran since the user's last confirmation (any instance)
-    if (arm.Test)
-        return testMode;
-    return SalUpdVersionCompare(running, arm.Version) < 0;
-}
+// Feature 422: the exit never starts an installer - 420's exit decision (SalUpdExitDecision) and the
+// availability of "Install When I Close" (SalUpdExitArmAvailable) are gone with it.
 
 //
 // ****************************************************************************
@@ -659,10 +634,9 @@ enum CSalUpdLevelChange
 {
     sulchNone,     // nothing more than the stored value
     sulchClassic,  // the offer form becomes the classic (notify-only) form
-    sulchFlow,     // 420's flow for the release: download (or a verified installer at once), then the
-                   // offer form replaces the classic one, or the automatic level installs it
-    sulchAutomatic // the offer form's update is planned for the automatic install (the window closes
-                   // when the plan may install silently)
+    sulchFlow      // 420's flow for the release: download (or a verified installer at once), then the
+                   // offer form replaces the classic one (feature 422: also at the automatic level - a
+                   // choice in the window never installs on its own)
 };
 
 // 'offerForm': the window shows the offer form (a verified installer), else the classic form;
@@ -673,9 +647,7 @@ inline CSalUpdLevelChange SalUpdNoticeLevelChange(BOOL offerForm, CSalUpdLevel l
         return (level != sulNotify && downloadOffered) ? sulchFlow : sulchNone;
     if (level == sulNotify)
         return sulchClassic;
-    if (level == sulAutomatic)
-        return sulchAutomatic;
-    return sulchNone;
+    return sulchNone; // feature 422: offer + automatic - stored, the offer stays (the user decides here)
 }
 
 // May the automatic level install the arm of 'version' without a window? Only the automatic level's
@@ -689,11 +661,11 @@ inline BOOL SalUpdSilentInstallPlanned(BOOL hasArm, const CSalUpdArm& arm, const
            arm.Launches < SALUPD_MAX_LAUNCHES;
 }
 
-// Review 421 M1: an installer started for 'arm' ended without installing it and the user answered No to
-// "install it when you close?". A click's plan (Install Now on nothing armed, Install When I Close) is
-// dropped as in 420; the automatic level's plan becomes OFFERED with its launch count instead - dropped,
-// the next check would plan it afresh and the silent install would start the same installer (and its
-// administrator prompt) again on its own. Returns TRUE and the arm to store when it is kept.
+// Review 421 M1, feature 422: an installer started for 'arm' ended without installing it while the
+// program runs (cancelled, the administrator prompt declined). A click's plan is dropped as in 420; the
+// automatic level's plan becomes OFFERED with its launch count instead - dropped, the next check would
+// plan it afresh and the silent install would start the same installer (and its administrator prompt)
+// again on its own (the maintainer's lock-out trap). Returns TRUE and the arm to store when it is kept.
 inline BOOL SalUpdDeclinedArmKept(const CSalUpdArm& arm, CSalUpdArm* kept)
 {
     if (!arm.Present || arm.Source != SALUPD_ARM_AUTOMATIC)
@@ -703,11 +675,9 @@ inline BOOL SalUpdDeclinedArmKept(const CSalUpdArm& arm, CSalUpdArm* kept)
     return TRUE;
 }
 
-#define SALUPD_SILENT_IDLE_MS 30000 // no keyboard or mouse input for this long before a silent install
-
 enum CSalUpdSilentInstall
 {
-    susiNever, // this plan is not installed silently in this session (the exit / next start of 420 remain)
+    susiNever, // this plan is not installed silently in this session (the next start may complete it)
     susiWait,  // not now - look again later
     susiNow    // start the installer now
 };
@@ -721,14 +691,13 @@ inline const char* SalUpdSilentInstallName(CSalUpdSilentInstall d)
 // level is still automatic, the check on or test mode); 'tried': this session already started it
 // for 'version'; 'lastInstance': no other instance of the program runs in the session;
 // 'installerRunning': an installer of the product runs; 'closeAgree': the program agrees to be
-// closed without asking anybody anything (the rule of an installer's close, 080/088); 'idleMs':
-// time since the last keyboard or mouse input; 'userAsked': the check was asked for by the user
-// (no idle wait).
+// closed without asking anybody anything (the rule of an installer's close, 080/088) and nothing the
+// close does not see would be lost (typed command-line text, Quick Rename). Feature 422: no idle wait -
+// the maintainer wants the update installed right away.
 inline CSalUpdSilentInstall SalUpdSilentInstallDecision(BOOL hasArm, const CSalUpdArm& arm, const CSalUpdVersion& version,
                                                         BOOL honoured, BOOL eligible, BOOL testMode,
                                                         const CSalUpdVersion& running, BOOL tried, BOOL lastInstance,
-                                                        BOOL installerRunning, BOOL closeAgree, DWORD idleMs,
-                                                        DWORD idleNeededMs, BOOL userAsked)
+                                                        BOOL installerRunning, BOOL closeAgree)
 {
     if (tried || !eligible || !honoured || !SalUpdSilentInstallPlanned(hasArm, arm, version))
         return susiNever;
@@ -737,8 +706,6 @@ inline CSalUpdSilentInstall SalUpdSilentInstallDecision(BOOL hasArm, const CSalU
     if (!arm.Test && SalUpdVersionCompare(running, arm.Version) >= 0)
         return susiNever; // already reached
     if (!lastInstance || installerRunning || !closeAgree)
-        return susiWait;
-    if (!userAsked && idleMs < idleNeededMs)
         return susiWait;
     return susiNow;
 }

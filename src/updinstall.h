@@ -101,19 +101,7 @@ BOOL UpdInstall_IsRefused(const CSalUpdVersion& version);
 BOOL UpdInstall_InstallerRunning();
 BOOL UpdInstall_IsLastInstance();
 BOOL UpdInstall_HasVerified(const CSalUpdRelease& release);
-// the idle time the silent automatic install waits for (SALUPD_SILENT_IDLE_MS; a Debug probe seam)
-DWORD UpdInstall_SilentIdleNeededMs();
-
-// Install When I Close: is the downloaded installer still the verified one? FALSE (the user was
-// told, the file is deleted) when it is missing or changed.
-BOOL UpdInstall_CheckReady(HWND parent, const CSalUpdRelease& release);
-
-// Install When I Close: UpdInstall_Arm(USER); round 5: a click while Install Now's installer of that
-// version runs is what a failure of that installer keeps (not the arm from before Install Now)
-void UpdInstall_ArmByClick(const CSalUpdRelease& release);
-
-// round 4: can Install When I Close still plan 'version' for the exit (its launches not used up)?
-BOOL UpdInstall_ExitArmAvailable(const CSalUpdVersion& version);
+// feature 422: no "Install When I Close" and no install at the exit any more
 
 // Skip This Version: drops an arm of that version and deletes its installer
 void UpdInstall_SkipVersion(const CSalUpdVersion& version);
@@ -124,8 +112,8 @@ void UpdInstall_NoteSkipClick(const CSalUpdVersion& version);
 BOOL UpdInstall_TakeSkipClick(const CSalUpdVersion& version);
 
 // Called once when start-up is complete (after the check of feature 123 was started): removes
-// leftovers of the updates folder and decides an armed update (data-model.md). An update the
-// exit did not install is completed at once: WM_USER_UPDATEINSTALL is posted to 'mainWindow',
+// leftovers of the updates folder and decides an armed update (data-model.md). An update not
+// installed while the program ran (feature 422: never at the exit) is completed at once: WM_USER_UPDATEINSTALL is posted to 'mainWindow',
 // whose handler calls UpdInstall_CompleteArmed().
 void UpdInstall_OnStartupComplete(HWND mainWindow);
 void UpdInstall_CompleteArmed(HWND parent);
@@ -135,16 +123,13 @@ void UpdInstall_CompleteArmed(HWND parent);
 // dropped) otherwise
 BOOL UpdInstall_GetArmedRelease(CSalUpdRelease* release);
 
-// reports a failed Install Now (WM_USER_UPDATEINSTALL_DONE); TRUE when nothing stays planned - the
-// caller offers the update again (UpdInstall_GetLaunchedRelease)
+// reports a failed Install Now (WM_USER_UPDATEINSTALL_DONE) with OK only; feature 422: an automatic plan
+// becomes offered (never started on its own again); TRUE - the caller offers the update again
 BOOL UpdInstall_OnInstallerEnded(HWND parent, DWORD exitCode);
 // the release whose installer Install Now / the start-up completion started, when its installer is
 // still the verified one
 BOOL UpdInstall_GetLaunchedRelease(CSalUpdRelease* release);
 
-// Program exit: PrepareExit right after the main message loop decides whether the armed update
-// is installed now (and keeps the verified file open); RunAtExit, the last statement of the
-// exit, starts the installer. Shutdown abandons a running download (never waits for the network).
-void UpdInstall_PrepareExit();
-void UpdInstall_RunAtExit();
+// Program exit: Shutdown abandons a running download (never waits for the network); feature 422: the
+// exit never starts an installer.
 void UpdInstall_Shutdown();

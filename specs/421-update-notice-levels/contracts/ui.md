@@ -40,3 +40,5 @@ at once (`Update Level`), drops an automatic plan that no longer applies, and ac
 | `IDS_UPDATE_DLI_FAILED` 14012 | as above |
 | `IDS_UPDATE_LEVEL_AUTO` 14098 (changed) | `Install it automatically as soon as it is downloaded` |
 | `IDS_UPDATE_HINT_AUTO` 14154, `IDS_UPDATE_BTN_OK` 14152 | removed |
+
+> **Feature 422** (`specs/422-install-now-not-at-exit/spec.md`): nothing is installed at the exit any more - *Install When I Close*, the question "install it when you close?" and the exit install are removed; the automatic level installs right away after the check at start-up (no idle wait); a check the user starts always shows the notification.

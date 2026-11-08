@@ -5226,9 +5226,7 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
     // pro pripad chyby zkusim zavrit dialog
     SplashScreenCloseIfExist();
 
-    // feature 420: an armed update is installed by this exit? (decided now, while the registry and
-    // the other instances can still be asked; the installer starts as the last step of the exit)
-    UpdInstall_PrepareExit();
+    // feature 422: the exit never starts an installer (420 did, at this point and at the end)
 
     // vratime prioritu do puvodniho stavu
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
@@ -5294,9 +5292,6 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
     // OleSpyRevoke();     // odpojime OLESPY
     OleUninitialize(); // deinicializace OLE
 
-    // feature 420: the last step of a normal exit - the installer of an armed update (it must not find
-    // this process alive with its files open: specs/420-auto-update-install/research.md R3)
-    UpdInstall_RunAtExit();
     // OleSpyDump();       // vypiseme leaky
 
     TRACE_I("End");

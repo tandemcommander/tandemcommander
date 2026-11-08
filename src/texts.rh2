@@ -2584,7 +2584,6 @@
 #define IDS_UPDATE_LEVEL_OFFER          14097
 #define IDS_UPDATE_LEVEL_AUTO           14098
 #define IDS_UPDATE_BTN_INSTALLNOW       14099 // notification window buttons
-#define IDS_UPDATE_BTN_INSTALLEXIT      14100
 #define IDS_UPDATE_HINT_OFFER           14153 // notification window: the downloaded installer is offered
 #define IDS_UPDATE_TESTMODE             14156 // notification window, test mode (--updatetest)
 #define IDS_UPDATE_ABOUT_TESTMODE       14157 // About dialog, test mode, followed by the normal line
@@ -2592,7 +2591,6 @@
 #define IDS_UPDATE_ERR_RUN              14159 // %s = version, %s = the system's reason
 // feature 420 review: free slots of the bundle of 14000
 #define IDS_UPDATE_BUSY                 14002 // an installer of the product is already running
-#define IDS_UPDATE_INSTALL_LATER        14003 // appended to IDS_UPDATE_INSTALL_FAILED when the update stays planned (a Yes/No question)
 #define IDS_UPDATE_INSTALL_TITLE        14004 // title of the messages about installing an update
 #define IDS_UPDATE_ERR_DAMAGED          14006 // %s = version: the downloaded installer is missing or changed
 // feature 421: the notification's Download & Install, free slots of the bundle of 14000

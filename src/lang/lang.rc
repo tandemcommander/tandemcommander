@@ -663,7 +663,7 @@ END
 // controls without text are placeholders: the dialog reads their rectangles for the painted
 // header band (wordmark, artwork, accent line) and destroys them. The link text and the two
 // version numbers are set at run time. Tab order: buttons, check box, link.
-// feature 420: a second install button (IDC_UPDN_INSTALLEXIT); the texts of IDOK and IDCANCEL
+// feature 420: (feature 422 removed its second install button, Install When I Close); the texts of IDOK and IDCANCEL
 // and of the hint depend on the form (classic / offer / automatic, contracts/ui.md) and are set at
 // run time; the visible buttons are laid out left to right, each as wide as its text needs.
 // feature 421: Download & Install (IDC_UPDN_DLINSTALL, text set at run time, first of the classic
@@ -676,7 +676,6 @@ FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     PUSHBUTTON      "",IDC_UPDN_DLINSTALL,12,203,72,14,WS_GROUP
     DEFPUSHBUTTON   "&Download",IDOK,12,203,72,14,WS_GROUP
-    PUSHBUTTON      "",IDC_UPDN_INSTALLEXIT,90,203,72,14
     PUSHBUTTON      "Remind Me &Later",IDCANCEL,168,203,72,14
     PUSHBUTTON      "&Skip This Version",IDC_UPDN_SKIP,246,203,72,14
     CONTROL         "&Check for a new version at start-up",IDC_UPDN_ATSTARTUP,"Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,12,161,306,12

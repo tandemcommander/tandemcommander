@@ -250,17 +250,7 @@ void CUpdateNoticeDialog::ApplyForm()
     }
     else if (!Eligible) // feature 421: say why this copy offers only the browser download
         SetDlgItemTextW(HWindow, IDC_UPDN_HINT, LoadStrW(IDS_UPDATE_HINT_PORTABLE));
-    // round 4 SHOULD: Install When I Close only while the exit can still install it (an update whose
-    // installer was started three times without installing it is offered for Install Now only)
-    BOOL exitOffered = Form == unfOffer && UpdInstall_ExitArmAvailable(Release.Version);
-    if (exitOffered)
-        SetDlgItemTextW(HWindow, IDC_UPDN_INSTALLEXIT, LoadStrW(IDS_UPDATE_BTN_INSTALLEXIT));
-    HWND installExit = GetDlgItem(HWindow, IDC_UPDN_INSTALLEXIT);
-    if (installExit != NULL && !exitOffered)
-    {
-        ShowWindow(installExit, SW_HIDE);
-        EnableWindow(installExit, FALSE);
-    }
+    // feature 422: no "Install When I Close" - nothing is installed when the program closes
     HWND dlInstall = GetDlgItem(HWindow, IDC_UPDN_DLINSTALL);
     if (dlInstall != NULL && !DliOffered)
     {
@@ -277,7 +267,7 @@ void CUpdateNoticeDialog::ApplyForm()
     // the visible buttons left to right, each at least as wide as in the template and wide enough
     // for its text (translations); the window grows when they do not fit; feature 421: Download &
     // Install (first in the template, the first tab stop) is also the first from the left
-    static const int ids[5] = {IDC_UPDN_DLINSTALL, IDOK, IDC_UPDN_INSTALLEXIT, IDCANCEL, IDC_UPDN_SKIP};
+    static const int ids[4] = {IDC_UPDN_DLINSTALL, IDOK, IDCANCEL, IDC_UPDN_SKIP};
     const int idCount = (int)_countof(ids);
     RECT gapR = {0, 0, 6, 0}; // the gap between buttons, in dialog units
     RECT padR = {0, 0, 8, 0}; // the margin left and right of a button's text
@@ -716,12 +706,6 @@ CUpdateNoticeDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                     DestroyWindow(self);
                 else if (res == UPDNOW_DAMAGED) // UX test 5: the browser download is all that is left
                     PostMessage(parent, WM_USER_UPDATENOTICE_FORM, unfClassic, 0);
-                else if (!UpdInstall_ExitArmAvailable(release.Version))
-                {
-                    // round 4 SHOULD: that launch used up the last one the exit may make - the form
-                    // must not keep offering (or promising) the install at close
-                    PostMessage(parent, WM_USER_UPDATENOTICE_FORM, unfOffer, 1);
-                }
                 return TRUE; // otherwise the user was told; the window stays
             }
             char url[SALUPD_URL_MAX];
@@ -800,27 +784,6 @@ CUpdateNoticeDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             UpdInstall_SkipVersion(Release.Version); // feature 420: no arm, no installer of it any more
             UpdInstall_NoteSkipClick(Release.Version); // round 4: also not the one downloading now
             DestroyWindow(HWindow);
-            return TRUE;
-        }
-
-        case IDC_UPDN_INSTALLEXIT: // feature 420: Install When I Close
-        {
-            if (Form == unfOffer && UpdInstall_ExitArmAvailable(Release.Version))
-            {
-                // UX test 5: never armed without a verified installer; round 6 NOTE: CheckReady may show
-                // a message box (the window can be replaced meanwhile) - nothing of the object after it
-                CSalUpdRelease release = Release;
-                HWND self = HWindow;
-                HWND parent = ::GetParent(HWindow);
-                if (UpdInstall_CheckReady(self, release))
-                {
-                    UpdInstall_ArmByClick(release); // round 5: also while Install Now's installer runs
-                    if (IsWindow(self))
-                        DestroyWindow(self);
-                }
-                else if (IsWindow(self))
-                    PostMessage(parent, WM_USER_UPDATENOTICE_FORM, unfClassic, 0);
-            }
             return TRUE;
         }
 

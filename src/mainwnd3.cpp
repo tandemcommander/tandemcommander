@@ -738,17 +738,20 @@ static BOOL UpdateClassicDuringDownload = FALSE;
 static CSalUpdVersion UpdateClassicVersion;
 static BOOL UpdateDownloadSkippedAtStart = FALSE; // round 3 M2: the version was skipped before the download
 
-// feature 421: the flow was started by a check the user asked for (no idle wait for the silent install)
+// feature 421 / 422: the flow was started by the user in the application (Help > Check for New Version, the
+// About box's Check now, a level chosen in the notification) - it always shows the notification, it never
+// installs on its own (maintainer requirement of 422); the automatic install follows only the background
+// check at start-up
 static BOOL UpdateFlowUserAsked = FALSE;
 
 // feature 421: the silent automatic install waits for its moment (contracts/ui.md, research R1)
 static BOOL UpdateSilentPending = FALSE;
 static CSalUpdRelease UpdateSilentRelease;
-static BOOL UpdateSilentUserAsked = FALSE;
 static BOOL UpdateSilentTried = FALSE; // started once in this session for UpdateSilentTriedVersion
 static CSalUpdVersion UpdateSilentTriedVersion = {0, 0, 0};
 static BOOL UpdateSilentDue = FALSE; // the idle part of the main loop is to look (TrySilentUpdateInstall)
-// review 2 S-A: the user cancelled Download & Install of this version in this session - offered, never silent
+// 421 review 2 S-A / 422: the user decided about this version in this session (cancelled Download &
+// Install, asked for the check in the application) - offered, never installed silently
 static BOOL UpdateSilentCancelled = FALSE;
 static CSalUpdVersion UpdateSilentCancelledVersion = {0, 0, 0};
 #define UPDATESILENT_RETRY_MS 5000
@@ -757,34 +760,45 @@ static CSalUpdVersion UpdateSilentCancelledVersion = {0, 0, 0};
 #define UPDSHOW_QUEUE 0   // when nothing is in its way, without the keyboard when the user works (123)
 #define UPDSHOW_NOW 1     // at once, activated (a check the user asked for)
 #define UPDSHOW_REPLACE 2 // at once in place of our open classic form, without taking the keyboard
-#define UPDSHOW_LEVEL 3   // feature 421: the automatic level was chosen on the open offer form
 
 // feature 421: the automatic level installs 'release' without a window as soon as its moment comes
-static void StartSilentUpdateInstall(CMainWindow* wnd, const CSalUpdRelease& release, BOOL userAsked)
+static void StartSilentUpdateInstall(CMainWindow* wnd, const CSalUpdRelease& release)
 {
     UpdateSilentPending = TRUE;
     UpdateSilentRelease = release;
-    UpdateSilentUserAsked = userAsked;
-    TRACE_I("Update: the silent automatic install waits for its moment (user asked " << userAsked << ")");
+    TRACE_I("Update: the silent automatic install waits for its moment");
     SetTimer(wnd->HWindow, IDT_UPDATEAUTOINSTALL, UPDATESILENT_RETRY_MS, NULL);
     UpdateSilentDue = TRUE; // perhaps now already: the next idle moment of the main loop looks
 }
 
-// feature 420: a verified installer of 'release' is in the updates folder - offer it, or (feature
-// 421) at the automatic level plan it and install it without a window (contracts/ui.md of 421)
-static void ShowDownloadedUpdate(CMainWindow* wnd, const CSalUpdRelease& release, int how)
+// feature 422: the user decides about 'version' in this session - a waiting silent install of it ends
+static void UpdateSilentLeaveToUser(CMainWindow* wnd, const CSalUpdVersion& version)
+{
+    UpdateSilentCancelled = TRUE;
+    UpdateSilentCancelledVersion = version;
+    if (UpdateSilentPending && SalUpdVersionCompare(UpdateSilentRelease.Version, version) == 0)
+    {
+        UpdateSilentPending = FALSE;
+        KillTimer(wnd->HWindow, IDT_UPDATEAUTOINSTALL);
+    }
+}
+
+// feature 420: a verified installer of 'release' is in the updates folder - offer it, or (features
+// 421 / 422) after the background check at the automatic level plan it and install it right away
+// without a window; 'userAsked': the flow was started by the user in the application - always offered
+static void ShowDownloadedUpdate(CMainWindow* wnd, const CSalUpdRelease& release, int how, BOOL userAsked)
 {
     BOOL activateNow = how == UPDSHOW_NOW;
     // review S2: the settings are read again - they may have changed while the installer downloaded
     CUpdateState state;
     UpdateCheck_LoadState(&state);
     CSalUpdLevel level = UpdInstall_GetLevel();
-    if (!state.CheckAtStartup && !UpdateTestMode)
+    if (!state.CheckAtStartup && !UpdateTestMode && !userAsked)
         return; // the check was turned off meanwhile: nothing is offered or armed
     if (level == sulNotify) // "notify me only" was chosen meanwhile: feature 123's notification
     {
-        if (how == UPDSHOW_REPLACE || how == UPDSHOW_LEVEL)
-            return; // the classic form (or the offer the user is changing) is on screen already
+        if (how == UPDSHOW_REPLACE)
+            return; // the classic form is on screen already
         if (activateNow)
             UpdateNotice_Show(wnd->HWindow, release, TRUE, unfClassic);
         else
@@ -796,42 +810,41 @@ static void ShowDownloadedUpdate(CMainWindow* wnd, const CSalUpdRelease& release
     BOOL hasArm = UpdInstall_LoadArm(&arm);
     if (hasArm && SalUpdVersionCompare(arm.Version, release.Version) < 0)
     {
-        // review 2: an update armed for an older version gives way to the newer one (the exit must
-        // not install the older version)
+        // review 2: an update armed for an older version gives way to the newer one (the start-up
+        // completion must not install the older version)
         UpdInstall_SkipVersion(arm.Version);
         hasArm = FALSE;
     }
-    // review S1: an arm whose launches are used up is not promised for the exit again - offered only;
-    // round 4 SHOULD: a version the user skipped is never installed on its own either - a check the
-    // user asked for offers it (Install Now / Install When I Close stay the user's choice)
+    if (level == sulAutomatic && userAsked)
+        UpdateSilentLeaveToUser(wnd, release.Version); // 422: the user decides - the notification, no silent install
+    // review S1: an arm whose launches are used up is never started on its own - offered only; round 4
+    // SHOULD: a version the user skipped is never installed on its own either - a check the user asked
+    // for offers it
     BOOL skipped = !UpdateTestMode && state.HasSkipped && SalUpdVersionCompare(state.Skipped, release.Version) == 0;
-    if (level == sulAutomatic && !skipped && SalUpdAutomaticArmUsable(hasArm, arm, release.Version))
+    if (level == sulAutomatic && !userAsked && !skipped && SalUpdAutomaticArmUsable(hasArm, arm, release.Version))
     {
         UpdInstall_Arm(release, SALUPD_ARM_AUTOMATIC);
-        // feature 421: no window - the plan is installed as soon as nothing can be lost; a plan whose
-        // installer ran since it was planned (or used up) is offered instead (420 round 6)
+        // features 421 / 422: no window - the plan is installed right away when nothing can be lost; a
+        // plan whose installer ran since it was planned (or used up) is offered instead (420 round 6,
+        // the maintainer's lock-out trap)
         CSalUpdArm planned;
         BOOL hasPlanned = UpdInstall_LoadArm(&planned);
-        // review 2: never closed under the user - a notification the user works in (it has the keyboard,
-        // a level list is open in it) and a version whose download the user cancelled are offered instead
+        // 421 review 2: never closed under the user - a notification the user works in (it has the
+        // keyboard) and a version the user decided about in this session are offered instead
         HWND open = UpdateNotice_GetWindow();
-        // (not when the user just chose the automatic level in that very window - that is the choice)
-        BOOL userInIt = how != UPDSHOW_LEVEL && open != NULL && IsWindow(open) && GetForegroundWindow() == open;
+        BOOL userInIt = open != NULL && IsWindow(open) && GetForegroundWindow() == open;
         BOOL cancelled = UpdateSilentCancelled && SalUpdVersionCompare(UpdateSilentCancelledVersion, release.Version) == 0;
         if (SalUpdSilentInstallPlanned(hasPlanned, planned, release.Version) && !userInIt && !cancelled)
         {
             CSalUpdRelease shown;
             if (UpdateNotice_GetRelease(&shown) && SalUpdVersionCompare(shown.Version, release.Version) == 0)
-                UpdateNotice_Close(); // what is left of a check the user asked for, or the offer just changed
+                UpdateNotice_Close(); // what is left of an earlier notification of it
             if (UpdateNoticePending && SalUpdVersionCompare(UpdateNoticeRelease.Version, release.Version) == 0)
                 UpdateNoticePending = FALSE;
-            BOOL userAsked = (how == UPDSHOW_NOW || how == UPDSHOW_REPLACE) && UpdateFlowUserAsked;
-            StartSilentUpdateInstall(wnd, release, userAsked);
+            StartSilentUpdateInstall(wnd, release);
             return;
         }
     }
-    if (how == UPDSHOW_LEVEL)
-        return; // the offer form stays as it is (the plan may not install silently)
     if (how != UPDSHOW_QUEUE)
     {
         UpdateNoticePending = FALSE;
@@ -844,13 +857,14 @@ static void ShowDownloadedUpdate(CMainWindow* wnd, const CSalUpdRelease& release
 void CMainWindow::StartUpdateFlow(const CSalUpdRelease& release, BOOL classicNow, BOOL notify, int userAsked)
 {
     CALL_STACK_MESSAGE3("CMainWindow::StartUpdateFlow(, %d, %d)", classicNow, notify);
-    UpdateFlowUserAsked = userAsked == -1 ? classicNow : userAsked != 0; // feature 421
+    // feature 422: the background check at start-up (it notifies, not at once) is the only one that is not the user's
+    UpdateFlowUserAsked = userAsked == -1 ? (classicNow || !notify) : userAsked != 0;
     BOOL ready = FALSE;
     if (UpdInstall_AfterCheck(HWindow, release, &ready) == suacDownload)
     {
         if (ready) // a verified installer from an earlier session
         {
-            ShowDownloadedUpdate(this, release, classicNow ? UPDSHOW_NOW : UPDSHOW_QUEUE);
+            ShowDownloadedUpdate(this, release, classicNow ? UPDSHOW_NOW : UPDSHOW_QUEUE, UpdateFlowUserAsked);
             return;
         }
         UpdateFlowNotify = notify;
@@ -930,7 +944,7 @@ void CMainWindow::OnUpdateDownloadDone()
     if (done.Ok)
     {
         // the downloaded form: in place of the classic one still open, else when nothing is in its way
-        ShowDownloadedUpdate(this, done.Release, classicShown ? UPDSHOW_REPLACE : UPDSHOW_QUEUE);
+        ShowDownloadedUpdate(this, done.Release, classicShown ? UPDSHOW_REPLACE : UPDSHOW_QUEUE, UpdateFlowUserAsked);
         return;
     }
     // no verified installer: 123's notification, unless it is already on screen
@@ -983,17 +997,12 @@ void CMainWindow::TrySilentUpdateInstall()
     // the cheap facts first; the process and window enumerations only when they can still matter
     CSalUpdSilentInstall d = SalUpdSilentInstallDecision(hasArm, arm, release.Version, honoured,
                                                          UpdInstall_IsEligible(NULL), UpdateTestMode, running, tried,
-                                                         TRUE, FALSE, TRUE, 0xFFFFFFFF, 0, TRUE);
+                                                         TRUE, FALSE, TRUE);
     if (d == susiNow)
     {
-        LASTINPUTINFO lii;
-        lii.cbSize = sizeof(lii);
-        DWORD idle = GetLastInputInfo(&lii) ? GetTickCount() - lii.dwTime : 0;
-        DWORD idleNeeded = UpdInstall_SilentIdleNeededMs();
-        // review 2 note: while the idle wait cannot be met, the window and process enumerations are not made
-        BOOL looked = UpdateSilentUserAsked || idle >= idleNeeded;
-        CSalCloseAppDecision closeWhy = looked ? DecideCloseApp() : scadBusy;
-        BOOL closeAgree = looked && closeWhy == scadAgree;
+        // feature 422: no idle wait - right away when nothing can be lost
+        CSalCloseAppDecision closeWhy = DecideCloseApp();
+        BOOL closeAgree = closeWhy == scadAgree;
         // review S1: what the installer's close does not ask about but the user would lose - text typed
         // in the command line, a Quick Rename edit in progress (the close agrees with both)
         BOOL typing = closeAgree && (QuickRenameWindowActive() ||
@@ -1005,14 +1014,13 @@ void CMainWindow::TrySilentUpdateInstall()
         BOOL last = closeAgree && UpdInstall_IsLastInstance();
         BOOL installer = last && UpdInstall_InstallerRunning();
         d = SalUpdSilentInstallDecision(hasArm, arm, release.Version, honoured, TRUE, UpdateTestMode, running, tried,
-                                        last, installer, closeAgree, idle, idleNeeded, UpdateSilentUserAsked);
-        TRACE_I("Update: silent install - close agrees " << closeAgree << ", last instance " << last
-                                                         << ", idle " << idle << " ms: " << SalUpdSilentInstallName(d));
+                                        last, installer, closeAgree);
+        TRACE_I("Update: silent install - close agrees " << closeAgree << ", last instance " << last << ": "
+                                                         << SalUpdSilentInstallName(d));
 #ifdef _DEBUG
         char line[300];
-        _snprintf_s(line, _TRUNCATE, "%s looked=%d close=%s typing=%d agree=%d last=%d installer=%d idle=%u asked=%d",
-                    SalUpdSilentInstallName(d), looked, looked ? SalCloseAppDecisionName(closeWhy) : "-", typing,
-                    closeAgree, last, installer, idle, UpdateSilentUserAsked);
+        _snprintf_s(line, _TRUNCATE, "%s close=%s typing=%d agree=%d last=%d installer=%d", SalUpdSilentInstallName(d),
+                    SalCloseAppDecisionName(closeWhy), typing, closeAgree, last, installer);
         UpdateSilentProbeLog(line);
 #endif // _DEBUG
     }
@@ -1042,9 +1050,9 @@ void CMainWindow::TrySilentUpdateInstall()
             (UpdateTestMode || !skipped) && UpdInstall_HasVerified(release))
         {
             CSalUpdRelease shown = release;
-            ShowDownloadedUpdate(this, shown, UPDSHOW_QUEUE);
+            ShowDownloadedUpdate(this, shown, UPDSHOW_QUEUE, FALSE);
         }
-        return; // the exit / the next start of 420 decide
+        return; // the next start decides (feature 422: never the exit)
     }
     UpdateSilentTried = TRUE;
     UpdateSilentTriedVersion = release.Version;
@@ -1064,14 +1072,7 @@ void CMainWindow::TrySilentUpdateInstall()
 
 void CMainWindow::OnUpdateDownloadCancelled(const CSalUpdVersion& version)
 {
-    UpdateSilentCancelled = TRUE;
-    UpdateSilentCancelledVersion = version;
-    UpdateFlowUserAsked = FALSE;
-    if (UpdateSilentPending && SalUpdVersionCompare(UpdateSilentRelease.Version, version) == 0)
-    {
-        UpdateSilentPending = FALSE; // a wait already running for it ends too
-        KillTimer(HWindow, IDT_UPDATEAUTOINSTALL);
-    }
+    UpdateSilentLeaveToUser(this, version); // a wait already running for it ends too
 }
 
 // feature 421: the level was changed in the notification - what it does to the open window
@@ -1089,11 +1090,9 @@ void CMainWindow::OnUpdateNoticeLevel(int level)
     case sulchClassic:
         UpdateNotice_Reshow(HWindow, unfClassic);
         break;
-    case sulchFlow: // download (or a verified installer at once); the classic form stays meanwhile
-        StartUpdateFlow(release, TRUE, TRUE, FALSE);
-        break;
-    case sulchAutomatic:
-        ShowDownloadedUpdate(this, release, UPDSHOW_LEVEL);
+    case sulchFlow: // download (or a verified installer at once); the classic form stays meanwhile, then the
+        // offer replaces it - feature 422: a choice in the window is the user's, never a silent install
+        StartUpdateFlow(release, TRUE, TRUE, TRUE);
         break;
     default:
         break;
@@ -6862,7 +6861,7 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
         {
             CSalUpdRelease release;
             if (UpdInstall_GetArmedRelease(&release))
-                ShowDownloadedUpdate(this, release, UPDSHOW_QUEUE);
+                ShowDownloadedUpdate(this, release, UPDSHOW_QUEUE, FALSE);
         }
         else // the exit did not start the installer at all - completed now
             UpdInstall_CompleteArmed(HWindow);

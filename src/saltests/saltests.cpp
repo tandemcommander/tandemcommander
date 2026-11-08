@@ -10434,16 +10434,10 @@ static void TestAutoUpdate420()
     CHECK(SalUpdBuildInstallerArgs(sulkNow, FALSE, TRUE, L"C:\\U\\l.log", args, _countof(args)) &&
           wcscmp(args, L"/SP- /SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /NORESTARTAPPLICATIONS "
                        L"/CURRENTUSER /LOG=\"C:\\U\\l.log\"") == 0);
-    CHECK(SalUpdBuildInstallerArgs(sulkExit, FALSE, FALSE, L"C:\\U\\l.log", args, _countof(args)) &&
-          wcscmp(args, L"/SP- /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /NORESTARTAPPLICATIONS "
-                       L"/CURRENTUSER /LOG=\"C:\\U\\l.log\"") == 0);
-    CHECK(SalUpdBuildInstallerArgs(sulkExit, TRUE, FALSE, L"C:\\U\\l.log", args, _countof(args)) &&
-          wcsstr(args, L"/VERYSILENT") != NULL && wcsstr(args, L"/ALLUSERS ") != NULL &&
-          wcsstr(args, L"/RESTARTAPPLICATIONS") == NULL);
     CHECK(!SalUpdBuildInstallerArgs(sulkNow, TRUE, FALSE, L"C:\\a\"b.log", args, _countof(args)) && args[0] == 0);
     CHECK(!SalUpdBuildInstallerArgs(sulkNow, TRUE, FALSE, L"", args, _countof(args)));
     CHECK(!SalUpdBuildInstallerArgs(sulkNow, TRUE, FALSE, L"C:\\l.log", args, 40) && args[0] == 0);
-    CHECK(strcmp(SalUpdLaunchKindName(sulkNow), "now") == 0 && strcmp(SalUpdLaunchKindName(sulkExit), "exit") == 0);
+    CHECK(strcmp(SalUpdLaunchKindName(sulkNow), "now") == 0);
 
     // --- the level and the decision after a check
     CHECK(SalUpdLevelFromStored(FALSE, 0) == sulOffer && SalUpdLevelFromStored(TRUE, 0) == sulNotify &&
@@ -10525,7 +10519,6 @@ static void TestAutoUpdate420()
     CHECK(!SalUpdArmHonoured(offered, TRUE, sulAutomatic, TRUE));
     CHECK(SalUpdStartupArmDecision(offered, FALSE, FALSE, v020, TRUE) == susaNone);
     CHECK(SalUpdStartupArmDecision(offered, FALSE, FALSE, v021, TRUE) == susaDone);
-    CHECK(!SalUpdExitDecision(offered, FALSE, TRUE, TRUE, TRUE, FALSE, v020));
     CHECK(!SalUpdAutomaticArmUsable(TRUE, offered, offered.Version));
     CHECK(SalUpdAutomaticArmUsable(TRUE, offered, v030));
     // round 4 MUST: a failed Install Now restores the arm that existed before the click, with the new count
@@ -10559,10 +10552,8 @@ static void TestAutoUpdate420()
         CSalUpdArm nowArm = Upd420Arm(0, 2, 1, SALUPD_ARM_USER, FALSE, 1);
         back = SalUpdArmAfterFailedNow(TRUE, userBefore, nowArm, FALSE, &keep);
         CHECK(keep && back.Launches == 1 && back.ConfirmedAt == 1 && back.Source == SALUPD_ARM_USER);
-        CHECK(SalUpdExitDecision(back, TRUE, TRUE, TRUE, TRUE, FALSE, v020));
         back = SalUpdArmAfterFailedNow(TRUE, userBefore, nowArm, TRUE, &keep); // it ran and failed
         CHECK(keep && back.Launches == 1 && back.ConfirmedAt == 0);
-        CHECK(!SalUpdExitDecision(back, TRUE, TRUE, TRUE, TRUE, FALSE, v020));
         CHECK(SalUpdStartupArmDecision(back, TRUE, FALSE, v020, TRUE) == susaOffer);
         CSalUpdArm nowTwo = Upd420Arm(0, 2, 1, SALUPD_ARM_USER, FALSE, 2);
         back = SalUpdArmAfterFailedNow(TRUE, offered, nowTwo, FALSE, &keep);
@@ -10572,15 +10563,7 @@ static void TestAutoUpdate420()
         back = SalUpdArmAfterFailedNow(TRUE, once, gone, TRUE, &keep);
         CHECK(!keep);
     }
-    // round 4 SHOULD: Install When I Close only while the exit can still install it
-    CHECK(SalUpdExitArmAvailable(FALSE, none, v021, FALSE));
-    CHECK(SalUpdExitArmAvailable(TRUE, twice, twice.Version, FALSE));
-    CHECK(!SalUpdExitArmAvailable(TRUE, tired, tired.Version, FALSE));
-    CHECK(SalUpdExitArmAvailable(TRUE, tired, v030, FALSE));             // another version starts afresh
-    CHECK(SalUpdExitArmAvailable(TRUE, tired, tired.Version, TRUE));     // a test session arms afresh
-    CSalUpdArm tiredOffered = Upd420Arm(0, 2, 1, SALUPD_ARM_OFFERED, FALSE, SALUPD_MAX_LAUNCHES);
-    CHECK(!SalUpdExitArmAvailable(TRUE, tiredOffered, tiredOffered.Version, FALSE));
-    CHECK(SalUpdExitArmAvailable(TRUE, offered, offered.Version, FALSE)); // offered, launches left: a click arms it
+    // feature 422: no exit install, no Install When I Close (SalUpdExitArmAvailable is gone)
     // round 4 NOTE: with the check off an offer can never be shown - the offered update and its file go
     CHECK(SalUpdStartupOfferReachable(susaOffer, once, FALSE, FALSE, TRUE) == susaDropAll);
     CHECK(SalUpdStartupOfferReachable(susaNone, offered, FALSE, FALSE, TRUE) == susaDropAll);
@@ -10601,25 +10584,13 @@ static void TestAutoUpdate420()
     CHECK(strcmp(SalUpdStartupArmName(susaComplete), "complete") == 0 &&
           strcmp(SalUpdStartupArmName(susaGiveUp), "give-up") == 0);
 
-    // exit
-    CHECK(SalUpdExitDecision(aut, TRUE, TRUE, TRUE, TRUE, FALSE, v020));
-    CHECK(!SalUpdExitDecision(none, TRUE, TRUE, TRUE, TRUE, FALSE, v020));
-    CHECK(!SalUpdExitDecision(aut, FALSE, TRUE, TRUE, TRUE, FALSE, v020)); // not honoured
-    CHECK(!SalUpdExitDecision(aut, TRUE, FALSE, TRUE, TRUE, FALSE, v020)); // sign-out, installer close
-    CHECK(!SalUpdExitDecision(aut, TRUE, TRUE, FALSE, TRUE, FALSE, v020)); // another instance runs
-    CHECK(!SalUpdExitDecision(aut, TRUE, TRUE, TRUE, FALSE, FALSE, v020)); // not installed by the installer
-    CHECK(!SalUpdExitDecision(tired, TRUE, TRUE, TRUE, TRUE, FALSE, v020));
-    CHECK(!SalUpdExitDecision(twice, TRUE, TRUE, TRUE, TRUE, FALSE, v020)); // round 6: ran twice since it was planned
+    // feature 422: the exit never installs (SalUpdExitDecision is gone); a plan the user confirmed
+    // again after the second launch is completed at the next start
     {
         CSalUpdArm twiceConfirmed = twice;
         twiceConfirmed.ConfirmedAt = 2; // the user confirmed it again (Yes) after the second launch
-        CHECK(SalUpdExitDecision(twiceConfirmed, TRUE, TRUE, TRUE, TRUE, FALSE, v020));
         CHECK(SalUpdStartupArmDecision(twiceConfirmed, TRUE, FALSE, v020, TRUE) == susaComplete);
     }
-    CHECK(!SalUpdExitDecision(aut, TRUE, TRUE, TRUE, TRUE, FALSE, v021)); // already there
-    CHECK(SalUpdExitDecision(test, TRUE, TRUE, TRUE, TRUE, TRUE, v020));  // test arm, test session
-    CHECK(!SalUpdExitDecision(test, TRUE, TRUE, TRUE, TRUE, FALSE, v020));
-    CHECK(SalUpdExitDecision(user, TRUE, TRUE, TRUE, TRUE, TRUE, v020)); // a normal arm in a test session
 }
 
 // feature 421: the notification's level choice, Download & Install and the silent automatic install
@@ -10662,8 +10633,8 @@ static void TestUpdateNotice421()
     CHECK(SalUpdNoticeLevelChange(TRUE, sulNotify, TRUE) == sulchClassic);
     CHECK(SalUpdNoticeLevelChange(TRUE, sulNotify, FALSE) == sulchClassic);
     CHECK(SalUpdNoticeLevelChange(TRUE, sulOffer, TRUE) == sulchNone);
-    CHECK(SalUpdNoticeLevelChange(TRUE, sulAutomatic, TRUE) == sulchAutomatic);
-    CHECK(SalUpdNoticeLevelChange(TRUE, sulAutomatic, FALSE) == sulchAutomatic); // the installer is here already
+    CHECK(SalUpdNoticeLevelChange(TRUE, sulAutomatic, TRUE) == sulchNone);  // 422: stored, the offer stays
+    CHECK(SalUpdNoticeLevelChange(TRUE, sulAutomatic, FALSE) == sulchNone);
 
     // --- may the automatic level install silently?
     CSalUpdVersion v019 = {0, 1, 9}, v020 = {0, 2, 0}, v021 = {0, 2, 1};
@@ -10692,29 +10663,27 @@ static void TestUpdateNotice421()
     CHECK(!SalUpdSilentInstallPlanned(TRUE, a, v020)); // used up
 
     // --- the moment
-    const DWORD need = SALUPD_SILENT_IDLE_MS;
-    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, TRUE, FALSE, v019, FALSE, TRUE, FALSE, TRUE, need, need, FALSE) == susiNow);
-    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, TRUE, FALSE, v019, FALSE, TRUE, FALSE, TRUE, need - 1, need, FALSE) == susiWait); // the user works
-    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, TRUE, FALSE, v019, FALSE, TRUE, FALSE, TRUE, 0, need, TRUE) == susiNow);         // the user asked
-    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, TRUE, FALSE, v019, FALSE, FALSE, FALSE, TRUE, need, need, TRUE) == susiWait);   // another instance
-    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, TRUE, FALSE, v019, FALSE, TRUE, TRUE, TRUE, need, need, TRUE) == susiWait);     // an installer runs
-    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, TRUE, FALSE, v019, FALSE, TRUE, FALSE, FALSE, need, need, TRUE) == susiWait);   // something to lose
-    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, TRUE, FALSE, v019, TRUE, TRUE, FALSE, TRUE, need, need, TRUE) == susiNever);    // tried this session
-    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, FALSE, TRUE, FALSE, v019, FALSE, TRUE, FALSE, TRUE, need, need, TRUE) == susiNever);  // level / check changed
-    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, FALSE, FALSE, v019, FALSE, TRUE, FALSE, TRUE, need, need, TRUE) == susiNever);  // not installed by the installer
-    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, TRUE, FALSE, v020, FALSE, TRUE, FALSE, TRUE, need, need, TRUE) == susiNever);   // reached
-    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, TRUE, FALSE, v021, FALSE, TRUE, FALSE, TRUE, need, need, TRUE) == susiNever);   // newer running
-    CHECK(SalUpdSilentInstallDecision(FALSE, aut, v020, TRUE, TRUE, FALSE, v019, FALSE, TRUE, FALSE, TRUE, need, need, TRUE) == susiNever);  // no arm
-    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, TRUE, TRUE, v019, FALSE, TRUE, FALSE, TRUE, need, need, TRUE) == susiNever);   // a normal plan in a test session
+    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, TRUE, FALSE, v019, FALSE, TRUE, FALSE, TRUE) == susiNow);
+    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, TRUE, FALSE, v019, FALSE, TRUE, FALSE, TRUE) == susiNow);         // feature 422: no idle wait - also while the user works
+    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, TRUE, FALSE, v019, FALSE, FALSE, FALSE, TRUE) == susiWait);   // another instance
+    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, TRUE, FALSE, v019, FALSE, TRUE, TRUE, TRUE) == susiWait);     // an installer runs
+    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, TRUE, FALSE, v019, FALSE, TRUE, FALSE, FALSE) == susiWait);   // something to lose
+    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, TRUE, FALSE, v019, TRUE, TRUE, FALSE, TRUE) == susiNever);    // tried this session
+    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, FALSE, TRUE, FALSE, v019, FALSE, TRUE, FALSE, TRUE) == susiNever);  // level / check changed
+    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, FALSE, FALSE, v019, FALSE, TRUE, FALSE, TRUE) == susiNever);  // not installed by the installer
+    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, TRUE, FALSE, v020, FALSE, TRUE, FALSE, TRUE) == susiNever);   // reached
+    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, TRUE, FALSE, v021, FALSE, TRUE, FALSE, TRUE) == susiNever);   // newer running
+    CHECK(SalUpdSilentInstallDecision(FALSE, aut, v020, TRUE, TRUE, FALSE, v019, FALSE, TRUE, FALSE, TRUE) == susiNever);  // no arm
+    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, TRUE, TRUE, v019, FALSE, TRUE, FALSE, TRUE) == susiNever);   // a normal plan in a test session
     a = aut;
     a.Test = TRUE;
-    CHECK(SalUpdSilentInstallDecision(TRUE, a, v020, TRUE, TRUE, TRUE, v020, FALSE, TRUE, FALSE, TRUE, need, need, FALSE) == susiNow);     // test plan, test session, same version
-    CHECK(SalUpdSilentInstallDecision(TRUE, a, v020, TRUE, TRUE, FALSE, v020, FALSE, TRUE, FALSE, TRUE, need, need, FALSE) == susiNever);  // test plan, normal session
+    CHECK(SalUpdSilentInstallDecision(TRUE, a, v020, TRUE, TRUE, TRUE, v020, FALSE, TRUE, FALSE, TRUE) == susiNow);     // test plan, test session, same version
+    CHECK(SalUpdSilentInstallDecision(TRUE, a, v020, TRUE, TRUE, FALSE, v020, FALSE, TRUE, FALSE, TRUE) == susiNever);  // test plan, normal session
     a = aut;
     a.Launches = 1; // ran since planned
-    CHECK(SalUpdSilentInstallDecision(TRUE, a, v020, TRUE, TRUE, FALSE, v019, FALSE, TRUE, FALSE, TRUE, need, need, TRUE) == susiNever);
+    CHECK(SalUpdSilentInstallDecision(TRUE, a, v020, TRUE, TRUE, FALSE, v019, FALSE, TRUE, FALSE, TRUE) == susiNever);
     // "never" outranks "wait": a plan that may not install is not waited for
-    CHECK(SalUpdSilentInstallDecision(TRUE, a, v020, TRUE, TRUE, FALSE, v019, FALSE, FALSE, TRUE, FALSE, 0, need, FALSE) == susiNever);
+    CHECK(SalUpdSilentInstallDecision(TRUE, a, v020, TRUE, TRUE, FALSE, v019, FALSE, FALSE, TRUE, FALSE) == susiNever);
     CHECK(strcmp(SalUpdSilentInstallName(susiNow), "now") == 0 && strcmp(SalUpdSilentInstallName(susiWait), "wait") == 0 &&
           strcmp(SalUpdSilentInstallName(susiNever), "never") == 0);
 
@@ -10727,11 +10696,38 @@ static void TestUpdateNotice421()
     // ... which the automatic level never plans again (420's rule) nor installs silently, and the exit refuses
     CHECK(!SalUpdAutomaticArmUsable(TRUE, kept, v020));
     CHECK(!SalUpdSilentInstallPlanned(TRUE, kept, v020));
-    CHECK(!SalUpdExitDecision(kept, SalUpdArmHonoured(kept, TRUE, sulAutomatic, FALSE), TRUE, TRUE, TRUE, FALSE, v019));
     // negative control: the dropped arm (420's old behaviour) lets the next check plan it afresh - silent again
     CHECK(SalUpdAutomaticArmUsable(FALSE, none, v020));
     a.Source = SALUPD_ARM_USER; // a click's plan is dropped as in 420
     CHECK(!SalUpdDeclinedArmKept(a, &kept));
+
+    // --- feature 422, the maintainer's lock-out trap: the automatic install's (or the start-up completion's)
+    // installer closed the program and was cancelled - the program never got to restore anything. What the
+    // launch left (Install Now's own plan: source user, 1 launch, unconfirmed) must never start again on
+    // its own: the start only offers it, the automatic level does not plan it silently, also after a check
+    CSalUpdArm launched = aut;
+    launched.Source = SALUPD_ARM_USER;
+    launched.Launches = 1;
+    launched.ConfirmedAt = 0;
+    CHECK(SalUpdStartupArmDecision(launched, SalUpdArmHonoured(launched, TRUE, sulAutomatic, FALSE), FALSE, v019, TRUE) ==
+          susaOffer);
+    CHECK(!SalUpdSilentInstallPlanned(TRUE, launched, v020));
+    CHECK(SalUpdSilentInstallDecision(TRUE, launched, v020, TRUE, TRUE, FALSE, v019, FALSE, TRUE, FALSE, TRUE) == susiNever);
+    // the same with the automatic plan restored (a failed launch reported while the program ran, then killed)
+    launched.Source = SALUPD_ARM_AUTOMATIC;
+    CHECK(SalUpdStartupArmDecision(launched, TRUE, FALSE, v019, TRUE) == susaOffer);
+    CHECK(!SalUpdSilentInstallPlanned(TRUE, launched, v020));
+    // ... and once offered (No / a failure while running), never planned again, also not after a check
+    CHECK(SalUpdDeclinedArmKept(launched, &kept) && !SalUpdAutomaticArmUsable(TRUE, kept, v020) &&
+          SalUpdStartupArmDecision(kept, FALSE, FALSE, v019, TRUE) == susaNone);
+    // a second and a third launch that did not install it: still only offered, then given up (no start)
+    launched.Launches = 2;
+    CHECK(SalUpdStartupArmDecision(launched, TRUE, FALSE, v019, TRUE) == susaOffer);
+    launched.Launches = SALUPD_MAX_LAUNCHES;
+    launched.ConfirmedAt = SALUPD_MAX_LAUNCHES;
+    CHECK(SalUpdStartupArmDecision(launched, TRUE, FALSE, v019, TRUE) == susaGiveUp);
+    // negative control: a plan never launched is completed at the start (that is the intended install)
+    CHECK(SalUpdStartupArmDecision(aut, TRUE, FALSE, v019, TRUE) == susaComplete);
     a.Source = SALUPD_ARM_OFFERED;
     CHECK(!SalUpdDeclinedArmKept(a, &kept));
     CHECK(!SalUpdDeclinedArmKept(none, &kept));

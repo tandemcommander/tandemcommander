@@ -724,7 +724,7 @@
 #define IDC_ABOUT_UPDATECMD             6257
 // feature 420: automatic update (the notification's second install button, the level on the
 // General page)
-#define IDC_UPDN_INSTALLEXIT            6296
+// 6296 was IDC_UPDN_INSTALLEXIT (Install When I Close), removed by feature 422
 #define IDC_UPDATELEVEL_LABEL           6297
 #define IDC_UPDATELEVEL                 6298
 // feature 421: the notification's level choice and Download & Install

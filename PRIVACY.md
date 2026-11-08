@@ -10,8 +10,8 @@ FTP or SFTP server, loading the images of a Markdown document, or clicking a
 web link. The exception is the check for a new version: unless you turn it
 off, the program asks GitHub about once a day, when it starts, which version
 of Tandem Commander is the latest, and when there is a newer one it downloads
-that version's installer from GitHub, so that you can install it with one click
-or when you close the program (see *Checking for a new version*). What it
+that version's installer from GitHub, so that you can install it with one click,
+or installs it right away if you choose so (see *Checking for a new version*). What it
 stores — settings, history and, if you choose, saved passwords — stays in
 your Windows user profile.
 
@@ -301,21 +301,24 @@ General → When a new version is found**, or in the notification window itself:
   on a metered connection, because you asked for it), check it and install
   it. Each of these happens only when you choose it.
 - *Download it and offer installation* (the default): the program downloads
-  the installer itself and then offers *Install Now* and *Install When I
-  Close*. Nothing is installed until you choose one of them.
-- *Install it automatically as soon as it is downloaded*: the program
-  downloads the installer and installs it without asking as soon as nothing
-  can be lost: no file operation or search running, no modal dialog or menu
-  open, nothing opened from an archive waiting to be packed back, no plug-in
-  file system open, nothing typed in the command line, no other copy of the
-  program running, and - unless you asked for the check yourself - no
-  keyboard or mouse use for half a minute; the program closes and starts
-  again after the update. If its installer does not install it (for example
-  you decline the administrator's permission) and you do not want it at the
-  exit, it is only offered from then on. If you close the
-  program first, it installs the update then; if that did not happen either
-  (for example the computer was switched off), it installs it the next time
-  the program starts.
+  the installer itself and then offers *Install Now*. Nothing is installed
+  until you choose it.
+- *Install it automatically as soon as it is downloaded*: after the check at
+  start-up, the program downloads the installer and installs it without
+  asking right away, unless something could be lost - a file operation or
+  search running, a modal dialog or menu open, something opened from an
+  archive waiting to be packed back, a plug-in file system open, text typed
+  in the command line, another copy of the program running; then it waits
+  until that has ended. The program closes, the update is installed and the
+  program starts again. An update not installed before you close the program
+  is installed when it starts the next time. A check you start yourself
+  (*Help → Check for New Version*, the About box) always shows the
+  notification instead. If an installer started this way does not install
+  the update (for example you cancel it or decline the administrator's
+  permission), the update is only offered from then on and never started on
+  its own again.
+
+Nothing is ever installed when you close the program.
 
 The download is one request to `api.github.com` for the installer file of that
 release (an address the program builds from the release's number, not one

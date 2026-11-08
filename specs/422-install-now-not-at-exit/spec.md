@@ -12,6 +12,7 @@
 - Q: When does the automatic level install after the download? → A: Right away, without waiting for the user to be idle; only never while something can be lost (maintainer decision 2026-11-08, asked in the session)
 - Q: What happens to installation at exit (the automatic fall-back, *Install When I Close*, the question after a failed *Install Now*)? → A: Removed completely (maintainer decision 2026-11-08, asked in the session)
 - Q: The installer of an automatic install closed Tandem Commander and the user cancelled it (or declined the administrator prompt); the user starts the program again - does the install start again? → A: Never; the update is only offered from then on, at every start, until the user clicks *Install Now* (maintainer requirement 2026-11-08: "a logical trap - otherwise the user is locked out")
+- Q: At the automatic level, what does a check the user starts in the application do (Help > Check for New Version, the About box's *Check now*, a level chosen in the notification)? → A: It always shows the notification with the new version and *Install Now* - it never installs on its own; the automatic install happens only after the background check at start-up (and the start-up completion). A silent install of that version already waiting is cancelled for the session (maintainer requirement 2026-11-08)
 - Q: Is the notification closed under the user when the automatic install becomes due while it is open? → A: Only when the user is not in the middle of choosing in it (the level list is not open); otherwise the offer form replaces it (autonomous run: item - "never while something can be lost")
 
 ## User Scenarios & Testing *(mandatory)*
@@ -53,7 +54,7 @@ An automatic plan whose installer never ran (the program was closed before the m
 
 ### User Story 4 - A cancelled install never locks the user out (Priority: P1)
 
-The installer of an automatic install (while running or at the start-up completion) closed the program and the user cancelled it (or declined the administrator prompt). When the user starts Tandem Commander again, nothing starts on its own: the update is offered, at this start and every following one, until the user clicks *Install Now*.
+The installer of an automatic install (while running or at the start-up completion) closed the program and the user cancelled it (or declined the administrator prompt). When the user starts Tandem Commander again, nothing starts on its own - at this start and every following one, until the user clicks *Install Now*: the update is only offered (the notification at a start whose check is due, as 420 offers an update; a start without a check shows nothing, so the user is not nagged at every start).
 
 **Acceptance Scenarios**:
 
@@ -79,6 +80,7 @@ The installer of an automatic install (while running or at the start-up completi
 - **FR-005**: A failed *Install Now* (or automatic install) whose installer ended while the program runs MUST be reported with OK only (no "install it when you close?"); an automatic plan becomes offered (421's `SalUpdDeclinedArmKept`); the offer comes back.
 - **FR-006**: An automatic (or click's) plan never launched since it was planned MUST be installed at the next start right away (420's start-up completion).
 - **FR-007**: A plan whose installer was started and did not install the update MUST never be started again on its own - not by the silent install, not at the next start, not after a new check - until the user clicks *Install Now* (420's launch count / confirmation; maintainer requirement).
+- **FR-009** (maintainer, added during the run): a check the user starts in the application (Help > Check for New Version, the About box's *Check now*, a level chosen in the notification) MUST show the notification with the new version and *Install Now* at every level and MUST NOT install on its own; at the automatic level a silent install of that version already waiting is cancelled for the session. The automatic install follows only the background check at start-up and the start-up completion.
 - **FR-008**: The manual, `PRIVACY.md`, the 420/421 contracts and the translations MUST describe the new behaviour.
 
 ## Success Criteria *(mandatory)*

@@ -862,15 +862,6 @@ static void UpdiReportDamaged(HWND parent, const CSalUpdVersion& version)
     SalMessageBox(parent, text, title, MB_OK | MB_ICONEXCLAMATION);
 }
 
-BOOL UpdInstall_CheckReady(HWND parent, const CSalUpdRelease& release)
-{
-    if (UpdiHasVerified(release))
-        return TRUE;
-    UpdiDeleteFiles(release.Version);
-    UpdiReportDamaged(parent, release.Version);
-    return FALSE;
-}
-
 // Round 4 MUST: the launch of Install Now failed (it could not be started, or the installer ended
 // without installing while the program runs) - the arm that existed before the click comes back with
 // the new launch count (an offered update stays only offered), a click on nothing armed leaves nothing
@@ -890,21 +881,6 @@ static void UpdiRestoreArmAfterFailedNow(BOOL started)
                                                          << (keep ? restored.Source : 0));
 }
 
-// round 6: the user confirmed the plan of 'version' now - launches made so far are behind it;
-// round 8 S3: a confirmation is a click - an arm another instance marked offered meanwhile (while the
-// question "install it when you close?" was up) becomes the user's again
-static void UpdiConfirmArm(const CSalUpdVersion& version)
-{
-    CSalUpdArm arm;
-    if (UpdInstall_LoadArm(&arm) && SalUpdVersionCompare(arm.Version, version) == 0)
-    {
-        arm.ConfirmedAt = arm.Launches;
-        if (arm.Source == SALUPD_ARM_OFFERED)
-            arm.Source = SALUPD_ARM_USER;
-        UpdiSaveArm(arm);
-    }
-}
-
 // round 8 S1 / S2: the installer of 'version' did not verify - is its file still there? Then it only
 // could not be read now (an antivirus or backup scan holds it; a file that is not ours was deleted by
 // UpdiVerify, or will be at the next try): the arm and its count stay. Gone: the arm goes.
@@ -912,21 +888,6 @@ static BOOL UpdiInstallerStillThere(const CSalUpdVersion& version)
 {
     WCHAR path[UPDINST_MAX_FOLDER + 100];
     return UpdiInstallerPath(version, path, _countof(path)) && GetFileAttributesW(path) != INVALID_FILE_ATTRIBUTES;
-}
-
-void UpdInstall_ArmByClick(const CSalUpdRelease& release)
-{
-    // round 5 / 6: a click while an installer of Install Now runs (in this or another instance) is
-    // confirmed at the current count - a failure of that installer keeps it (SalUpdArmAfterFailedNow)
-    UpdInstall_Arm(release, SALUPD_ARM_USER);
-    UpdiConfirmArm(release.Version);
-}
-
-BOOL UpdInstall_ExitArmAvailable(const CSalUpdVersion& version)
-{
-    CSalUpdArm arm;
-    BOOL hasArm = UpdInstall_LoadArm(&arm);
-    return SalUpdExitArmAvailable(hasArm, arm, version, UpdateTestMode);
 }
 
 int UpdInstall_InstallNow(HWND parent, const CSalUpdRelease& release)
@@ -968,49 +929,32 @@ int UpdInstall_InstallNow(HWND parent, const CSalUpdRelease& release)
 
 BOOL UpdInstall_OnInstallerEnded(HWND parent, DWORD exitCode)
 {
-    // The installer of Install Now (or of the start-up completion) ended with a failure while the
-    // program still runs - it was cancelled, the elevation was declined, or it could not close the
-    // program. Review NOTE: a click that only asked for "now" does not turn into a silent install at
-    // the exit; an update armed before (Install When I Close, the automatic level) stays armed.
+    // The installer of Install Now (or of the automatic install, or of the start-up completion) ended
+    // with a failure while the program still runs - it was cancelled, the elevation was declined, or it
+    // could not close the program.
     UpdiRestoreArmAfterFailedNow(TRUE); // round 4 MUST: the click's arm gives way to the one before it
     CSalUpdArm arm;
     BOOL armed = UpdInstall_LoadArm(&arm) && SalUpdVersionCompare(arm.Version, UpdiNowVersion) == 0;
-    BOOL later = armed && UpdInstall_ArmHonoured(arm) && arm.Launches < SALUPD_MAX_LAUNCHES;
+    // feature 422 (the maintainer's lock-out trap): the automatic level's plan is only offered from now on,
+    // with its count - it is never started on its own again (not now, not at a start, not after a check);
+    // another plan restored here has a launch since its confirmation, which the start only offers
+    CSalUpdArm offered;
+    if (armed && SalUpdDeclinedArmKept(arm, &offered))
+    {
+        TRACE_I("UpdInstall: the installer did not install the update - the automatic plan is only offered now");
+        UpdiSaveArm(offered);
+    }
+    // feature 422: no question about installing at close any more - nothing installs at the exit
     char ver[SALUPD_VERSION_TEXT_MAX] = "";
     SalUpdFormatVersion(UpdiNowVersion, ver, sizeof(ver));
     char text[1500];
     _snprintf_s(text, _TRUNCATE, LoadStrU8(IDS_UPDATE_INSTALL_FAILED), ver, (unsigned)exitCode);
-    // UX test 6: an update that stays planned is the user's choice now (after a declined elevation
-    // prompt the user may not want another one at the exit)
-    if (later)
-    {
-        size_t len = strlen(text);
-        _snprintf_s(text + len, sizeof(text) - len, _TRUNCATE, "\n\n%s", LoadStrU8(IDS_UPDATE_INSTALL_LATER));
-    }
     char title[200];
     lstrcpyn(title, LoadStrU8(IDS_UPDATE_INSTALL_TITLE), _countof(title));
-    int answer = SalMessageBox(parent, text, title, later ? (MB_YESNO | MB_ICONQUESTION) : (MB_OK | MB_ICONEXCLAMATION));
-    if (answer == IDNO && later)
-    {
-        // review 421 M1: the automatic level's plan stays as an offer (with its count) - dropped, the next
-        // check would plan it afresh and the silent install would run the same installer again
-        CSalUpdArm offered;
-        if (SalUpdDeclinedArmKept(arm, &offered))
-        {
-            TRACE_I("UpdInstall: the user does not want the update at the exit - the automatic plan is only offered now");
-            UpdiSaveArm(offered);
-        }
-        else
-        {
-            TRACE_I("UpdInstall: the user does not want the update at the exit - the arm is dropped");
-            UpdInstall_DropArm();
-        }
-    }
-    else if (later) // round 6: Yes confirms the plan - the exit may install it (also with other instances)
-        UpdiConfirmArm(UpdiNowVersion);
-    // UX test 2 (item 4): when nothing stays planned the update must not just vanish - the offer
-    // comes back (Install Now / Install When I Close / Remind Me Later / Skip)
-    return !later || answer == IDNO;
+    SalMessageBox(parent, text, title, MB_OK | MB_ICONEXCLAMATION);
+    // UX test 2 (item 4): the update must not just vanish - the offer comes back (Install Now / Remind Me
+    // Later / Skip)
+    return TRUE;
 }
 
 // round 3 NOTE: the release date of a version the program learned of (123's stored state) - the
@@ -1632,19 +1576,6 @@ BOOL UpdInstall_DownloadInstallOffered(const CSalUpdRelease& release)
                                         UpdateTestMode);
 }
 
-DWORD UpdInstall_SilentIdleNeededMs()
-{
-#ifdef _DEBUG
-    // test seam, Debug builds only: the idle time the silent install waits for (a probe cannot wait
-    // half a minute per row, and a huge value stands for "the user is working")
-    WCHAR seam[20];
-    DWORD len = GetEnvironmentVariableW(L"TC_UPDATE_PROBE_IDLE_MS", seam, _countof(seam));
-    if (len > 0 && len < _countof(seam))
-        return (DWORD)wcstoul(seam, NULL, 10);
-#endif // _DEBUG
-    return SALUPD_SILENT_IDLE_MS;
-}
-
 // stops the running download of 'version' and waits for its worker a moment (its '.part' file is
 // deleted by the worker; a new download of the same version must not meet the old one's file)
 static void UpdiCancelDownload(const CSalUpdVersion& version)
@@ -1766,7 +1697,6 @@ BOOL UpdInstall_GetDownloadProgress(const CSalUpdVersion& version, ULONGLONG* re
 // start-up and exit
 //
 
-static BOOL UpdiStarted = FALSE; // start-up completed: only such a run installs at its exit
 
 static BOOL UpdiLastInstance(); // below
 
@@ -1775,7 +1705,6 @@ void UpdInstall_OnStartupComplete(HWND mainWindow)
     CALL_STACK_MESSAGE1("UpdInstall_OnStartupComplete()");
     if (SALAMANDER_ROOT_REG == NULL)
         return;
-    UpdiStarted = TRUE;
     CSalUpdArm arm;
     UpdInstall_LoadArm(&arm);
     CSalUpdVersion running;
@@ -1961,79 +1890,8 @@ static BOOL UpdiLastInstance()
     return last;
 }
 
-static HANDLE UpdiExitHeld = NULL; // the verified installer, held from PrepareExit to RunAtExit
-// TRUE: the main window was destroyed by an installer's close, a critical shutdown or a sign-out /
-// shutdown of Windows (recorded by UpdInstall_Shutdown while those flags were still set)
-static BOOL UpdiExitNotNormal = FALSE;
-static CSalUpdVersion UpdiExitVersion;
-
-void UpdInstall_PrepareExit()
-{
-    CALL_STACK_MESSAGE1("UpdInstall_PrepareExit()");
-    UpdiExitHeld = NULL;
-    if (SALAMANDER_ROOT_REG == NULL || !UpdiStarted)
-        return;
-    CSalUpdArm arm;
-    if (!UpdInstall_LoadArm(&arm))
-        return;
-    CSalUpdVersion running;
-    UpdateCheck_GetInstalledVersion(&running);
-    BOOL normalExit = !UpdiExitNotNormal && !UnattendedClose && !CriticalShutdown && GetSystemMetrics(SM_SHUTTINGDOWN) == 0;
-    BOOL honoured = UpdInstall_ArmHonoured(arm);
-    BOOL eligible = UpdInstall_IsEligible(NULL);
-    BOOL last = normalExit && honoured && eligible && UpdiLastInstance();
-    BOOL install = SalUpdExitDecision(arm, honoured, normalExit, last, eligible, UpdateTestMode, running);
-    TRACE_I("UpdInstall: at exit - normal " << normalExit << ", honoured " << honoured << ", last instance " << last
-                                            << ", install " << install);
-    if (!install)
-        return;
-    if (UpdiInstallerRunning()) // review M1: e.g. Install Now's installer has not closed us yet
-        return;                 // the arm stays; the next start completes it when nothing runs
-    WCHAR path[UPDINST_MAX_FOLDER + 100];
-    HANDLE held = NULL;
-    if (!UpdiInstallerPath(arm.Version, path, _countof(path)) ||
-        UpdiVerify(path, arm.Version, arm.Digest, &held) != suvOk)
-    {
-        if (UpdiInstallerStillThere(arm.Version)) // round 8 S1: held now - the next start completes it
-            return;
-        UpdInstall_DropArm();
-        UpdiDeleteFiles(arm.Version);
-        return;
-    }
-    UpdiExitHeld = held;
-    UpdiExitVersion = arm.Version;
-}
-
-void UpdInstall_RunAtExit()
-{
-    if (UpdiExitHeld == NULL)
-        return;
-    DWORD error;
-    HANDLE held = UpdiExitHeld;
-    UpdiExitHeld = NULL;
-    // review 2 S2: the program may have been opened again during the exit (seconds pass since
-    // PrepareExit) - its windows would be closed by the installer and not brought back
-    if (!UpdiLastInstance() || UpdiInstallerRunning())
-    {
-        NOHANDLES(CloseHandle(held));
-        return; // the arm stays; that instance's exit (or the next start) installs it
-    }
-    CSalUpdArm before;
-    BOOL hadArm = UpdInstall_LoadArm(&before);
-    if (!UpdiLaunch(sulkExit, UpdiExitVersion, held, FALSE, &error))
-    {
-        // round 7 SHOULD: the installer could not be started - nothing ran, the plan stays confirmed
-        // (the next start completes it, as after a failed start of Install Now or of the completion)
-        CSalUpdArm now;
-        BOOL keep = FALSE;
-        if (hadArm && UpdInstall_LoadArm(&now) && SalUpdVersionCompare(now.Version, UpdiExitVersion) == 0)
-        {
-            CSalUpdArm kept = SalUpdArmAfterFailedNow(TRUE, before, now, FALSE, &keep);
-            if (keep)
-                UpdiSaveArm(kept);
-        }
-    }
-}
+// feature 422: the exit never starts an installer (420's UpdInstall_PrepareExit / UpdInstall_RunAtExit are
+// gone): an update not installed while the program ran is completed at the next start (OnStartupComplete)
 
 BOOL UpdInstall_GetArmedRelease(CSalUpdRelease* release)
 {
@@ -2060,12 +1918,7 @@ BOOL UpdInstall_GetArmedRelease(CSalUpdRelease* release)
 
 void UpdInstall_Shutdown()
 {
-    // The main window is being destroyed. Whether this exit is the user's is decided NOW: an
-    // installer's close (feature 080) sets UnattendedClose only for the time of its WM_ENDSESSION
-    // and resets it before the end of the exit runs PrepareExit - measured in the end-to-end run:
-    // without this, the exit started a second installer while the first was installing.
-    UpdiExitNotNormal = UnattendedClose || CriticalShutdown || GetSystemMetrics(SM_SHUTTINGDOWN) != 0;
-    TRACE_I("UpdInstall: the main window closes; a user's exit: " << !UpdiExitNotNormal);
+    // The main window is being destroyed (feature 422: nothing is installed at the exit)
     UpdiWatchNotify = NULL;
     if (UpdiCSInitialized == 0)
         return;
