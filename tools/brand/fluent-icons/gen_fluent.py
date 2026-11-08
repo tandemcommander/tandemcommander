@@ -104,8 +104,10 @@ def paths_of(fn):
 CUSTOM = {"console": '<path d="M3.5 2A2.5 2.5 0 0 0 1 4.5v7A2.5 2.5 0 0 0 3.5 14h9a2.5 2.5 0 0 0 2.5-2.5v-7A2.5 2.5 0 0 0 12.5 2zM2 4.5C2 3.67 2.67 3 3.5 3h9c.83 0 1.5.67 1.5 1.5v7c0 .83-.67 1.5-1.5 1.5h-9A1.5 1.5 0 0 1 2 11.5z"/>'
            '<path d="M4.15 6.15a.5.5 0 0 1 .7 0l1.5 1.5a.5.5 0 0 1 0 .7l-1.5 1.5a.5.5 0 0 1-.7-.7L5.29 8 4.15 6.85a.5.5 0 0 1 0-.7M7.5 10h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 1 0-1"/>',
           # ".." of the file list: the shape and idea of today's updir.ico (angular up arrow whose stem turns right,
-          # followed by two square dots), redrawn flat with softened corners
-          "updir": '<path d="M3.5 3.6 7 8.5H5V11h3v3H3a1 1 0 0 1-1-1V8.5H0z"/><rect x="9" y="11" width="3" height="3" rx=".7"/><rect x="13" y="11" width="3" height="3" rx=".7"/>'}
+          # followed by two square dots), redrawn flat on the 16 px pixel grid: every straight edge on a whole pixel,
+          # the head's flanks at 45 degrees, no stroke and no rounded corners (a 0.5 px stroke and .7 corners put every
+          # edge on a quarter pixel and blurred the icon)
+          "updir": '<path d="M3 3h1l3 3v1H5v4h3v3H2V7H0V6z"/><rect x="9" y="11" width="3" height="3"/><rect x="13" y="11" width="3" height="3"/>'}
 
 # thin halo behind outline-only glyphs (light set): they stay visible on the dark blue menu highlight and on a blue panel cursor
 HALO = {"light": "#FFFFFF", "dark": "#1E1E1E"}
@@ -125,8 +127,8 @@ def build(name, spec, theme):
             return f'<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">{body}</svg>'
         if icon == "@updir":
             halo = {"light": "#FFFFFF", "dark": "#1E1E1E"}[theme]
-            body = f'<g fill="{halo}" stroke="{halo}" stroke-width="1.6" stroke-linejoin="round">{g}</g>' + \
-                   f'<g fill="{P[ROLES[role][1]]}" stroke="{P[ROLES[role][1]]}" stroke-width=".5" stroke-linejoin="round">{g}</g>'
+            # a 1 px halo (a 2 px stroke, half of it outside) with mitred joins keeps the halo on whole pixels too
+            body = f'<g fill="{halo}" stroke="{halo}" stroke-width="2">{g}</g>' + f'<g fill="{P[ROLES[role][1]]}">{g}</g>'
         else:
             body = f'<rect x="1.5" y="2.5" width="13" height="11" rx="2" fill="{P["paper"]}"/>' + f'<g fill="{P[ROLES[role][1]]}">{g}</g>'
         return f'<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">{body}</svg>'

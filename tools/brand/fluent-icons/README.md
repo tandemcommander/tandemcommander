@@ -48,7 +48,8 @@ The build does not run the generator and needs no network; the source package is
 - Legibility on the dark blue menu highlight: outline icons get a paper underlay (their `_filled` shape in the
   paper colour) or, where a filled shape would change the meaning (`NO_PAPER`: arrows, letters, lines), a thin halo.
 - Own drawings on the Fluent grid: the console `>_` (no 16 px Fluent glyph), the `..` symbol of the file list
-  (today's shape: an angular up arrow whose stem turns right and two square dots) and the Network composite
+  (today's shape: an angular up arrow whose stem turns right and two square dots, drawn on the 16 px pixel grid -
+  every straight edge and its 1 px halo on whole pixels, the head's flanks at 45 degrees) and the Network composite
   (Fluent desktop + globe badge).
 - Never used as a colour: `#FF00FF`, `#F0F0F0`, `#2D2D2D` (the image lists' transparent keys).
 

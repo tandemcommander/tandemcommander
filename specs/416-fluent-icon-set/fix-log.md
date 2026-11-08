@@ -235,3 +235,21 @@ table numbers, path building, user data.
   rule says - whoever enables one refreshes it); the licence location (decision recorded); removable drives
   get the generic Fluent icon (no shell call on the medium) and the row mix-up is fixed in Fluent only (both
   recorded decisions).
+
+## 2026-11-08 - the `..` icon (UpDir) blurred
+
+Maintainer: in Fluent 2 the `..` arrow had the right shape and colour but looked blurred, not sharp.
+- Measured in the probe capture `captures_after/fluent_t0_files.png`: every straight edge carried an extra
+  row / column of ~20 % blue (`CFE0F0`, `C5DCEF`), the gap between the dots 50 % (`9AC1E2`), rounded dot
+  corners partial. Cause: the glyph had a 0.5 px stroke (edges on x.25 / x.75), `rx=".7"` dots, a head on
+  fractional coordinates (3.5, 3.6, 8.5) and a 1.6 px halo (0.8 px out).
+- Fix (`gen_fluent.py`, regenerated `UpDir.svg` + `dark/UpDir.svg`, nothing else changed - the generator with
+  the pinned package reproduced the committed set byte-identically before the change): the same shape on the
+  16 px grid - `M3 3h1l3 3v1H5v4h3v3H2V7H0V6z` + two 3 x 3 squares at 9 / 13, no stroke, no rounded corners,
+  head flanks at 45 degrees with a 1 px flat top; halo a 2 px mitred stroke (exactly 1 px out). At 16 / 32 / 48 px
+  (the list's icon sizes at 100 %) every straight edge lands on a whole pixel.
+- Verified: `check_iconset.py` 0 problems; saltests 286948 / 0 (UpDir @16: silhouette 4.72 / 5.38 / 4.50 /
+  5.38, disabled 2.11; dark 5.68 / 3.89 / 3.50 / 4.84 / 2.43); real program on the hidden desktop
+  (`try416_capture.ps1`, registry identical): the focused `..` row has 10 colours in the icon crop after,
+  33 before (negative control with the old file, same run conditions); only the head's 45-degree flanks are
+  anti-aliased (50 %).
