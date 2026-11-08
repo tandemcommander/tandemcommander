@@ -8,7 +8,7 @@ source: manual
 who: agent
 created: 2026-11-08
 updated: 2026-11-08
-verified: -
+verified: 2026-11-08 824e8f58
 effort: L
 feature: -
 related: [new-version-check-123-person-steps, checkver-update-channel-decision, update-close-real-installer-signout-080-088-118]
@@ -98,3 +98,5 @@ B as the new default, with one setting on Configuration > General in three level
 - 2026-11-08 — moved to Next position 1
 - 2026-11-08 — extended: maintainer requirement 2026-11-08 - test mode (command-line switch, session only) that treats the published release as newer even on the same version, so the whole update can be repeated without a new release; integrity checks unchanged
 - 2026-11-08 — extended: maintainer decision 2026-11-08 - the test-mode option is --updatetest (new multi-word options take two dashes, old switches unchanged); it must work in the Release build
+- 2026-11-08 — verified at 824e8f58: still present at 824e8f58: Download opens the browser (upddlg.cpp IDOK), no download or install code; asset digest present in the API, browser_download_url answered 504, API asset route 302 to release-assets.githubusercontent.com
+- 2026-11-08 — maintainer requirement 2026-11-08 (at the start of the run): a setting the user can change later (off / full automatic), and an update planned for the exit that did not happen at the exit is completed at the next start
