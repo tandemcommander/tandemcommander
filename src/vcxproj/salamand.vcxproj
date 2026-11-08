@@ -395,6 +395,8 @@
     </ClCompile>
     <ClCompile Include="..\upddlg.cpp">
     </ClCompile>
+    <ClCompile Include="..\updinstall.cpp">
+    </ClCompile>
     <ClCompile Include="..\edtlbwnd.cpp">
     </ClCompile>
     <ClCompile Include="..\execute.cpp">
@@ -908,6 +910,12 @@
     <ClInclude Include="..\upddlg.h">
     </ClInclude>
     <ClInclude Include="..\common\salupdcheck.h">
+    </ClInclude>
+    <ClInclude Include="..\common\salupdinstall.h">
+    </ClInclude>
+    <ClInclude Include="..\updinstall.h">
+    </ClInclude>
+    <ClInclude Include="..\updhttp.h">
     </ClInclude>
     <ClInclude Include="..\pngimage.h">
     </ClInclude>

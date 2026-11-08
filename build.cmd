@@ -253,6 +253,15 @@ if errorlevel 1 (
 )
 del "%TEMP%\opensal_encguard.txt" >nul 2>&1
 
+:: Feature 420: the program pins the signer of the installers it downloads; the pin must be the
+:: certificate of tools\codesign\codesign.cfg, or every automatic update would be refused.
+python "%~dp0tools\check_update_pin.py"
+if errorlevel 1 (
+    echo.
+    echo Update signer pin FAILED - see the line above.
+    exit /b 1
+)
+
 :: ============================================================
 :: Display build configuration
 :: ============================================================

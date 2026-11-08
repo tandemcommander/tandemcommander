@@ -722,6 +722,11 @@
 // sends WM_COMMAND with its own id on every click)
 #define IDC_UPDN_NOTESCMD               6256
 #define IDC_ABOUT_UPDATECMD             6257
+// feature 420: automatic update (the notification's second install button, the level on the
+// General page)
+#define IDC_UPDN_INSTALLEXIT            6296
+#define IDC_UPDATELEVEL_LABEL           6297
+#define IDC_UPDATELEVEL                 6298
 // feature 245: the settings import wizard
 #define IDD_CFGIMPORT_SOURCE            6258
 #define IDD_CFGIMPORT_GROUPS            6259
@@ -764,7 +769,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        8200
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         6296
+#define _APS_NEXT_CONTROL_VALUE         6299
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -14,6 +14,7 @@ HWND UpdateAboutWindow = NULL;
 
 static HWND UpdateNoticeWindow = NULL;     // this instance's notification
 static CSalUpdVersion UpdateNoticeVersion; // the version it announces (valid while the window exists)
+static CUpdateNoticeForm UpdateNoticeForm = unfClassic; // feature 420: its form (valid while the window exists)
 static BOOL UpdateManualWaiting = FALSE;
 static BOOL UpdateNoticeAttached = FALSE; // the dialog object got its window (it then deletes itself)
 
@@ -107,7 +108,7 @@ BOOL UpdateCheck_OpenUrl(HWND parent, const char* url)
 class CUpdateNoticeDialog : public CCommonDialog
 {
 public:
-    CUpdateNoticeDialog(HWND parent, const CSalUpdRelease& release, BOOL activate);
+    CUpdateNoticeDialog(HWND parent, const CSalUpdRelease& release, BOOL activate, CUpdateNoticeForm form);
     ~CUpdateNoticeDialog();
 
 protected:
@@ -116,9 +117,11 @@ protected:
     void PaintHeader();              // (re)paints the header band into HeaderBitmap
     void FitVersionFont(int ctrlID); // the largest of the three faces in which the control's text fits
     void DrawArrow(DRAWITEMSTRUCT* dis);
+    void ApplyForm(); // feature 420: the buttons and the hint of the form, laid out left to right
 
     CSalUpdRelease Release;
     BOOL Activate; // FALSE: the window must not take the activation or the keyboard when it appears
+    CUpdateNoticeForm Form;
     CBitmap* HeaderBitmap;
     RECT WordmarkR;
     RECT LogoR;
@@ -128,11 +131,13 @@ protected:
     HFONT HVersionFont;
 };
 
-CUpdateNoticeDialog::CUpdateNoticeDialog(HWND parent, const CSalUpdRelease& release, BOOL activate)
+CUpdateNoticeDialog::CUpdateNoticeDialog(HWND parent, const CSalUpdRelease& release, BOOL activate,
+                                         CUpdateNoticeForm form)
     : CCommonDialog(HLanguage, IDD_UPDATENOTICE, parent, ooStandard)
 {
     Release = release;
     Activate = activate;
+    Form = form;
     HeaderBitmap = NULL;
     memset(&WordmarkR, 0, sizeof(WordmarkR));
     memset(&LogoR, 0, sizeof(LogoR));
@@ -206,6 +211,75 @@ void CUpdateNoticeDialog::FitVersionFont(int ctrlID)
     HANDLES(ReleaseDC(hCtrl, hDC));
 }
 
+void CUpdateNoticeDialog::ApplyForm()
+{
+    // the texts of the form (the classic form keeps the dialog's own texts)
+    if (Form != unfClassic)
+    {
+        SetDlgItemTextW(HWindow, IDOK, LoadStrW(IDS_UPDATE_BTN_INSTALLNOW));
+        SetDlgItemTextW(HWindow, IDC_UPDN_HINT, LoadStrW(Form == unfOffer ? IDS_UPDATE_HINT_OFFER : IDS_UPDATE_HINT_AUTO));
+    }
+    if (Form == unfOffer)
+        SetDlgItemTextW(HWindow, IDC_UPDN_INSTALLEXIT, LoadStrW(IDS_UPDATE_BTN_INSTALLEXIT));
+    if (Form == unfAutomatic)
+        SetDlgItemTextW(HWindow, IDCANCEL, LoadStrW(IDS_UPDATE_BTN_OK)); // closes; the update stays armed
+    HWND installExit = GetDlgItem(HWindow, IDC_UPDN_INSTALLEXIT);
+    if (installExit != NULL && Form != unfOffer)
+    {
+        ShowWindow(installExit, SW_HIDE);
+        EnableWindow(installExit, FALSE);
+    }
+
+    // the visible buttons left to right, each at least as wide as in the template and wide enough
+    // for its text (translations); the window grows when they do not fit
+    static const int ids[4] = {IDOK, IDC_UPDN_INSTALLEXIT, IDCANCEL, IDC_UPDN_SKIP};
+    RECT gapR = {0, 0, 6, 0}; // the gap between buttons, in dialog units
+    RECT padR = {0, 0, 8, 0}; // the margin left and right of a button's text
+    MapDialogRect(HWindow, &gapR);
+    MapDialogRect(HWindow, &padR);
+    int gap = gapR.right;
+    int margin = padR.right;
+    RECT first;
+    HWND hFirst = GetDlgItem(HWindow, IDOK);
+    if (hFirst == NULL)
+        return;
+    GetWindowRect(hFirst, &first);
+    MapWindowPoints(NULL, HWindow, (POINT*)&first, 2);
+    int x = first.left;
+    HFONT font = (HFONT)SendMessage(HWindow, WM_GETFONT, 0, 0);
+    HDC hDC = HANDLES(GetDC(HWindow));
+    HFONT oldFont = font != NULL ? (HFONT)SelectObject(hDC, font) : NULL;
+    for (int i = 0; i < 4; i++)
+    {
+        HWND h = GetDlgItem(HWindow, ids[i]);
+        if (h == NULL || (GetWindowLong(h, GWL_STYLE) & WS_VISIBLE) == 0) // the dialog itself is not shown yet
+            continue;
+        RECT r;
+        GetWindowRect(h, &r);
+        MapWindowPoints(NULL, HWindow, (POINT*)&r, 2);
+        WCHAR text[200];
+        int len = GetWindowTextW(h, text, _countof(text));
+        RECT tr = {0, 0, 0, 0};
+        DrawTextW(hDC, text, len, &tr, DT_CALCRECT | DT_SINGLELINE); // '&' is measured as the underline
+        int w = max(r.right - r.left, (tr.right - tr.left) + 2 * margin);
+        SetWindowPos(h, NULL, x, r.top, w, r.bottom - r.top, SWP_NOZORDER | SWP_NOACTIVATE);
+        x += w + gap;
+    }
+    if (oldFont != NULL)
+        SelectObject(hDC, oldFont);
+    HANDLES(ReleaseDC(HWindow, hDC));
+    RECT client;
+    GetClientRect(HWindow, &client);
+    int need = x - gap + first.left; // the same margin on the right as on the left
+    if (need > client.right)
+    {
+        RECT wr;
+        GetWindowRect(HWindow, &wr);
+        SetWindowPos(HWindow, NULL, 0, 0, wr.right - wr.left + need - client.right, wr.bottom - wr.top,
+                     SWP_NOZORDER | SWP_NOMOVE | SWP_NOACTIVATE);
+    }
+}
+
 void CUpdateNoticeDialog::DrawArrow(DRAWITEMSTRUCT* dis)
 {
     // drawn, so that it does not depend on a glyph of the dialog font
@@ -241,7 +315,9 @@ CUpdateNoticeDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         UpdateNoticeWindow = HWindow;
         UpdateNoticeVersion = Release.Version;
+        UpdateNoticeForm = Form;
         UpdateNoticeAttached = TRUE;
+        ApplyForm(); // feature 420: first - the window may grow, and the header band follows its width
         SetPropW(HWindow, UPDATENOTICE_WINDOW_PROP, (HANDLE)(INT_PTR)1);
         // nothing to lose here: an installer may close the program while this window is open
         SetPropA(HWindow, SALCLOSEAPP_WINDOW_PROP, (HANDLE)(INT_PTR)1);
@@ -288,7 +364,9 @@ CUpdateNoticeDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         FitVersionFont(IDC_UPDN_NEWVER);
 
         WCHAR date[100];
-        if (UpdateCheck_FormatDate(Release.PublishedUtc, date, _countof(date)))
+        if (UpdateTestMode) // feature 420: the release is announced because of the test, not because it is newer
+            SetDlgItemTextW(HWindow, IDC_UPDN_RELEASED, LoadStrW(IDS_UPDATE_TESTMODE));
+        else if (UpdateCheck_FormatDate(Release.PublishedUtc, date, _countof(date)))
         {
             WCHAR released[200];
             _snwprintf_s(released, _TRUNCATE, LoadStrW(IDS_UPDATE_RELEASED), date);
@@ -398,6 +476,12 @@ CUpdateNoticeDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
         case IDOK: // Download: the installer of the new version, in the default browser
         {
+            if (Form != unfClassic) // feature 420: Install Now - the installer closes the program
+            {
+                if (UpdInstall_InstallNow(HWindow, Release))
+                    DestroyWindow(HWindow);
+                return TRUE; // on failure the user was told; the window stays
+            }
             char url[SALUPD_URL_MAX];
             if (SalUpdInstallerUrl(Release.Version, url, sizeof(url)) && UpdateCheck_OpenUrl(HWindow, url))
                 DestroyWindow(HWindow);
@@ -414,8 +498,20 @@ CUpdateNoticeDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         case IDC_UPDN_SKIP: // this version is not offered at start-up any more; a newer one is
         {
-            UpdateCheck_SetSkippedVersion(Release.Version);
+            if (!UpdateTestMode) // feature 420: a test writes none of 123's stored state
+                UpdateCheck_SetSkippedVersion(Release.Version);
+            UpdInstall_SkipVersion(Release.Version); // feature 420: no arm, no installer of it any more
             DestroyWindow(HWindow);
+            return TRUE;
+        }
+
+        case IDC_UPDN_INSTALLEXIT: // feature 420: Install When I Close
+        {
+            if (Form == unfOffer)
+            {
+                UpdInstall_Arm(Release, SALUPD_ARM_USER);
+                DestroyWindow(HWindow);
+            }
             return TRUE;
         }
 
@@ -467,14 +563,24 @@ HWND UpdateNotice_FindAny()
     return found;
 }
 
-void UpdateNotice_Show(HWND mainWindow, const CSalUpdRelease& release, BOOL activate)
+CUpdateNoticeForm UpdateNotice_GetForm()
 {
-    CALL_STACK_MESSAGE2("UpdateNotice_Show(, , %d)", activate);
+    return UpdateNoticeForm;
+}
+
+void UpdateNotice_Show(HWND mainWindow, const CSalUpdRelease& release, BOOL activate, CUpdateNoticeForm form)
+{
+    CALL_STACK_MESSAGE3("UpdateNotice_Show(, , %d, %d)", activate, (int)form);
     // our own window announcing another version than the one just found is replaced (a check on
-    // demand found a newer release while the notification was open)
+    // demand found a newer release while the notification was open); feature 420: also one of
+    // another form (the installer finished downloading while the classic form was open)
     if (UpdateNoticeWindow != NULL && IsWindow(UpdateNoticeWindow) &&
-        SalUpdVersionCompare(UpdateNoticeVersion, release.Version) != 0)
+        (SalUpdVersionCompare(UpdateNoticeVersion, release.Version) != 0 || UpdateNoticeForm != form))
+    {
+        if (!activate && GetForegroundWindow() == UpdateNoticeWindow)
+            activate = TRUE; // the user is looking at it: the replacement takes its place in front
         UpdateNotice_Close();
+    }
 
     HWND existing = UpdateNotice_FindAny();
     if (existing != NULL) // one notification per user
@@ -488,7 +594,7 @@ void UpdateNotice_Show(HWND mainWindow, const CSalUpdRelease& release, BOOL acti
         return;
     }
 
-    CUpdateNoticeDialog* dlg = new CUpdateNoticeDialog(mainWindow, release, activate);
+    CUpdateNoticeDialog* dlg = new CUpdateNoticeDialog(mainWindow, release, activate, form);
     if (dlg == NULL)
         return;
     UpdateNoticeAttached = FALSE;

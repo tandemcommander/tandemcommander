@@ -47,6 +47,15 @@ struct CUpdateState
 // reads the stored state; a missing, mistyped or unparsable value is its default
 void UpdateCheck_LoadState(CUpdateState* state);
 
+// feature 420: opens HKCU\<root>\Update Check (also the key of updinstall.cpp's values)
+BOOL UpdateCheck_OpenStateKey(BOOL forWrite, HKEY* key);
+
+// Feature 420: --updatetest - for this session the check runs at once at start-up whatever the
+// option, the interval and a skipped version, writes none of the stored state above, and the
+// published release counts as newer; everything else (download, verification, installation)
+// runs for real. Set once by the command-line parser, never stored, never passed to a restart.
+extern BOOL UpdateTestMode;
+
 // each writes one value at once; a store that cannot be written is not an error
 void UpdateCheck_SetCheckAtStartup(BOOL on);
 void UpdateCheck_SetSkippedVersion(const CSalUpdVersion& version);

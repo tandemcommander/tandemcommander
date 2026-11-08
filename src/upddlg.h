@@ -16,6 +16,7 @@
 //*****************************************************************************
 
 #include "updcheck.h"
+#include "updinstall.h"
 #include "gui.h"
 
 // A hyperlink in a dialog that acts on Enter itself. A plain CHyperLink is a
@@ -45,11 +46,24 @@ HWND UpdateNotice_GetWindow();
 // A notification window of any instance of this user (ours included), or NULL.
 HWND UpdateNotice_FindAny();
 
+// Feature 420: the three forms of the notification (specs/420-auto-update-install/contracts/ui.md)
+enum CUpdateNoticeForm
+{
+    unfClassic,  // feature 123: Download (in the browser), Remind Me Later, Skip This Version
+    unfOffer,    // a verified installer is offered: Install Now, Install When I Close, Remind Me Later, Skip
+    unfAutomatic // a verified installer is armed for the exit: Install Now, OK, Skip
+};
+
 // Shows the notification for 'release' (owner: the main window). When one is
 // already open - in this or another instance - it is brought to the front
-// instead ('activate' TRUE) or left alone ('activate' FALSE).
+// instead ('activate' TRUE) or left alone ('activate' FALSE). Our own window
+// of another version or another form is replaced.
 // 'activate' FALSE shows the window without taking the keyboard.
-void UpdateNotice_Show(HWND mainWindow, const CSalUpdRelease& release, BOOL activate);
+void UpdateNotice_Show(HWND mainWindow, const CSalUpdRelease& release, BOOL activate,
+                       CUpdateNoticeForm form = unfClassic);
+
+// the form of this instance's open notification (valid while UpdateNotice_GetWindow() != NULL)
+CUpdateNoticeForm UpdateNotice_GetForm();
 
 // Destroys this instance's notification without a question (program exit, an
 // installer closing the program). The same as "Remind Me Later".

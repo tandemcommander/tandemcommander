@@ -465,6 +465,13 @@ void CAboutDialog::RefreshUpdateLine()
     }
     }
 
+    if (UpdateTestMode) // feature 420: the session runs with --updatetest
+    {
+        WCHAR withTest[_countof(text) + 100];
+        _snwprintf_s(withTest, _TRUNCATE, L"%s %s", LoadStrW(IDS_UPDATE_ABOUT_TESTMODE), text);
+        lstrcpynW(text, withTest, _countof(text)); // UI text; a long translation would only lose its end
+    }
+
     HWND hText = GetDlgItem(HWindow, IDC_ABOUT_UPDATE);
     HWND hLink = GetDlgItem(HWindow, IDC_ABOUT_UPDATELINK);
     if (hText == NULL || hLink == NULL)
@@ -687,7 +694,10 @@ CAboutDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (LOWORD(wParam) == CM_HELP_CHECKVERSION) // the link "Check now"
         {
             CUpdateCheckDone done;
-            UpdateCheck_RunManualUI(HWindow, &done); // answers by itself, except "newer": the line shows it
+            // answers by itself, except "newer": the line shows it; feature 420: the installer is
+            // downloaded too, and the downloaded form of the notification follows when this closes
+            if (UpdateCheck_RunManualUI(HWindow, &done) && MainWindow != NULL)
+                MainWindow->StartUpdateFlow(done.Release, FALSE, FALSE);
             RefreshUpdateLine();
             return TRUE;
         }

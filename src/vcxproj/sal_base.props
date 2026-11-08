@@ -22,9 +22,10 @@
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
     </ProjectReference>
     <Link>
-      <AdditionalDependencies>htmlhelp.lib;comctl32.lib;mpr.lib;wsock32.lib;netapi32.lib;msimg32.lib;shlwapi.lib;windowscodecs.lib;winhttp.lib;delayimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <!-- feature 123: winhttp.dll is loaded only when a check for a new version runs (worker thread) -->
-      <DelayLoadDLLs>winhttp.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
+      <AdditionalDependencies>htmlhelp.lib;comctl32.lib;mpr.lib;wsock32.lib;netapi32.lib;msimg32.lib;shlwapi.lib;windowscodecs.lib;winhttp.lib;wintrust.lib;crypt32.lib;bcrypt.lib;version.lib;delayimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <!-- feature 123: winhttp.dll is loaded only when a check for a new version runs (worker thread);
+           feature 420: wintrust.dll and bcrypt.dll only when a downloaded installer is verified -->
+      <DelayLoadDLLs>winhttp.dll;wintrust.dll;bcrypt.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
       <AdditionalLibraryDirectories>..\plugins\shared\libs\$(ShortPlatform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>

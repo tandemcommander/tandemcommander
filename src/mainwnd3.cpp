@@ -635,6 +635,8 @@ void RegisterRestartForUpdates()
 static BOOL UpdateNoticePending = FALSE;   // a start-up result waits to be shown
 static CSalUpdRelease UpdateNoticeRelease; // valid when UpdateNoticePending
 static int UpdateNoticeTries = 0;          // how many times it could not be shown yet
+static CUpdateNoticeForm UpdateNoticePendingForm = unfClassic; // feature 420: the form of the waiting one
+static BOOL UpdateFlowNotify = TRUE; // feature 420: the running download's result is to be shown
 
 // how long the user must have been idle for the notification to be activated
 #define UPDATENOTICE_IDLE_MS 2000
@@ -716,7 +718,81 @@ void CMainWindow::TryShowUpdateNotice()
         if (GetLastInputInfo(&lii) && GetTickCount() - lii.dwTime < UPDATENOTICE_IDLE_MS)
             activate = FALSE;
     }
-    UpdateNotice_Show(HWindow, UpdateNoticeRelease, activate);
+    UpdateNotice_Show(HWindow, UpdateNoticeRelease, activate, UpdateNoticePendingForm);
+}
+
+// feature 420: queues the notification in 'form' (shown when nothing is in its way)
+static void QueueUpdateNotice(CMainWindow* wnd, const CSalUpdRelease& release, CUpdateNoticeForm form)
+{
+    UpdateNoticeRelease = release;
+    UpdateNoticePendingForm = form;
+    UpdateNoticePending = TRUE;
+    UpdateNoticeTries = 0;
+    wnd->TryShowUpdateNotice();
+}
+
+// feature 420: a verified installer of 'release' is in the updates folder - offer it, or arm it
+// for the exit at the automatic level (contracts/ui.md)
+static void ShowDownloadedUpdate(CMainWindow* wnd, const CSalUpdRelease& release, BOOL activateNow)
+{
+    CUpdateNoticeForm form = unfOffer;
+    if (UpdInstall_GetLevel() == sulAutomatic)
+    {
+        UpdInstall_Arm(release, SALUPD_ARM_AUTOMATIC);
+        form = unfAutomatic;
+    }
+    if (activateNow)
+    {
+        UpdateNoticePending = FALSE;
+        UpdateNotice_Show(wnd->HWindow, release, TRUE, form);
+    }
+    else
+        QueueUpdateNotice(wnd, release, form);
+}
+
+void CMainWindow::StartUpdateFlow(const CSalUpdRelease& release, BOOL classicNow, BOOL notify)
+{
+    CALL_STACK_MESSAGE3("CMainWindow::StartUpdateFlow(, %d, %d)", classicNow, notify);
+    BOOL ready = FALSE;
+    if (UpdInstall_AfterCheck(HWindow, release, &ready) == suacDownload)
+    {
+        if (ready) // a verified installer from an earlier session
+        {
+            ShowDownloadedUpdate(this, release, classicNow);
+            return;
+        }
+        UpdateFlowNotify = notify;
+        if (classicNow && notify) // a check the user asked for answers at once
+            UpdateNotice_Show(HWindow, release, TRUE, unfClassic);
+        return; // the downloaded form follows (WM_USER_UPDATEDOWNLOAD_DONE)
+    }
+    if (!notify)
+        return;
+    if (classicNow)
+    {
+        UpdateNoticePending = FALSE;
+        UpdateNotice_Show(HWindow, release, TRUE, unfClassic);
+    }
+    else
+        QueueUpdateNotice(this, release, unfClassic);
+}
+
+// feature 420: the download of a new version's installer finished (WM_USER_UPDATEDOWNLOAD_DONE)
+void CMainWindow::OnUpdateDownloadDone()
+{
+    CALL_STACK_MESSAGE1("CMainWindow::OnUpdateDownloadDone()");
+    CUpdDownloadDone done;
+    if (!UpdInstall_TakeDownloadResult(&done))
+        return;
+    if (done.Ok)
+    {
+        ShowDownloadedUpdate(this, done.Release, FALSE); // the downloaded form always: it is a new offer
+        return;
+    }
+    // no verified installer: 123's notification, unless it is already on screen
+    HWND open = UpdateNotice_GetWindow();
+    if (UpdateFlowNotify && (open == NULL || UpdateNotice_GetForm() != unfClassic))
+        QueueUpdateNotice(this, done.Release, unfClassic);
 }
 
 // a check for a new version finished (WM_USER_UPDATECHECK_DONE)
@@ -734,13 +810,10 @@ void CMainWindow::OnUpdateCheckDone()
     // a result nobody waits for any more.
     CUpdateState state;
     UpdateCheck_LoadState(&state);
-    if (SalUpdStartupNoticeWanted(done.Result, done.Release.Version, state.HasSkipped, state.Skipped))
-    {
-        UpdateNoticeRelease = done.Release;
-        UpdateNoticePending = TRUE;
-        UpdateNoticeTries = 0;
-        TryShowUpdateNotice();
-    }
+    // feature 420: a test announces the release whatever was skipped
+    if (done.Result == surNewer &&
+        (UpdateTestMode || SalUpdStartupNoticeWanted(done.Result, done.Release.Version, state.HasSkipped, state.Skipped)))
+        StartUpdateFlow(done.Release, FALSE, TRUE); // download, or 123's notification
 }
 
 CSalCloseAppDecision
@@ -3029,7 +3102,7 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
             CUpdateCheckDone done;
             UpdateNoticePending = FALSE; // the answer of this check replaces a waiting start-up one
             if (UpdateCheck_RunManualUI(HWindow, &done))
-                UpdateNotice_Show(HWindow, done.Release, TRUE); // also a version skipped earlier
+                StartUpdateFlow(done.Release, TRUE, TRUE); // also a version skipped earlier (feature 420: downloads too)
             return 0;
         }
 
@@ -6466,6 +6539,24 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
         return 0;
     }
 
+    case WM_USER_UPDATEDOWNLOAD_DONE: // feature 420
+    {
+        OnUpdateDownloadDone();
+        return 0;
+    }
+
+    case WM_USER_UPDATEINSTALL: // feature 420: an armed update the exit did not install
+    {
+        UpdInstall_CompleteArmed(HWindow);
+        return 0;
+    }
+
+    case WM_USER_UPDATEINSTALL_DONE: // feature 420: Install Now's installer ended with a failure
+    {
+        UpdInstall_OnInstallerEnded(HWindow, (DWORD)wParam);
+        return 0;
+    }
+
     case WM_USER_SLGINCOMPLETE:
     {
         char buff[1000];
@@ -7528,6 +7619,7 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
         KillTimer(HWindow, IDT_UPDATENOTICE);
         UpdateNoticePending = FALSE;
         UpdateCheck_Shutdown();
+        UpdInstall_Shutdown(); // feature 420: a running download is abandoned too
         UpdateNotice_Close();
         HANDLES(RevokeDragDrop(HWindow));
         if (Configuration.StatusArea)

@@ -1857,6 +1857,19 @@ STRINGTABLE
  IDS_UPDATE_ERR_START, "Could not check for a new version: the check could not be started. Try again."
  IDS_UPDATE_ABOUT_LATEST_NODATE, "This is the latest version."
 
+ IDS_UPDATE_LEVEL_NOTIFY, "Notify me only"
+ IDS_UPDATE_LEVEL_OFFER, "Download it and offer installation"
+ IDS_UPDATE_LEVEL_AUTO, "Install it automatically when I close Tandem Commander"
+ IDS_UPDATE_BTN_INSTALLNOW, "Install &Now"
+ IDS_UPDATE_BTN_INSTALLEXIT, "Install &When I Close"
+ IDS_UPDATE_BTN_OK, "OK"
+ IDS_UPDATE_HINT_OFFER, "The new version has been downloaded and verified. Install it now, or when you close Tandem Commander; your settings are kept."
+ IDS_UPDATE_HINT_AUTO, "The new version has been downloaded and verified. It will be installed when you close Tandem Commander; your settings are kept."
+ IDS_UPDATE_TESTMODE, "Update test mode: the published version is treated as new."
+ IDS_UPDATE_ABOUT_TESTMODE, "Update test mode."
+ IDS_UPDATE_INSTALL_FAILED, "The update to version %s was not installed (Setup ended with code %u).\n\nIt will be installed when you close Tandem Commander."
+ IDS_UPDATE_ERR_RUN, "The installer of version %s could not be started.\n\n%s"
+
  IDS_SLGINCOMPLETE_TITLE, "Unfinished Translation of Tandem Commander"
  IDS_SLGINCOMPLETE_TEXT, "Translation of Tandem Commander into your language is not finished. Please consider visiting our discussion forum and joining the translation effort:"
  

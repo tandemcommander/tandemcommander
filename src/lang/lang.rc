@@ -130,6 +130,8 @@ BEGIN
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,1,159,193,12
     CONTROL         "Check for a new &version of Tandem Commander at start-up",IDC_CHECKNEWVERSION,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,1,172,282,12
+    LTEXT           "&When a new version is found:",IDC_UPDATELEVEL_LABEL,12,188,280,8
+    COMBOBOX        IDC_UPDATELEVEL,12,199,280,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 END
 
 IDD_CFGPAGE_REGIONAL DIALOGEX 65, 18, 299, 231
@@ -661,27 +663,31 @@ END
 // controls without text are placeholders: the dialog reads their rectangles for the painted
 // header band (wordmark, artwork, accent line) and destroys them. The link text and the two
 // version numbers are set at run time. Tab order: buttons, check box, link.
-IDD_UPDATENOTICE DIALOGEX 0, 0, 296, 184
+// feature 420: a second install button (IDC_UPDN_INSTALLEXIT); the texts of IDOK and IDCANCEL
+// and of the hint depend on the form (classic / offer / automatic, contracts/ui.md) and are set at
+// run time; the visible buttons are laid out left to right, each as wide as its text needs.
+IDD_UPDATENOTICE DIALOGEX 0, 0, 330, 193
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Tandem Commander"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    DEFPUSHBUTTON   "&Download",IDOK,12,162,72,14,WS_GROUP
-    PUSHBUTTON      "Remind Me &Later",IDCANCEL,90,162,92,14
-    PUSHBUTTON      "&Skip This Version",IDC_UPDN_SKIP,188,162,96,14
-    CONTROL         "&Check for a new version at start-up",IDC_UPDN_ATSTARTUP,"Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,12,144,272,12
-    LTEXT           "",IDC_UPDN_NOTES,12,110,272,8,WS_TABSTOP
+    DEFPUSHBUTTON   "&Download",IDOK,12,171,72,14,WS_GROUP
+    PUSHBUTTON      "",IDC_UPDN_INSTALLEXIT,90,171,72,14
+    PUSHBUTTON      "Remind Me &Later",IDCANCEL,168,171,72,14
+    PUSHBUTTON      "&Skip This Version",IDC_UPDN_SKIP,246,171,72,14
+    CONTROL         "&Check for a new version at start-up",IDC_UPDN_ATSTARTUP,"Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,12,153,306,12
+    LTEXT           "",IDC_UPDN_NOTES,12,110,306,8,WS_TABSTOP
     LTEXT           "",IDC_UPDN_WORDMARK,12,7,170,22
     LTEXT           "A new version is available",IDC_UPDN_TITLE,12,32,220,13
-    LTEXT           "",IDC_UPDN_LOGO,238,2,54,48
-    CONTROL         "",IDC_UPDN_ACCENT,"Static",SS_ETCHEDHORZ,0,52,296,1
+    LTEXT           "",IDC_UPDN_LOGO,272,2,54,48
+    CONTROL         "",IDC_UPDN_ACCENT,"Static",SS_ETCHEDHORZ,0,52,330,1
     LTEXT           "Installed version",IDC_UPDN_INSTLABEL,24,62,104,8
     LTEXT           "",IDC_UPDN_INSTVER,24,72,104,18
     CONTROL         "",IDC_UPDN_ARROW,"Static",SS_OWNERDRAW,130,74,26,14
-    LTEXT           "Available version",IDC_UPDN_NEWLABEL,164,62,120,8
-    LTEXT           "",IDC_UPDN_NEWVER,164,72,120,18
-    LTEXT           "",IDC_UPDN_RELEASED,12,98,272,8
-    LTEXT           "The download opens in your web browser. Run the installer to update; your settings are kept.",IDC_UPDN_HINT,12,123,272,17
+    LTEXT           "Available version",IDC_UPDN_NEWLABEL,164,62,150,8
+    LTEXT           "",IDC_UPDN_NEWVER,164,72,150,18
+    LTEXT           "",IDC_UPDN_RELEASED,12,98,306,8
+    LTEXT           "The download opens in your web browser. Run the installer to update; your settings are kept.",IDC_UPDN_HINT,12,123,306,26
 END
 
 // feature 123: shown while a check the user asked for takes longer than a moment

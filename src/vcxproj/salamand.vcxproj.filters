@@ -99,6 +99,9 @@
     <ClCompile Include="..\upddlg.cpp">
       <Filter>cpp</Filter>
     </ClCompile>
+    <ClCompile Include="..\updinstall.cpp">
+      <Filter>cpp</Filter>
+    </ClCompile>
     <ClCompile Include="..\execute.cpp">
       <Filter>cpp</Filter>
     </ClCompile>
@@ -732,6 +735,15 @@
       <Filter>h</Filter>
     </ClInclude>
     <ClInclude Include="..\common\salupdcheck.h">
+      <Filter>h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\salupdinstall.h">
+      <Filter>h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\updinstall.h">
+      <Filter>h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\updhttp.h">
       <Filter>h</Filter>
     </ClInclude>
     <ClInclude Include="..\tasklist.h">

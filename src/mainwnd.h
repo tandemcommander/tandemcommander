@@ -18,6 +18,7 @@ extern const int SPLIT_LINE_WIDTH;
 extern const int MIN_WIN_WIDTH;
 
 struct CCommandLineParams;
+struct CSalUpdRelease; // feature 420 (salupdcheck.h)
 
 // if the user disallows multiple instances, just activate the previous one
 BOOL CheckOnlyOneInstance(const CCommandLineParams* cmdLineParams);
@@ -621,6 +622,14 @@ public:
     // feature 123: checking for a new version (mainwnd3.cpp)
     void OnUpdateCheckDone();   // WM_USER_UPDATECHECK_DONE
     void TryShowUpdateNotice(); // shows the waiting start-up notification when nothing is in its way
+
+    // feature 420: a check found a newer release - download (or reuse) its installer per the update
+    // level, or show 123's notification. 'classicNow': show the classic form at once also while the
+    // installer is downloading (a check the user asked for; the downloaded form replaces it later).
+    // 'notify' FALSE: no classic form (the About dialog's line already tells the user); the downloaded
+    // form is always shown (queued until nothing is in its way).
+    void StartUpdateFlow(const CSalUpdRelease& release, BOOL classicNow, BOOL notify);
+    void OnUpdateDownloadDone(); // WM_USER_UPDATEDOWNLOAD_DONE
 
     // called when closing a file system; the directory history stores FS
     // interfaces that must be set to NULL after closing (to prevent accidental match just because FS interfaces were allocated at the same address)

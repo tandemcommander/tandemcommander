@@ -2578,6 +2578,21 @@
 #define IDS_UPDATE_ERR_START            14148
 #define IDS_UPDATE_ABOUT_LATEST_NODATE  14149
 
+// feature 420: automatic update. The remaining free slots of the same two bundles (14096-14100,
+// 14152-14154, 14156-14159), so no bundle is added and no translation row moves.
+#define IDS_UPDATE_LEVEL_NOTIFY         14096 // Configuration > General, the level list
+#define IDS_UPDATE_LEVEL_OFFER          14097
+#define IDS_UPDATE_LEVEL_AUTO           14098
+#define IDS_UPDATE_BTN_INSTALLNOW       14099 // notification window buttons
+#define IDS_UPDATE_BTN_INSTALLEXIT      14100
+#define IDS_UPDATE_BTN_OK               14152
+#define IDS_UPDATE_HINT_OFFER           14153 // notification window: the downloaded installer is offered
+#define IDS_UPDATE_HINT_AUTO            14154 // notification window: the downloaded installer is armed for the exit
+#define IDS_UPDATE_TESTMODE             14156 // notification window, test mode (--updatetest)
+#define IDS_UPDATE_ABOUT_TESTMODE       14157 // About dialog, test mode, followed by the normal line
+#define IDS_UPDATE_INSTALL_FAILED       14158 // %s = version, %u = the installer's exit code
+#define IDS_UPDATE_ERR_RUN              14159 // %s = version, %s = the system's reason
+
 // Translation of Open Salamander into your language is not finished. Please join the translation effort.
 #define IDS_SLGINCOMPLETE_TITLE         14150
 #define IDS_SLGINCOMPLETE_TEXT          14151

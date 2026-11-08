@@ -523,6 +523,7 @@ protected:
     void EnableControls();
 
     int ShownCheckNewVersion; // feature 123: the state the page put into its check box (-1 = not yet)
+    int ShownUpdateLevel;     // feature 420: the level the page put into its list (-1 = not yet)
 };
 
 //

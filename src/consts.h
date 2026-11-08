@@ -1388,6 +1388,13 @@ struct COpenViewerData
 #define WM_USER_CFGMIGRATE_FAILED WM_APP + 420 // [0, 0]
 #define WM_USER_BKGNDCHECK_DONE WM_APP + 421 // feature 372: [0, CBkgndPathCheckData*] - a panel's background path check finished (the panel frees the data)
 
+// feature 420 (updinstall.h): the download of a new version's installer finished - the main window
+// fetches the result with UpdInstall_TakeDownloadResult(); an armed update the exit did not install
+// is to be completed now; an installer started by Install Now ended with a failure
+#define WM_USER_UPDATEDOWNLOAD_DONE WM_APP + 422 // [0, 0]
+#define WM_USER_UPDATEINSTALL WM_APP + 423       // [0, 0]
+#define WM_USER_UPDATEINSTALL_DONE WM_APP + 424  // [exit code, 0]
+
 // states for Shift+F1 help mode
 #define HELP_INACTIVE 0 // not in Shift+F1 help mode (must be 0)
 #define HELP_ACTIVE 1   // in Shift+F1 help mode (non-zero)

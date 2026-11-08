@@ -5,7 +5,8 @@
 #include "precomp.h"
 
 #include "mainwnd.h"
-#include "updcheck.h" // feature 123
+#include "updcheck.h"   // feature 123
+#include "updinstall.h" // feature 420
 #include "usermenu.h"
 #include "edtlbwnd.h"
 #include "cfgdlg.h"
@@ -794,6 +795,7 @@ CCfgPageGeneral::CCfgPageGeneral()
     : CCommonPropSheetPage(NULL, HLanguage, IDD_CFGPAGE_GENERAL, IDD_CFGPAGE_GENERAL, PSP_USETITLE, NULL)
 {
     ShownCheckNewVersion = -1;
+    ShownUpdateLevel = -1;
 }
 
 void CCfgPageGeneral::Validate(CTransferInfo& ti)
@@ -857,6 +859,33 @@ void CCfgPageGeneral::Transfer(CTransferInfo& ti)
     {
         UpdateCheck_SetCheckAtStartup(checkNewVersion != 0);
         ShownCheckNewVersion = checkNewVersion != 0 ? 1 : 0;
+        UpdInstall_OnSettingsChanged(); // feature 420: an automatic arm needs the check on
+    }
+
+    // feature 420: what happens with a new version - the same pattern: read fresh, written at once
+    // and only when the user changed it here
+    HWND hLevel = GetDlgItem(HWindow, IDC_UPDATELEVEL);
+    if (hLevel != NULL)
+    {
+        if (ti.Type == ttDataToWindow)
+        {
+            SendMessageW(hLevel, CB_RESETCONTENT, 0, 0);
+            SendMessageW(hLevel, CB_ADDSTRING, 0, (LPARAM)LoadStrW(IDS_UPDATE_LEVEL_NOTIFY));
+            SendMessageW(hLevel, CB_ADDSTRING, 0, (LPARAM)LoadStrW(IDS_UPDATE_LEVEL_OFFER));
+            SendMessageW(hLevel, CB_ADDSTRING, 0, (LPARAM)LoadStrW(IDS_UPDATE_LEVEL_AUTO));
+            ShownUpdateLevel = (int)UpdInstall_GetLevel();
+            SendMessageW(hLevel, CB_SETCURSEL, (WPARAM)ShownUpdateLevel, 0);
+        }
+        else if (ShownUpdateLevel != -1)
+        {
+            int level = (int)SendMessageW(hLevel, CB_GETCURSEL, 0, 0);
+            if (level >= (int)sulNotify && level <= (int)sulAutomatic && level != ShownUpdateLevel)
+            {
+                UpdInstall_SetLevel((CSalUpdLevel)level);
+                ShownUpdateLevel = level;
+                UpdInstall_OnSettingsChanged(); // a lowered level drops an automatic arm
+            }
+        }
     }
 
     if (ti.Type == ttDataToWindow)
@@ -868,6 +897,10 @@ void CCfgPageGeneral::EnableControls()
     BOOL useTimeRes = IsDlgButtonChecked(HWindow, IDC_TIMERESOLUTION);
     EnableWindow(GetDlgItem(HWindow, IDE_TIMERESOLUTION), useTimeRes);
     EnableWindow(GetDlgItem(HWindow, IDC_ASYNCCOPYALG), Windows7AndLater);
+    // feature 420: the level applies only while the check is on
+    BOOL check = IsDlgButtonChecked(HWindow, IDC_CHECKNEWVERSION) == BST_CHECKED;
+    EnableWindow(GetDlgItem(HWindow, IDC_UPDATELEVEL_LABEL), check);
+    EnableWindow(GetDlgItem(HWindow, IDC_UPDATELEVEL), check);
 }
 
 INT_PTR

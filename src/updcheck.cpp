@@ -7,6 +7,7 @@
 
 #include "mainwnd.h"
 #include "updcheck.h"
+#include "updhttp.h"
 
 // winhttp.dll is delay-loaded (sal_base.props): a program that never checks -
 // the option is off - never loads it, and when it is loaded, it is loaded by
@@ -23,6 +24,9 @@ static const WCHAR* const UPDCHECK_VAL_LASTSUCCESS = L"Last Success";
 static const WCHAR* const UPDCHECK_VAL_LATEST = L"Latest Version";
 static const WCHAR* const UPDCHECK_VAL_PUBLISHED = L"Latest Published";
 static const WCHAR* const UPDCHECK_VAL_SKIPPED = L"Skipped Version";
+
+// feature 420: --updatetest (updcheck.h)
+BOOL UpdateTestMode = FALSE;
 
 // one claim per interval across the instances of one logon session
 static const WCHAR* const UPDCHECK_MUTEX = L"Local\\TandemCommanderUpdateCheck";
@@ -68,6 +72,11 @@ static BOOL UpdOpenKey(BOOL forWrite, HKEY* key)
                                          KEY_READ | KEY_WRITE, NULL, key, NULL)) == ERROR_SUCCESS;
     }
     return NOHANDLES(RegOpenKeyExW(HKEY_CURRENT_USER, path, 0, KEY_READ, key)) == ERROR_SUCCESS;
+}
+
+BOOL UpdateCheck_OpenStateKey(BOOL forWrite, HKEY* key)
+{
+    return UpdOpenKey(forWrite, key);
 }
 
 static BOOL UpdReadDword(HKEY key, const WCHAR* name, DWORD* value)
@@ -285,16 +294,6 @@ struct CUpdCheckContext
     BOOL Cancelled;     // guarded by UpdCS: set by a cancel, which also detaches the context from UpdRunning
 };
 
-// what the WinHTTP callback (any thread) hands to the worker
-struct CUpdAsync
-{
-    HANDLE Event;  // auto-reset: the step in progress completed
-    HANDLE Closed; // manual-reset: the request handle is gone, no callback will come any more
-    DWORD Status;  // WINHTTP_CALLBACK_STATUS_* of the completion
-    DWORD Number;  // DATA_AVAILABLE: bytes waiting; READ_COMPLETE: bytes read
-    DWORD Error;   // REQUEST_ERROR: the Windows error
-};
-
 static CRITICAL_SECTION UpdCS; // never deleted: a worker may outlive an exit in progress
 static LONG UpdCSInitialized = 0;
 // The check in progress (guarded by UpdCS). The main thread reaches a context only through this
@@ -364,7 +363,7 @@ static BOOL UpdClaim(BOOL force)
 // day's contact, whatever became of the body)
 static void UpdStoreResult(CSalUpdResult result, const CSalUpdRelease& release, BOOL answered)
 {
-    if (result == surCancelled)
+    if (result == surCancelled || UpdateTestMode) // feature 420: a test writes none of the stored state
         return;
     HKEY key;
     if (!UpdOpenKey(TRUE, &key))
@@ -383,57 +382,11 @@ static void UpdStoreResult(CSalUpdResult result, const CSalUpdRelease& release, 
     NOHANDLES(RegCloseKey(key));
 }
 
-static void CALLBACK UpdStatusCallback(HINTERNET handle, DWORD_PTR context, DWORD status,
-                                       LPVOID info, DWORD infoLength)
-{
-    CUpdAsync* async = (CUpdAsync*)context;
-    if (async == NULL)
-        return;
-    switch (status)
-    {
-    case WINHTTP_CALLBACK_STATUS_SENDREQUEST_COMPLETE:
-    case WINHTTP_CALLBACK_STATUS_HEADERS_AVAILABLE:
-        async->Number = 0;
-        break;
-
-    case WINHTTP_CALLBACK_STATUS_DATA_AVAILABLE:
-        async->Number = (info != NULL && infoLength >= sizeof(DWORD)) ? *(DWORD*)info : 0;
-        break;
-
-    case WINHTTP_CALLBACK_STATUS_READ_COMPLETE:
-        async->Number = infoLength;
-        break;
-
-    case WINHTTP_CALLBACK_STATUS_REQUEST_ERROR:
-        async->Error = info != NULL ? ((WINHTTP_ASYNC_RESULT*)info)->dwError : 0;
-        break;
-
-    case WINHTTP_CALLBACK_STATUS_HANDLE_CLOSING:
-        SetEvent(async->Closed); // the last callback of the request
-        return;
-
-    default:
-        return;
-    }
-    async->Status = status;
-    SetEvent(async->Event);
-}
-
-// Waits for the completion of the step just started. Returns its status, or
-// 0 when the check was cancelled or the deadline of the whole request passed
-// ('*timedOut' TRUE) - the step is then still pending and the caller must
-// close the request handle before it frees anything the step uses.
+// Waits for the completion of the step just started (updhttp.h); the deadline is the whole
+// request's (UPDCHECK_DEADLINE_MS).
 static DWORD UpdAwait(CUpdCheckContext* ctx, CUpdAsync* async, DWORD startTick, BOOL* timedOut)
 {
-    DWORD elapsed = GetTickCount() - startTick;
-    DWORD left = elapsed >= UPDCHECK_DEADLINE_MS ? 0 : UPDCHECK_DEADLINE_MS - elapsed;
-    HANDLE handles[2] = {async->Event, ctx->CancelEvent};
-    DWORD wait = WaitForMultipleObjects(2, handles, FALSE, left);
-    if (wait == WAIT_OBJECT_0)
-        return async->Status;
-    if (wait == WAIT_TIMEOUT)
-        *timedOut = TRUE;
-    return 0;
+    return UpdHttpAwait(ctx->CancelEvent, async, startTick, UPDCHECK_DEADLINE_MS, timedOut);
 }
 
 // One GET per contracts/update-source.md. Returns the result class; 'release'
@@ -532,12 +485,12 @@ static CSalUpdResult UpdRequest(CUpdCheckContext* ctx, CSalUpdRelease* release, 
     {
         // No cookie jar, no logon with the user's Windows credentials on a 401/407 challenge, no
         // redirect followed (the rule of feature 085); completions and the closing of the handle
-        // are reported to UpdStatusCallback. A request that cannot be set up so is not sent.
+        // are reported to UpdHttpStatusCallback. A request that cannot be set up so is not sent.
         DWORD disable = WINHTTP_DISABLE_COOKIES | WINHTTP_DISABLE_AUTHENTICATION | WINHTTP_DISABLE_REDIRECTS;
         DWORD_PTR context = (DWORD_PTR)async;
         if (WinHttpSetOption(request, WINHTTP_OPTION_DISABLE_FEATURE, &disable, sizeof(disable)) &&
             WinHttpSetOption(request, WINHTTP_OPTION_CONTEXT_VALUE, &context, sizeof(context)) &&
-            WinHttpSetStatusCallback(request, UpdStatusCallback,
+            WinHttpSetStatusCallback(request, UpdHttpStatusCallback,
                                      WINHTTP_CALLBACK_FLAG_ALL_COMPLETIONS | WINHTTP_CALLBACK_FLAG_HANDLES,
                                      0) != WINHTTP_INVALID_STATUS_CALLBACK)
             callbackSet = TRUE;
@@ -644,7 +597,8 @@ static CSalUpdResult UpdRequest(CUpdCheckContext* ctx, CSalUpdRelease* release, 
         {
             CSalUpdVersion installed;
             UpdateCheck_GetInstalledVersion(&installed);
-            result = SalUpdClassify(*release, installed);
+            // feature 420: in test mode the published release counts as newer whatever is installed
+            result = UpdateTestMode ? surNewer : SalUpdClassify(*release, installed);
         }
         else
         {
@@ -675,7 +629,9 @@ static unsigned UpdThreadBody(void* param)
     NOHANDLES(LeaveCriticalSection(&UpdCS));
 
     BOOL go = TRUE;
-    if (manual)
+    if (UpdateTestMode)
+        TRACE_I("UpdateCheck: test mode - nothing claimed, nothing stored"); // feature 420
+    else if (manual)
         UpdClaim(TRUE); // a check on demand counts as today's contact too
     else if (!UpdClaim(FALSE))
     {
@@ -825,9 +781,13 @@ void UpdateCheck_OnStartupComplete(HWND mainWindow)
 
     // registry only: is the option on and may a check be due? The worker decides again under
     // the cross-instance mutex before it sends anything.
+    // feature 420: test mode checks at once, whatever the option, the interval and the stored state
+    if (UpdateTestMode)
+        TRACE_I("UpdateCheck: update test mode (--updatetest): the published release counts as newer");
     CUpdateState state;
     UpdateCheck_LoadState(&state);
-    if (!SalUpdAutoCheckDue(state.CheckAtStartup, state.HasLastAttempt, state.LastAttempt,
+    if (!UpdateTestMode &&
+        !SalUpdAutoCheckDue(state.CheckAtStartup, state.HasLastAttempt, state.LastAttempt,
                             state.LastAttemptAnswered, UpdNow()))
         return;
 

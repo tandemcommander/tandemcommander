@@ -236,6 +236,93 @@ inline BOOL SalUpdReleaseNotesUrl(const CSalUpdVersion& v, char* buf, int bufSiz
     return p != NULL;
 }
 
+// Feature 420: the installer is downloaded through the API address of its asset (the
+// browser address answered 504 when measured; specs/420-auto-update-install/research.md R1).
+// Host and path are fixed; only the asset's validated number is inserted.
+#define SALUPD_ASSET_PATH_PREFIX "/repos/tandemcommander/tandemcommander/releases/assets/"
+
+// appends an unsigned 64-bit decimal number; returns the new end or NULL when it does not fit
+inline char* SalUpdAppendNumber64(char* p, char* end, ULONGLONG value)
+{
+    char digits[24];
+    int n = 0;
+    do
+    {
+        digits[n++] = (char)('0' + (int)(value % 10));
+        value /= 10;
+    } while (value != 0);
+    if (p == NULL || end - p <= n)
+        return NULL;
+    while (n > 0)
+        *p++ = digits[--n];
+    *p = 0;
+    return p;
+}
+
+// /repos/tandemcommander/tandemcommander/releases/assets/<id>
+inline BOOL SalUpdAssetApiPath(ULONGLONG assetId, char* buf, int bufSize)
+{
+    if (buf == NULL || bufSize <= 0)
+        return FALSE;
+    char* end = buf + bufSize;
+    buf[0] = 0;
+    char* p = SalUpdAppendText(buf, end, SALUPD_ASSET_PATH_PREFIX);
+    p = SalUpdAppendNumber64(p, end, assetId);
+    if (p == NULL || assetId == 0)
+    {
+        buf[0] = 0;
+        return FALSE;
+    }
+    return TRUE;
+}
+
+// https://api.github.com/repos/tandemcommander/tandemcommander/releases/assets/<id>
+inline BOOL SalUpdAssetApiUrl(ULONGLONG assetId, char* buf, int bufSize)
+{
+    if (buf == NULL || bufSize <= 0)
+        return FALSE;
+    char* end = buf + bufSize;
+    buf[0] = 0;
+    char* p = SalUpdAppendText(buf, end, "https://api.github.com");
+    if (p == NULL || !SalUpdAssetApiPath(assetId, p, (int)(end - p)))
+    {
+        buf[0] = 0;
+        return FALSE;
+    }
+    return TRUE;
+}
+
+// "sha256:" followed by exactly 64 hexadecimal digits (either case) -> 32 bytes
+inline BOOL SalUpdParseDigest(const char* s, unsigned char* digest)
+{
+    static const char prefix[] = "sha256:";
+    if (s == NULL || digest == NULL || strncmp(s, prefix, 7) != 0)
+        return FALSE;
+    s += 7;
+    unsigned char out[32]; // SHA-256
+    for (int i = 0; i < 64; i++)
+    {
+        char c = s[i];
+        int v;
+        if (c >= '0' && c <= '9')
+            v = c - '0';
+        else if (c >= 'a' && c <= 'f')
+            v = c - 'a' + 10;
+        else if (c >= 'A' && c <= 'F')
+            v = c - 'A' + 10;
+        else
+            return FALSE; // also the terminating zero of a short text
+        if ((i & 1) == 0)
+            out[i / 2] = (unsigned char)(v << 4);
+        else
+            out[i / 2] |= (unsigned char)v;
+    }
+    if (s[64] != 0)
+        return FALSE;
+    memcpy(digest, out, sizeof(out)); // the caller's buffer is written only on success
+    return TRUE;
+}
+
 //
 // ****************************************************************************
 // Time
@@ -352,11 +439,22 @@ inline void SalUpdStripWeekday(WCHAR* picture)
 // Release record and results
 //
 
+#define SALUPD_DIGEST_BYTES 32 // SHA-256
+
 struct CSalUpdRelease
 {
     CSalUpdVersion Version;
     ULONGLONG PublishedUtc;                   // UTC FILETIME of 'published_at'
     char PublishedText[SALUPD_TIME_TEXT_MAX]; // 'published_at' as received (validated, 20 ASCII bytes)
+
+    // Feature 420: what the program needs to download the installer itself, from the installer
+    // asset (the one 123 validates by name, state and browser_download_url). Optional: a record
+    // without them is accepted as before, it is only not installed automatically.
+    BOOL HasAsset;       // 'id' read once as a plain number and the asset's 'url' == SalUpdAssetApiUrl(id)
+    ULONGLONG AssetId;   // valid with HasAsset
+    ULONGLONG AssetSize; // 'size' read once as a plain number; 0 = not known
+    BOOL HasDigest;      // 'digest' read once as "sha256:" + 64 hex digits
+    unsigned char Digest[SALUPD_DIGEST_BYTES];
 };
 
 enum CSalUpdResult
@@ -734,6 +832,37 @@ public:
         return TRUE;
     }
 
+    // Feature 420: reads a number that must be a plain unsigned decimal integer of 1 to 15
+    // digits without a leading zero (a JSON "0" passes). Any other well-formed number (a sign, a
+    // fraction, an exponent, more digits) is consumed and reported as '*bad'; a malformed one
+    // fails the grammar.
+    BOOL ReadUnsigned(ULONGLONG* value, BOOL* bad)
+    {
+        *bad = FALSE;
+        *value = 0;
+        SkipSpace();
+        if (Failed)
+            return FALSE;
+        const unsigned char* start = P;
+        if (!SkipNumber())
+            return FALSE;
+        size_t n = (size_t)(P - start);
+        BOOL ok = n >= 1 && n <= 15 && (start[0] != '0' || n == 1);
+        ULONGLONG v = 0;
+        for (size_t i = 0; ok && i < n; i++)
+        {
+            if (start[i] < '0' || start[i] > '9')
+                ok = FALSE;
+            else
+                v = v * 10 + (start[i] - '0');
+        }
+        if (ok)
+            *value = v;
+        else
+            *bad = TRUE;
+        return TRUE;
+    }
+
     // skips any value; 'depth' is the nesting level of the value itself (the
     // top-level value is 1)
     BOOL SkipValue(int depth)
@@ -897,8 +1026,11 @@ inline BOOL SalUpdReadStringMember(CSalUpdJsonReader& r, int depth, char* out, i
 
 // One asset object. '*matches' TRUE when it is the expected installer:
 // name == 'wantName', state == "uploaded", browser_download_url == 'wantUrl',
-// each member present exactly once.
-inline BOOL SalUpdReadAsset(CSalUpdJsonReader& r, const char* wantName, const char* wantUrl, BOOL* matches)
+// each member present exactly once. Feature 420: 'data' (may be NULL) gets the
+// download members of a matching asset (CSalUpdRelease: HasAsset, AssetId,
+// AssetSize, HasDigest, Digest); they never decide '*matches'.
+inline BOOL SalUpdReadAsset(CSalUpdJsonReader& r, const char* wantName, const char* wantUrl, BOOL* matches,
+                            CSalUpdRelease* data = NULL)
 {
     *matches = FALSE;
     if (r.Peek() != '{')
@@ -906,6 +1038,13 @@ inline BOOL SalUpdReadAsset(CSalUpdJsonReader& r, const char* wantName, const ch
     r.Advance();
     int names = 0, states = 0, urls = 0;
     BOOL nameOk = FALSE, stateOk = FALSE, urlOk = FALSE;
+    // feature 420: the download members (read always, used only when the asset matches)
+    int ids = 0, sizes = 0, digests = 0, apiUrls = 0;
+    BOOL idOk = FALSE, sizeOk = FALSE, digestOk = FALSE, apiUrlRead = FALSE;
+    ULONGLONG id = 0, size = 0;
+    unsigned char digest[SALUPD_DIGEST_BYTES];
+    char apiUrl[SALUPD_URL_MAX];
+    apiUrl[0] = 0;
     if (r.Peek() == '}')
     {
         r.Advance();
@@ -940,6 +1079,50 @@ inline BOOL SalUpdReadAsset(CSalUpdJsonReader& r, const char* wantName, const ch
             urls++;
             urlOk = isString && !bad && strcmp(value, wantUrl) == 0;
         }
+        else if (!keyBad && strcmp(key, "id") == 0)
+        {
+            ids++;
+            idOk = FALSE;
+            if (r.Peek() >= '0' && r.Peek() <= '9')
+            {
+                BOOL numBad;
+                if (!r.ReadUnsigned(&id, &numBad))
+                    return FALSE;
+                idOk = !numBad && id != 0;
+            }
+            else if (!r.SkipValue(4))
+                return FALSE;
+        }
+        else if (!keyBad && strcmp(key, "size") == 0)
+        {
+            sizes++;
+            sizeOk = FALSE;
+            if (r.Peek() >= '0' && r.Peek() <= '9')
+            {
+                BOOL numBad;
+                if (!r.ReadUnsigned(&size, &numBad))
+                    return FALSE;
+                sizeOk = !numBad;
+            }
+            else if (!r.SkipValue(4))
+                return FALSE;
+        }
+        else if (!keyBad && strcmp(key, "digest") == 0)
+        {
+            if (!SalUpdReadStringMember(r, 4, value, sizeof(value), &bad, &isString))
+                return FALSE;
+            digests++;
+            digestOk = isString && !bad && SalUpdParseDigest(value, digest);
+        }
+        else if (!keyBad && strcmp(key, "url") == 0)
+        {
+            if (!SalUpdReadStringMember(r, 4, value, sizeof(value), &bad, &isString))
+                return FALSE;
+            apiUrls++;
+            apiUrlRead = isString && !bad && strlen(value) < sizeof(apiUrl);
+            if (apiUrlRead)
+                strcpy_s(apiUrl, value);
+        }
         else if (!r.SkipValue(4))
             return FALSE;
         int d = r.Peek();
@@ -956,6 +1139,20 @@ inline BOOL SalUpdReadAsset(CSalUpdJsonReader& r, const char* wantName, const ch
         return r.Fail();
     }
     *matches = names == 1 && states == 1 && urls == 1 && nameOk && stateOk && urlOk;
+    if (*matches && data != NULL)
+    {
+        // the asset's own API address must be the one built from its number
+        char wantApi[SALUPD_URL_MAX];
+        data->HasAsset = ids == 1 && idOk && apiUrls == 1 && apiUrlRead &&
+                         SalUpdAssetApiUrl(id, wantApi, sizeof(wantApi)) && strcmp(apiUrl, wantApi) == 0;
+        data->AssetId = data->HasAsset ? id : 0;
+        data->AssetSize = (sizes == 1 && sizeOk) ? size : 0;
+        data->HasDigest = digests == 1 && digestOk;
+        if (data->HasDigest)
+            memcpy(data->Digest, digest, sizeof(data->Digest));
+        else
+            memset(data->Digest, 0, sizeof(data->Digest));
+    }
     return TRUE;
 }
 
@@ -966,8 +1163,9 @@ inline BOOL SalUpdReadAsset(CSalUpdJsonReader& r, const char* wantName, const ch
 // '*duplicate' reports a repeated member of interest.
 inline BOOL SalUpdScanTop(const char* data, size_t len, CSalUpdTopFields* top,
                           const char* wantName, const char* wantUrl, BOOL* installerFound,
-                          BOOL* duplicate)
+                          BOOL* duplicate, CSalUpdRelease* assetData = NULL)
 {
+    int installersSeen = 0; // feature 420: download data only from a single matching asset
     CSalUpdJsonReader r(data, len);
     *duplicate = FALSE;
     if (installerFound != NULL)
@@ -1008,10 +1206,31 @@ inline BOOL SalUpdScanTop(const char* data, size_t len, CSalUpdTopFields* top,
                         for (;;)
                         {
                             BOOL matches;
-                            if (!SalUpdReadAsset(r, wantName, wantUrl, &matches))
+                            CSalUpdRelease one;
+                            memset(&one, 0, sizeof(one));
+                            if (!SalUpdReadAsset(r, wantName, wantUrl, &matches, &one))
                                 return FALSE;
                             if (matches && installerFound != NULL)
                                 *installerFound = TRUE;
+                            if (matches && assetData != NULL)
+                            {
+                                if (++installersSeen == 1)
+                                {
+                                    assetData->HasAsset = one.HasAsset;
+                                    assetData->AssetId = one.AssetId;
+                                    assetData->AssetSize = one.AssetSize;
+                                    assetData->HasDigest = one.HasDigest;
+                                    memcpy(assetData->Digest, one.Digest, sizeof(assetData->Digest));
+                                }
+                                else // two assets claim to be the installer: no automatic download
+                                {
+                                    assetData->HasAsset = FALSE;
+                                    assetData->AssetId = 0;
+                                    assetData->AssetSize = 0;
+                                    assetData->HasDigest = FALSE;
+                                    memset(assetData->Digest, 0, sizeof(assetData->Digest));
+                                }
+                            }
                             int d = r.Peek();
                             if (d == ',')
                             {
@@ -1190,7 +1409,7 @@ inline BOOL SalUpdParseLatestRelease(const char* data, size_t len, CSalUpdReleas
         return FALSE;
     }
     BOOL installerFound;
-    if (!SalUpdScanTop(data, len, NULL, wantName, wantUrl, &installerFound, &duplicate))
+    if (!SalUpdScanTop(data, len, NULL, wantName, wantUrl, &installerFound, &duplicate, release))
         return FALSE; // cannot happen after the first pass; kept for safety
     if (duplicate)
     {

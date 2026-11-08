@@ -45,6 +45,7 @@
 #include "salmsgwrap.h"     // feature 121
 #include "salfindtext.h"    // feature 121
 #include "salupdcheck.h"    // feature 123
+#include "salupdinstall.h"  // feature 420
 #include "saluncserver.h"   // feature 125
 #include "salshelllink.h"   // feature 128
 #include "salinserts.h"     // feature 127
@@ -10193,6 +10194,331 @@ static void TestUpdateCheck123()
         }
         SalUpdStripWeekday(NULL); // must not fault
     }
+}
+
+// feature 420: automatic update - the extended release record and the rules of salupdinstall.h
+#define UPD420_API_7 "https://api.github.com/repos/tandemcommander/tandemcommander/releases/assets/7"
+#define UPD420_HEX "3c56de193de8260f5e15dbc851e250271fc1dffdb882bd30f7da2ece1cd2e2b2"
+
+static CSalUpdRelease Upd420Parse(const std::string& extraAsset, BOOL* ok, const char* name = UPD_NAME_019,
+                                  const char* extraTop = "")
+{
+    CSalUpdRelease rel;
+    CSalUpdParseError err = supeNone;
+    std::string s = UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, UPD_NOTES_019, name, "uploaded", UPD_URL_019,
+                                     "false", "false", extraTop, extraAsset.c_str());
+    *ok = SalUpdParseLatestRelease(s.c_str(), s.size(), &rel, &err);
+    return rel;
+}
+
+static CSalUpdArm Upd420Arm(int major, int minor, int patch, DWORD source, BOOL test, DWORD launches)
+{
+    CSalUpdArm a;
+    memset(&a, 0, sizeof(a));
+    a.Present = TRUE;
+    a.Version.Major = major;
+    a.Version.Minor = minor;
+    a.Version.Patch = patch;
+    a.Source = source;
+    a.Test = test;
+    a.Launches = launches;
+    return a;
+}
+
+static void TestAutoUpdate420()
+{
+    // --- the release record: the download members of the installer asset
+    BOOL ok;
+    unsigned char want[32];
+    CHECK(SalUpdParseDigest("sha256:" UPD420_HEX, want));
+    CHECK(want[0] == 0x3c && want[31] == 0xb2);
+
+    CSalUpdRelease r = Upd420Parse("\"url\":\"" UPD420_API_7 "\",\"digest\":\"sha256:" UPD420_HEX "\",", &ok);
+    CHECK(ok && r.HasAsset && r.AssetId == 7 && r.AssetSize == 8247136 && r.HasDigest &&
+          memcmp(r.Digest, want, 32) == 0);
+    CHECK(r.Version.Patch == 9); // 123's part unchanged
+
+    r = Upd420Parse("", &ok); // a record of 123's shape: accepted, no download data
+    CHECK(ok && !r.HasAsset && r.AssetId == 0 && !r.HasDigest && r.AssetSize == 8247136);
+    r = Upd420Parse("\"url\":\"https://api.github.com/repos/tandemcommander/tandemcommander/releases/assets/8\",", &ok);
+    CHECK(ok && !r.HasAsset); // the url does not belong to the id
+    r = Upd420Parse("\"url\":\"https://api.github.com/repos/other/repo/releases/assets/7\",", &ok);
+    CHECK(ok && !r.HasAsset);
+    r = Upd420Parse("\"url\":\"" UPD420_API_7 "\",\"url\":\"" UPD420_API_7 "\",", &ok);
+    CHECK(ok && !r.HasAsset); // twice
+    r = Upd420Parse("\"id\":7,\"url\":\"" UPD420_API_7 "\",", &ok);
+    CHECK(ok && !r.HasAsset); // the record's "id" plus another one
+    r = Upd420Parse("\"url\":7,", &ok);
+    CHECK(ok && !r.HasAsset);
+    r = Upd420Parse("\"digest\":\"sha256:" UPD420_HEX "\",\"digest\":\"sha256:" UPD420_HEX "\",", &ok);
+    CHECK(ok && !r.HasDigest);
+    const char* badDigests[] = {"\"sha1:" UPD420_HEX "\"", "\"sha256:3c56\"", "\"sha256:" UPD420_HEX "0\"",
+                                "\"SHA256:" UPD420_HEX "\"", "\"sha256: " UPD420_HEX "\"", "null", "42"};
+    for (int i = 0; i < (int)(sizeof(badDigests) / sizeof(badDigests[0])); i++)
+    {
+        r = Upd420Parse(std::string("\"digest\":") + badDigests[i] + ",", &ok);
+        CHECK(ok && !r.HasDigest);
+    }
+    r = Upd420Parse("\"digest\":\"sha256:3C56DE193DE8260F5E15DBC851E250271FC1DFFDB882BD30F7DA2ECE1CD2E2B2\",", &ok);
+    CHECK(ok && r.HasDigest && memcmp(r.Digest, want, 32) == 0); // upper case digits
+    // the number of the asset: plain decimal only (the record builder puts "id":7 first)
+    std::string recId;
+    const char* badIds[] = {"-7", "7.0", "7e0", "07", "\"7\"", "1234567890123456", "0"};
+    for (int i = 0; i < (int)(sizeof(badIds) / sizeof(badIds[0])); i++)
+    {
+        std::string s = UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, UPD_NOTES_019, UPD_NAME_019, "uploaded",
+                                         UPD_URL_019, "false", "false", "", "\"url\":\"" UPD420_API_7 "\",");
+        size_t at = s.find("\"id\":7,\"name\"");
+        CHECK(at != std::string::npos);
+        s.replace(at, 7, std::string("\"id\":") + badIds[i] + ",");
+        CSalUpdRelease rel;
+        BOOL parsed = SalUpdParseLatestRelease(s.c_str(), s.size(), &rel, NULL);
+        CHECK(!parsed || !rel.HasAsset); // "07" is not even JSON; the others parse without download data
+    }
+    {
+        std::string s = UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, UPD_NOTES_019, UPD_NAME_019, "uploaded",
+                                         UPD_URL_019, "false", "false", "",
+                                         "\"url\":\"https://api.github.com/repos/tandemcommander/tandemcommander/releases/assets/123456789012345\",");
+        s.replace(s.find("\"id\":7,"), 7, "\"id\":123456789012345,");
+        CSalUpdRelease rel;
+        CHECK(SalUpdParseLatestRelease(s.c_str(), s.size(), &rel, NULL) && rel.HasAsset &&
+              rel.AssetId == 123456789012345ULL); // 15 digits, above 32 bits
+        std::string t = s;
+        t.replace(t.find("\"size\":8247136,"), 15, "\"size\":-1,");
+        CHECK(SalUpdParseLatestRelease(t.c_str(), t.size(), &rel, NULL) && rel.AssetSize == 0);
+        t = s;
+        t.replace(t.find("\"size\":8247136,"), 15, "\"size\":8.5,");
+        CHECK(SalUpdParseLatestRelease(t.c_str(), t.size(), &rel, NULL) && rel.AssetSize == 0);
+    }
+    // an asset that is not the installer gives nothing; two installers give nothing
+    {
+        std::string extraTop = "\"x\":1,";
+        std::string s = UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, UPD_NOTES_019, UPD_NAME_019, "uploaded",
+                                         UPD_URL_019, "false", "false", "",
+                                         "\"url\":\"" UPD420_API_7 "\",\"digest\":\"sha256:" UPD420_HEX "\",");
+        std::string asset = s.substr(s.find("{\"id\":7"));
+        asset = asset.substr(0, asset.find("}]") + 1);
+        std::string two = s;
+        two.insert(two.find("}]") + 1, "," + asset);
+        CSalUpdRelease rel;
+        CHECK(SalUpdParseLatestRelease(two.c_str(), two.size(), &rel, NULL) && !rel.HasAsset && !rel.HasDigest);
+        std::string other = asset;
+        other.replace(other.find(UPD_NAME_019), strlen(UPD_NAME_019), "readme.txt");
+        std::string withOther = UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, UPD_NOTES_019, UPD_NAME_019, "uploaded",
+                                                 UPD_URL_019);
+        withOther.insert(withOther.find("\"assets\":[") + 10, other + ",");
+        CHECK(SalUpdParseLatestRelease(withOther.c_str(), withOther.size(), &rel, NULL) && !rel.HasAsset &&
+              !rel.HasDigest);
+    }
+
+    // --- addresses
+    char buf[SALUPD_URL_MAX];
+    CHECK(SalUpdAssetApiUrl(675680428ULL, buf, sizeof(buf)) &&
+          strcmp(buf, "https://api.github.com/repos/tandemcommander/tandemcommander/releases/assets/675680428") == 0);
+    CHECK(SalUpdAssetApiPath(675680428ULL, buf, sizeof(buf)) &&
+          strcmp(buf, "/repos/tandemcommander/tandemcommander/releases/assets/675680428") == 0);
+    CHECK(!SalUpdAssetApiUrl(0, buf, sizeof(buf)) && buf[0] == 0);
+    CHECK(!SalUpdAssetApiUrl(7, buf, 20) && buf[0] == 0);
+    CHECK(SalUpdAssetApiUrl(18446744073709551615ULL, buf, sizeof(buf)) &&
+          strstr(buf, "/assets/18446744073709551615") != NULL);
+    CHECK(SalUpdLogName(r.Version, buf, sizeof(buf)) && strcmp(buf, "setup-0.1.9.log") == 0);
+
+    // --- the redirect allow-list
+    WCHAR host[100], path[SALUPD_LOCATION_MAX + 2];
+    CHECK(SalUpdRedirectAllowed(L"https://release-assets.githubusercontent.com/github-production-release-asset/1?sp=r&sig=a%2Fb",
+                                host, _countof(host), path, _countof(path)) &&
+          wcscmp(host, L"release-assets.githubusercontent.com") == 0 &&
+          wcscmp(path, L"/github-production-release-asset/1?sp=r&sig=a%2Fb") == 0);
+    CHECK(SalUpdRedirectAllowed(L"HTTPS://Objects.GitHubUserContent.com:443/x", host, _countof(host), path, _countof(path)) &&
+          wcscmp(path, L"/x") == 0);
+    CHECK(SalUpdRedirectAllowed(L"https://objects.githubusercontent.com", host, _countof(host), path, _countof(path)) &&
+          wcscmp(path, L"/") == 0);
+    CHECK(SalUpdRedirectAllowed(L"https://objects.githubusercontent.com?a=1", host, _countof(host), path, _countof(path)) &&
+          wcscmp(path, L"/?a=1") == 0);
+    const WCHAR* refused[] = {
+        L"http://release-assets.githubusercontent.com/x",
+        L"https://release-assets.githubusercontent.com.evil.example/x",
+        L"https://evil.example/release-assets.githubusercontent.com/x",
+        L"https://user@release-assets.githubusercontent.com/x",
+        L"https://release-assets.githubusercontent.com@evil.example/x",
+        L"https://release-assets.githubusercontent.com:444/x",
+        L"https://release-assets.githubusercontent.com:4430/x",
+        L"https://release-assets.githubusercontent.com:/x",
+        L"https://release-assets.githubusercontent.com/x#frag",
+        L"https://release-assets.githubusercontent.com/a b",
+        L"https://release-assets.githubusercontent.com/a\\b",
+        L"https://release-assets.githubusercontent.com/\x00E9",
+        L"https://github.com/tandemcommander/x",
+        L"https://api.github.com/repos/x",
+        L"https://githubusercontent.com/x",
+        L"//release-assets.githubusercontent.com/x",
+        L"/relative/path",
+        L"",
+    };
+    for (int i = 0; i < (int)(sizeof(refused) / sizeof(refused[0])); i++)
+        CHECK(!SalUpdRedirectAllowed(refused[i], host, _countof(host), path, _countof(path)));
+    {
+        std::wstring longUrl = L"https://release-assets.githubusercontent.com/";
+        longUrl.append(SALUPD_LOCATION_MAX, L'a');
+        CHECK(!SalUpdRedirectAllowed(longUrl.c_str(), host, _countof(host), path, _countof(path)));
+        WCHAR smallPath[4];
+        CHECK(!SalUpdRedirectAllowed(L"https://objects.githubusercontent.com/abcdef", host, _countof(host), smallPath,
+                                     _countof(smallPath)));
+    }
+    CHECK(!SalUpdRedirectAllowed(NULL, host, _countof(host), path, _countof(path)));
+    CHECK(SalUpdIsRedirectStatus(302) && SalUpdIsRedirectStatus(307) && SalUpdIsRedirectStatus(301) &&
+          !SalUpdIsRedirectStatus(200) && !SalUpdIsRedirectStatus(304) && !SalUpdIsRedirectStatus(300));
+
+    // --- the signer pin
+    unsigned char thumb[20] = {0xa3, 0xd0, 0x5c, 0xcf, 0x5c, 0xa1, 0x3e, 0xaf, 0xf4, 0x9c,
+                               0xc7, 0xf6, 0x4d, 0x18, 0x32, 0xf0, 0xe6, 0xef, 0x67, 0x33};
+    CHECK(SalUpdSignerPinned(thumb, 20));
+    CHECK(!SalUpdSignerPinned(thumb, 19) && !SalUpdSignerPinned(NULL, 20));
+    for (int i = 0; i < 20; i++)
+    {
+        thumb[i] ^= 1;
+        CHECK(!SalUpdSignerPinned(thumb, 20));
+        thumb[i] ^= 1;
+    }
+
+    // --- the version resource of the installer (Inno pads with spaces)
+    CSalUpdVersion v020 = {0, 2, 0};
+    CHECK(SalUpdInstallerVersionOk(L"Tandem Commander                                            ",
+                                   L"0.2.0                                             ", v020));
+    CHECK(SalUpdInstallerVersionOk(L"Tandem Commander", L"0.2.0", v020));
+    CHECK(!SalUpdInstallerVersionOk(L"Tandem Commander", L"0.1.9", v020));
+    CHECK(!SalUpdInstallerVersionOk(L"Tandem Commander", L"0.2.0.0", v020));
+    CHECK(!SalUpdInstallerVersionOk(L"Tandem Commander", L" 0.2.0", v020));
+    CHECK(!SalUpdInstallerVersionOk(L"Tandem Commander X", L"0.2.0", v020));
+    CHECK(!SalUpdInstallerVersionOk(L"tandem commander", L"0.2.0", v020));
+    CHECK(!SalUpdInstallerVersionOk(L"Tandem Comm\x00E4nder", L"0.2.0", v020));
+    CHECK(!SalUpdInstallerVersionOk(NULL, L"0.2.0", v020) && !SalUpdInstallerVersionOk(L"Tandem Commander", NULL, v020));
+    CHECK(!SalUpdInstallerVersionOk(L"", L"", v020));
+
+    // --- digest text
+    char hex[65];
+    unsigned char back[32];
+    CHECK(SalUpdFormatDigestHex(want, hex, sizeof(hex)) && strcmp(hex, UPD420_HEX) == 0);
+    CHECK(SalUpdParseDigestHex(hex, back) && memcmp(back, want, 32) == 0);
+    CHECK(!SalUpdFormatDigestHex(want, hex, 64));
+    CHECK(!SalUpdParseDigestHex("3c56", back) && !SalUpdParseDigestHex(NULL, back));
+    memset(back, 0x55, sizeof(back));
+    CHECK(!SalUpdParseDigest("sha256:" UPD420_HEX "x", back) && back[0] == 0x55); // nothing written on failure
+
+    // --- files of the updates folder
+    CSalUpdVersion fv;
+    CSalUpdFileKind fk;
+    CHECK(SalUpdParseUpdateFileName("tandemcommander-0.2.0-x64-setup.exe", &fv, &fk) && fk == sufkInstaller &&
+          SalUpdVersionCompare(fv, v020) == 0);
+    CHECK(SalUpdParseUpdateFileName("tandemcommander-0.2.0-x64-setup.exe.part", &fv, &fk) && fk == sufkPart);
+    CHECK(SalUpdParseUpdateFileName("setup-12.3.45.log", &fv, &fk) && fk == sufkLog && fv.Major == 12);
+    const char* notOurs[] = {"tandemcommander-0.2-x64-setup.exe", "tandemcommander-0.2.0-x86-setup.exe",
+                             "Tandemcommander-0.2.0-x64-setup.exe", "tandemcommander-0.2.0-x64-setup.exe.bak",
+                             "setup-0.2.0.txt", "setup-.log", "readme.txt", "", "tandemcommander--x64-setup.exe"};
+    for (int i = 0; i < (int)(sizeof(notOurs) / sizeof(notOurs[0])); i++)
+        CHECK(!SalUpdParseUpdateFileName(notOurs[i], &fv, &fk));
+    CSalUpdVersion v019 = {0, 1, 9}, v021 = {0, 2, 1};
+    CHECK(!SalUpdKeepUpdateFile(sufkPart, v021, v020, FALSE, TRUE, v021)); // a .part never stays
+    CHECK(SalUpdKeepUpdateFile(sufkInstaller, v021, v020, FALSE, FALSE, v020));
+    CHECK(!SalUpdKeepUpdateFile(sufkInstaller, v020, v020, FALSE, FALSE, v020));
+    CHECK(!SalUpdKeepUpdateFile(sufkLog, v019, v020, FALSE, FALSE, v020));
+    CHECK(!SalUpdKeepUpdateFile(sufkInstaller, v021, v020, TRUE, FALSE, v020)); // test mode downloads afresh
+    CHECK(SalUpdKeepUpdateFile(sufkInstaller, v020, v020, TRUE, TRUE, v020));   // ...except the arm it completes
+    CHECK(SalUpdKeepUpdateFile(sufkLog, v020, v020, TRUE, TRUE, v020));
+
+    // --- the installer's command line
+    WCHAR args[SALUPD_ARGS_MAX];
+    CHECK(SalUpdBuildInstallerArgs(sulkNow, TRUE, FALSE, L"C:\\U\\setup-0.2.0.log", args, _countof(args)) &&
+          wcscmp(args, L"/SP- /SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /ALLUSERS "
+                       L"/LOG=\"C:\\U\\setup-0.2.0.log\"") == 0);
+    CHECK(SalUpdBuildInstallerArgs(sulkNow, FALSE, TRUE, L"C:\\U\\l.log", args, _countof(args)) &&
+          wcscmp(args, L"/SP- /SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /NORESTARTAPPLICATIONS "
+                       L"/CURRENTUSER /LOG=\"C:\\U\\l.log\"") == 0);
+    CHECK(SalUpdBuildInstallerArgs(sulkExit, FALSE, FALSE, L"C:\\U\\l.log", args, _countof(args)) &&
+          wcscmp(args, L"/SP- /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /NORESTARTAPPLICATIONS "
+                       L"/CURRENTUSER /LOG=\"C:\\U\\l.log\"") == 0);
+    CHECK(SalUpdBuildInstallerArgs(sulkExit, TRUE, FALSE, L"C:\\U\\l.log", args, _countof(args)) &&
+          wcsstr(args, L"/VERYSILENT") != NULL && wcsstr(args, L"/ALLUSERS ") != NULL &&
+          wcsstr(args, L"/RESTARTAPPLICATIONS") == NULL);
+    CHECK(!SalUpdBuildInstallerArgs(sulkNow, TRUE, FALSE, L"C:\\a\"b.log", args, _countof(args)) && args[0] == 0);
+    CHECK(!SalUpdBuildInstallerArgs(sulkNow, TRUE, FALSE, L"", args, _countof(args)));
+    CHECK(!SalUpdBuildInstallerArgs(sulkNow, TRUE, FALSE, L"C:\\l.log", args, 40) && args[0] == 0);
+    CHECK(strcmp(SalUpdLaunchKindName(sulkNow), "now") == 0 && strcmp(SalUpdLaunchKindName(sulkExit), "exit") == 0);
+
+    // --- the level and the decision after a check
+    CHECK(SalUpdLevelFromStored(FALSE, 0) == sulOffer && SalUpdLevelFromStored(TRUE, 0) == sulNotify &&
+          SalUpdLevelFromStored(TRUE, 1) == sulOffer && SalUpdLevelFromStored(TRUE, 2) == sulAutomatic &&
+          SalUpdLevelFromStored(TRUE, 3) == sulOffer && SalUpdLevelFromStored(TRUE, 0xFFFFFFFF) == sulOffer);
+    CSalUpdRelease full = Upd420Parse("\"url\":\"" UPD420_API_7 "\",\"digest\":\"sha256:" UPD420_HEX "\",", &ok);
+    CHECK(SalUpdAfterCheck(sulOffer, TRUE, TRUE, FALSE, full) == suacDownload);
+    CHECK(SalUpdAfterCheck(sulAutomatic, TRUE, TRUE, FALSE, full) == suacDownload);
+    CHECK(SalUpdAfterCheck(sulNotify, TRUE, TRUE, FALSE, full) == suacNotify);
+    CHECK(SalUpdAfterCheck(sulOffer, FALSE, TRUE, FALSE, full) == suacNotify);
+    CHECK(SalUpdAfterCheck(sulOffer, TRUE, FALSE, FALSE, full) == suacNotify);
+    CHECK(SalUpdAfterCheck(sulOffer, TRUE, TRUE, TRUE, full) == suacNotify);
+    CSalUpdRelease part = full;
+    part.HasDigest = FALSE;
+    CHECK(SalUpdAfterCheck(sulOffer, TRUE, TRUE, FALSE, part) == suacNotify);
+    part = full;
+    part.HasAsset = FALSE;
+    CHECK(SalUpdAfterCheck(sulOffer, TRUE, TRUE, FALSE, part) == suacNotify);
+    part = full;
+    part.AssetSize = 0;
+    CHECK(SalUpdAfterCheck(sulOffer, TRUE, TRUE, FALSE, part) == suacNotify);
+    part.AssetSize = SALUPD_MAX_INSTALLER_BYTES;
+    CHECK(SalUpdAfterCheck(sulOffer, TRUE, TRUE, FALSE, part) == suacDownload);
+    part.AssetSize = SALUPD_MAX_INSTALLER_BYTES + 1;
+    CHECK(SalUpdAfterCheck(sulOffer, TRUE, TRUE, FALSE, part) == suacNotify);
+
+    // --- the armed update
+    CSalUpdArm none;
+    memset(&none, 0, sizeof(none));
+    CSalUpdArm user = Upd420Arm(0, 2, 1, SALUPD_ARM_USER, FALSE, 0);
+    CSalUpdArm aut = Upd420Arm(0, 2, 1, SALUPD_ARM_AUTOMATIC, FALSE, 0);
+    CHECK(!SalUpdArmHonoured(none, TRUE, sulAutomatic, FALSE));
+    CHECK(SalUpdArmHonoured(user, FALSE, sulNotify, FALSE)); // a click holds whatever the level
+    CHECK(SalUpdArmHonoured(aut, TRUE, sulAutomatic, FALSE));
+    CHECK(!SalUpdArmHonoured(aut, FALSE, sulAutomatic, FALSE)); // the check turned off
+    CHECK(SalUpdArmHonoured(aut, FALSE, sulAutomatic, TRUE));   // ...test mode ignores the option
+    CHECK(!SalUpdArmHonoured(aut, TRUE, sulOffer, FALSE) && !SalUpdArmHonoured(aut, TRUE, sulNotify, TRUE));
+    CSalUpdArm odd = Upd420Arm(0, 2, 1, 7, FALSE, 0);
+    CHECK(!SalUpdArmHonoured(odd, TRUE, sulAutomatic, FALSE));
+
+    // start-up: every row of data-model.md, in order
+    CHECK(SalUpdStartupArmDecision(none, FALSE, FALSE, v020, TRUE) == susaNone);
+    CSalUpdArm test = Upd420Arm(0, 2, 0, SALUPD_ARM_AUTOMATIC, TRUE, 0);
+    CHECK(SalUpdStartupArmDecision(test, TRUE, FALSE, v020, TRUE) == susaDropAll);
+    CHECK(SalUpdStartupArmDecision(aut, FALSE, FALSE, v020, TRUE) == susaDropState);
+    CHECK(SalUpdStartupArmDecision(aut, TRUE, FALSE, v021, TRUE) == susaDone); // the update happened
+    CSalUpdVersion v030 = {0, 3, 0};
+    CHECK(SalUpdStartupArmDecision(aut, TRUE, FALSE, v030, TRUE) == susaDone); // even passed
+    CSalUpdArm testLaunched = Upd420Arm(0, 2, 0, SALUPD_ARM_AUTOMATIC, TRUE, 1);
+    CHECK(SalUpdStartupArmDecision(testLaunched, TRUE, TRUE, v020, TRUE) == susaDone);
+    CSalUpdArm tired = Upd420Arm(0, 2, 1, SALUPD_ARM_USER, FALSE, SALUPD_MAX_LAUNCHES);
+    CHECK(SalUpdStartupArmDecision(tired, TRUE, FALSE, v020, TRUE) == susaGiveUp);
+    CHECK(SalUpdStartupArmDecision(aut, TRUE, FALSE, v020, FALSE) == susaDropAll);
+    CHECK(SalUpdStartupArmDecision(aut, TRUE, FALSE, v020, TRUE) == susaComplete); // the exit did not do it
+    CSalUpdArm twice = Upd420Arm(0, 2, 1, SALUPD_ARM_AUTOMATIC, FALSE, SALUPD_MAX_LAUNCHES - 1);
+    CHECK(SalUpdStartupArmDecision(twice, TRUE, FALSE, v020, TRUE) == susaComplete); // the last try
+    CHECK(SalUpdStartupArmDecision(test, TRUE, TRUE, v020, TRUE) == susaComplete);   // test, never launched
+    CHECK(SalUpdStartupArmDecision(test, TRUE, TRUE, v030, TRUE) == susaComplete);   // test ignores versions
+    CHECK(SalUpdStartupArmDecision(user, TRUE, TRUE, v021, TRUE) == susaDone);       // a normal arm in a test session
+    CHECK(strcmp(SalUpdStartupArmName(susaComplete), "complete") == 0 &&
+          strcmp(SalUpdStartupArmName(susaGiveUp), "give-up") == 0);
+
+    // exit
+    CHECK(SalUpdExitDecision(aut, TRUE, TRUE, TRUE, TRUE, FALSE, v020));
+    CHECK(!SalUpdExitDecision(none, TRUE, TRUE, TRUE, TRUE, FALSE, v020));
+    CHECK(!SalUpdExitDecision(aut, FALSE, TRUE, TRUE, TRUE, FALSE, v020)); // not honoured
+    CHECK(!SalUpdExitDecision(aut, TRUE, FALSE, TRUE, TRUE, FALSE, v020)); // sign-out, installer close
+    CHECK(!SalUpdExitDecision(aut, TRUE, TRUE, FALSE, TRUE, FALSE, v020)); // another instance runs
+    CHECK(!SalUpdExitDecision(aut, TRUE, TRUE, TRUE, FALSE, FALSE, v020)); // not installed by the installer
+    CHECK(!SalUpdExitDecision(tired, TRUE, TRUE, TRUE, TRUE, FALSE, v020));
+    CHECK(SalUpdExitDecision(twice, TRUE, TRUE, TRUE, TRUE, FALSE, v020));
+    CHECK(!SalUpdExitDecision(aut, TRUE, TRUE, TRUE, TRUE, FALSE, v021)); // already there
+    CHECK(SalUpdExitDecision(test, TRUE, TRUE, TRUE, TRUE, TRUE, v020));  // test arm, test session
+    CHECK(!SalUpdExitDecision(test, TRUE, TRUE, TRUE, TRUE, FALSE, v020));
+    CHECK(SalUpdExitDecision(user, TRUE, TRUE, TRUE, TRUE, TRUE, v020)); // a normal arm in a test session
 }
 
 // feature 125 (GitHub #5): a UNC path with a server and no share - the rules of saluncserver.h
@@ -28302,6 +28628,7 @@ int main(int argc, char** argv)
     TestPvPixel120();
     TestSmallBatch121();
     TestUpdateCheck123();
+    TestAutoUpdate420();
     TestUncServer125();
     TestUncShareRoot284();
     TestUncShareListSignIn285();

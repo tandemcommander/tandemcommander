@@ -14,6 +14,7 @@
 #include "fileswnd.h"
 #include "mainwnd.h"
 #include "updcheck.h" // feature 123
+#include "updinstall.h" // feature 420
 #include "cfgimport.h" // feature 245
 #include "shellib.h"
 #include "worker.h"
@@ -3991,6 +3992,14 @@ BOOL ParseCommandLineParameters(LPSTR cmdLine, CCommandLineParams* cmdLineParams
                 }
             }
 
+            // feature 420: the update test mode (new multi-word options take two dashes, the old
+            // single-dash switches stay as they are); never stored, never passed to a restart
+            if (StrICmp(argv[i], "--updatetest") == 0)
+            {
+                UpdateTestMode = TRUE;
+                continue;
+            }
+
             if (StrICmp(argv[i], "-run_notepad") == 0 && i + 1 < p)
             { // Vista+: after installation: installer (SFX7ZIP) executes Salamander and asks for execution of notepad with readme file
                 lstrcpyn(OpenReadmeInNotepad, argv[i + 1], MAX_PATH);
@@ -4888,6 +4897,10 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                     // and a check is due (registry only here; the request runs on a worker thread)
                     UpdateCheck_OnStartupComplete(MainWindow->HWindow);
 
+                    // feature 420: an armed update the last exit did not install is completed now;
+                    // leftovers of the updates folder go
+                    UpdInstall_OnStartupComplete(MainWindow->HWindow);
+
                     if (IsSLGIncomplete[0] != 0 && Configuration.ShowSLGIncomplete)
                         PostMessage(MainWindow->HWindow, WM_USER_SLGINCOMPLETE, 0, 0);
 
@@ -5208,6 +5221,10 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
     // pro pripad chyby zkusim zavrit dialog
     SplashScreenCloseIfExist();
 
+    // feature 420: an armed update is installed by this exit? (decided now, while the registry and
+    // the other instances can still be asked; the installer starts as the last step of the exit)
+    UpdInstall_PrepareExit();
+
     // vratime prioritu do puvodniho stavu
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
 
@@ -5271,6 +5288,10 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
     //OleSpyStressTest(); // multi-threaded stress test
     // OleSpyRevoke();     // odpojime OLESPY
     OleUninitialize(); // deinicializace OLE
+
+    // feature 420: the last step of a normal exit - the installer of an armed update (it must not find
+    // this process alive with its files open: specs/420-auto-update-install/research.md R3)
+    UpdInstall_RunAtExit();
     // OleSpyDump();       // vypiseme leaky
 
     TRACE_I("End");
