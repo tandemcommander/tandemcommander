@@ -1,7 +1,7 @@
 ---
 title: Update notification: level choice, Download & Install, silent automatic install
 type: improvement
-status: open
+status: in-progress
 severity: 4
 area: privacy-security
 source: manual
@@ -10,7 +10,7 @@ created: 2026-11-08
 updated: 2026-11-08
 verified: 2026-11-08 1a25a164
 effort: L
-feature: -
+feature: 421
 related: [new-version-check-123-person-steps]
 depends-on: []
 reason: -
@@ -59,3 +59,4 @@ The trigger was a misreading while testing 420: the maintainer ran the build tre
 - 2026-11-08 — extended: the automatic level shows no notification and installs as soon as the installer is verified (maintainer 2026-11-08)
 - 2026-11-08 — moved to Next position 1
 - 2026-11-08 — verified at 1a25a164: still true at 1a25a164 by reading: upddlg.cpp has no level control, classic form has only browser Download, ShowDownloadedUpdate shows unfAutomatic and arms for the exit
+- 2026-11-08 — run started, feature 421
