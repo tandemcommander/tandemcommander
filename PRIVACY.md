@@ -492,11 +492,7 @@ project's repository.
 
 ---
 
-This statement describes Tandem Commander 0.2.0 (`CHANGELOG.md`) together with
-the automatic update prepared for the next version (described above); 0.2.0
-itself downloads and installs nothing: it keeps no `Update Level`, `Install` and
-`Download Refused` values and no `Updates` folder, and *Download* always hands
-the address to your web browser. In 0.1.10,
+This statement describes Tandem Commander 0.2.0 (`CHANGELOG.md`). In 0.1.10,
 the version before it, the settings are kept in the subkey `0.1` (the
 `Update Check` values under `0.1\Update Check`) and no `Moved To Settings`
 value is written; the program offers no import of settings from Altap
