@@ -37,6 +37,7 @@ public static class P420
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern IntPtr GetPropW(IntPtr h, string name);
     [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
     [DllImport("user32.dll")] static extern bool IsWindowVisible(IntPtr h);
+    [DllImport("user32.dll")] public static extern int GetWindowLongW(IntPtr h, int i);
     [DllImport("kernel32.dll", SetLastError = true)] static extern IntPtr OpenProcess(uint access, bool inherit, uint pid);
     [DllImport("kernel32.dll")] static extern bool CloseHandle(IntPtr h);
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode)] static extern int GetApplicationRestartSettings(IntPtr process, StringBuilder cmd, ref uint size, out uint flags);
@@ -348,20 +349,28 @@ $Groups['S'] = {
     $id = Start-420; [void](Wait-Form $id 'automatic'); $a = Arm
     Kill-Wait $id
     T 'S1' 'killed' ($null -ne $a -and (Runs).Count -eq 0) ('armed, then the program ended without its exit: {0}, {1}' -f (ArmStr $a), (RunsStr))
-    for ($n = 1; $n -le 3; $n++) {
+    NoCheck
+    $sw = [Diagnostics.Stopwatch]::StartNew()
+    $id = Start-420; $got = Wait-Run 1 20; $t = [math]::Round($sw.Elapsed.TotalSeconds, 1)
+    $r = Runs; $a = Arm
+    $ok = $got -and $r.Count -eq 1 -and $r[0] -like 'now|*/SILENT*/CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /CURRENTUSER*' -and $a.Launches -eq 1
+    T 'S1' 'start1' $ok ('the exit never started the installer -> next start: installer after {0} s: {1}; {2}' -f $t, (Esc $r[0]), (ArmStr $a))
+    Kill-Wait $id
+    # review 2 S1: that installer did not install it (here: the program was killed, the seam started nothing)
+    # - the next start offers it and starts nothing; the exits try again until 3 launches
+    for ($n = 2; $n -le 3; $n++) {
         NoCheck
-        $sw = [Diagnostics.Stopwatch]::StartNew()
-        $id = Start-420; $got = Wait-Run $n 20; $t = [math]::Round($sw.Elapsed.TotalSeconds, 1)
-        $r = Runs; $a = Arm
-        $ok = $got -and $r.Count -eq $n -and $r[$n - 1] -like 'now|*/SILENT*/CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /CURRENTUSER*' -and $a.Launches -eq $n
-        T 'S1' ('start' + $n) $ok ('start {0}: installer after {1} s: {2}; {3}' -f $n, $t, (Esc $r[$n - 1]), (ArmStr $a))
-        Kill-Wait $id
+        $id = Start-420; $h = Wait-Notice $id 20; Start-Sleep -Seconds 1; $f = Form ([P420]::Notice([uint32]$id))
+        $before = (Runs).Count
+        $s = Quit $id; $r = Runs; $a = Arm
+        T 'S1' ('offer' + $n) ($f -eq 'automatic' -and $before -eq ($n - 1) -and $r.Count -eq $n -and $r[$n - 1] -like 'exit|*' -and $a.Launches -eq $n) ('start after {0} launch(es): notice {1}, nothing started at the start ({2} lines); normal exit ({3} s): {4}; {5}' -f ($n - 1), $f, $before, $s, (Esc $r[$n - 1]), (ArmStr $a))
     }
     NoCheck
     $id = Start-420; Start-Sleep -Seconds 6
     $a = Arm
     T 'S1' 'giveup' ((Runs).Count -eq 3 -and $null -ne $a -and $a.Launches -eq 3 -and (UpdFiles) -contains $InstallerName) ('fourth start after 3 launches: {0} launches logged, {1}, {2}' -f (Runs).Count, (ArmStr $a), (FilesStr))
-    Kill-Wait $id
+    $s = Quit $id
+    T 'S1' 'giveexit' ((Runs).Count -eq 3) ('its exit ({0} s): {1} launches logged' -f $s, (Runs).Count)
     # review S1: the next check at the automatic level does not start a new count - the update is only offered
     Uc-Del 'Last Attempt'
     $id = Start-420; $h = Wait-Notice $id 40; Start-Sleep -Seconds 2; $h = [P420]::Notice([uint32]$id); $f = Form $h; $a = Arm
@@ -509,9 +518,27 @@ $Groups['Rv'] = {
     $box = @(Get-Tops $id | Where-Object { [Drv098f]::Cls($_) -eq '#32770' })
     $boxText = if ($box.Count) { (FullText $box[0]) } else { '<no message>' }
     T 'IN' 'failed' ($boxText -like '*was not installed*code 5*' -and $boxText -notlike '*when you close*' -and $null -eq (Arm)) ('Install Now, the installer ended with 5: message {0}; {1}' -f (Esc $boxText), (ArmStr (Arm)))
-    if ($box.Count) { Close-Win $box[0]; Start-Sleep -Milliseconds 400 }
+    if ($box.Count) { Close-Win $box[0]; Start-Sleep -Milliseconds 800 }
+    $f = Form ([P420]::Notice([uint32]$id))
+    T 'IN' 'again' ($f -eq 'offer') ('after the message the offer comes back (UX test 2): notice ' + $f)
     $s = Quit $id
     T 'IN' 'exit' ((Runs).Count -eq 1) ('then a normal exit ({0} s): {1}' -f $s, (RunsStr))
+
+    # UX test 2 (MUST): the automatic form shown at start-up without the keyboard - OK is the default
+    # in its style too, and the first activation puts the keyboard on OK
+    Reset-State 2; Set-Env
+    $id = Start-420; $h = Wait-Form $id 'automatic'
+    $okStyle = [P420]::GetWindowLongW((Ctl $h 2), -16) -band 0x0F
+    $inStyle = [P420]::GetWindowLongW((Ctl $h 1), -16) -band 0x0F
+    [void][P420]::SendR($h, 0x0006, 1, 0, 3000)          # WM_ACTIVATE WA_ACTIVE, as a click activates it
+    Start-Sleep -Milliseconds 600
+    $def = [P420]::SendR($h, 0x0400, 0, 0, 3000) -band 0xFFFF
+    T 'U4' 'style' ($okStyle -eq 1 -and $inStyle -eq 0 -and $def -eq 2) ('automatic form at start-up: OK style {0} (1 = default), Install Now style {1}, default id after activation {2}' -f $okStyle, $inStyle, $def)
+    # the texts span the row of buttons (UX test 2, item 5)
+    $hr = New-Object Drv098f+RECT; [void][Drv098f]::GetWindowRect((Ctl $h 6248), [ref]$hr)
+    $sr = New-Object Drv098f+RECT; [void][Drv098f]::GetWindowRect((Ctl $h 6250), [ref]$sr)
+    T 'U4' 'width' ([math]::Abs($hr.Right - $sr.Right) -le 1) ('hint right edge {0}, button row right edge {1}' -f $hr.Right, $sr.Right)
+    [void](Quit $id)
 
     Reset-State 1; Set-Env
     $id = Start-420; $h = Wait-Form $id 'offer'

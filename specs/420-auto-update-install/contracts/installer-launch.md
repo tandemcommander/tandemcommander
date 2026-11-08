@@ -1,7 +1,10 @@
 # Contract - starting the installer (feature 420)
 
 `CreateProcessW(<updates>\tandemcommander-<ver>-x64-setup.exe, <command line>)`, current directory
-the updates folder, no inherited handles. The command line (`SalUpdBuildInstallerArgs`):
+the updates folder; the only handle the installer inherits is the read handle that denies writing
+and deleting its own file (`PROC_THREAD_ATTRIBUTE_HANDLE_LIST`, inheritable only for that call - review 1 /
+review 2), so the file stays the verified one while the installer runs. Never while an installer
+of the product runs (`SalUpdIsInstallerProcessName`, review 1 M1). The command line (`SalUpdBuildInstallerArgs`):
 
 | Kind | Arguments after the quoted program path |
 |---|---|
@@ -14,7 +17,10 @@ the updates folder, no inherited handles. The command line (`SalUpdBuildInstalle
 Before the start: `Install Launches` + 1 written (the arm is created with source user for *now*).
 *now*: a thread waits for the process; exit code 0 -> nothing (the program has normally been closed
 by then); non-zero while the program runs -> `WM_USER_UPDATEINSTALL_DONE` -> message
-`IDS_UPDATE_INSTALL_FAILED` (code), the arm stays (source user) for the exit.
+`IDS_UPDATE_INSTALL_FAILED` (code); an arm the click itself created is dropped; an arm that existed
+before stays only when the user answers Yes to `IDS_UPDATE_INSTALL_LATER` (UX test 1). At the next
+start an arm whose installer was launched and did not install it is OFFERED (notification), never
+started again at the start (review 2); the exit tries again within `SALUPD_MAX_LAUNCHES`.
 
 *exit* is started by `UpdInstall_RunAtExit()`, the last statement of `WinMainBody` before
 `return 0`, after `UpdInstall_PrepareExit()` decided right after the message loop

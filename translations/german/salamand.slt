@@ -3528,7 +3528,7 @@ SLGINCOMPLETE,""
 14003,1,"Möchten Sie die Installation beim Schließen von Tandem Commander durchführen?"
 14004,1,"Tandem Commander aktualisieren"
 14005,1,"Administrator"
-14006,1,"Das heruntergeladene Installationsprogramm der Version %s fehlt oder hat sich geändert und wurde gelöscht.\n\nVerwenden Sie „Herunterladen“, um das Installationsprogramm in Ihrem Webbrowser abzurufen."
+14006,1,"Das heruntergeladene Installationsprogramm der Version %s fehlt oder wurde verändert und wurde gelöscht.\n\nMit „Download“ erhalten Sie das Installationsprogramm in Ihrem Webbrowser."
 
 [STRINGTABLE 153]
 14096,1,"Nur benachrichtigen"

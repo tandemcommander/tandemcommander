@@ -10506,15 +10506,20 @@ static void TestAutoUpdate420()
     // review M1: a running installer of the product, by its process name
     CHECK(SalUpdIsInstallerProcessName(L"tandemcommander-0.2.0-x64-setup.exe"));
     CHECK(SalUpdIsInstallerProcessName(L"TandemCommander-12.34.5-X64-Setup.TMP"));
+    CHECK(SalUpdIsInstallerProcessName(L"tandemcommander-0.2.0-x64-setup (1).exe")); // review 2: a browser copy
     const WCHAR* notInstallers[] = {L"tandemcommander.exe", L"tandemcommander-0.2.0-x64-setup.exe.part",
-                                    L"tandemcommander--x64-setup.exe", L"tandemcommander-0.2a-x64-setup.exe",
-                                    L"tandemcommander-0.2.0-x86-setup.exe", L"setup.exe", L"", L"unins000.exe"};
+                                    L"tandemcommander-0.2.0.exe", L"tandemcommander-setup", L"setup.exe", L"",
+                                    L"unins000.exe", L"tandemcommander-setup.dll", L"xtandemcommander-0.2.0-x64-setup.exe"};
     for (int i = 0; i < (int)(sizeof(notInstallers) / sizeof(notInstallers[0])); i++)
         CHECK(!SalUpdIsInstallerProcessName(notInstallers[i]));
     CHECK(!SalUpdIsInstallerProcessName(NULL));
     CHECK(SalUpdStartupArmDecision(aut, TRUE, FALSE, v020, TRUE) == susaComplete); // the exit did not do it
     CSalUpdArm twice = Upd420Arm(0, 2, 1, SALUPD_ARM_AUTOMATIC, FALSE, SALUPD_MAX_LAUNCHES - 1);
-    CHECK(SalUpdStartupArmDecision(twice, TRUE, FALSE, v020, TRUE) == susaComplete); // the last try
+    // review 2: an installer that was started and did not install it is offered, never forced at a start
+    CHECK(SalUpdStartupArmDecision(twice, TRUE, FALSE, v020, TRUE) == susaOffer);
+    CSalUpdArm once = Upd420Arm(0, 2, 1, SALUPD_ARM_AUTOMATIC, FALSE, 1);
+    CHECK(SalUpdStartupArmDecision(once, TRUE, FALSE, v020, TRUE) == susaOffer);
+    CHECK(strcmp(SalUpdStartupArmName(susaOffer), "offer") == 0);
     CHECK(SalUpdStartupArmDecision(test, TRUE, TRUE, v020, TRUE) == susaComplete);   // test, never launched
     CHECK(SalUpdStartupArmDecision(test, TRUE, TRUE, v030, TRUE) == susaComplete);   // test ignores versions
     CHECK(SalUpdStartupArmDecision(user, TRUE, TRUE, v021, TRUE) == susaDone);       // a normal arm in a test session

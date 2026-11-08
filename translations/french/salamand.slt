@@ -3525,10 +3525,10 @@ SLGINCOMPLETE,""
 14000,1,"[invalide]"
 14001,1,"Recherche : %s (%d sur %d)"
 14002,1,"Une mise à jour de Tandem Commander est déjà en cours d’installation. Veuillez réessayer une fois celle-ci terminée."
-14003,1,"Souhaitez-vous l'installer à la fermeture de Tandem Commander ?"
+14003,1,"Souhaitez-vous l’installer à la fermeture de Tandem Commander ?"
 14004,1,"Mettre à jour Tandem Commander"
 14005,1,"Administrateur"
-14006,1,"Le programme d'installation téléchargé de la version %s est manquant ou a été modifié et supprimé.\n\nUtilisez « Télécharger » pour obtenir le programme d'installation dans votre navigateur Web."
+14006,1,"Le programme d’installation téléchargé de la version %s est manquant ou a été modifié et a été supprimé.\n\nUtilisez « Télécharger » pour obtenir le programme d’installation dans votre navigateur Web."
 
 [STRINGTABLE 153]
 14096,1,"M’avertir uniquement"

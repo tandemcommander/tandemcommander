@@ -84,6 +84,36 @@ completed at the next start**. Logged in the item's *Log*.
 | 13 NOTE | About's Download link + the program's download = two downloads | per the clarification (the About link stays a browser download); accepted |
 | 14 NOT DRIVEN | completion at the next start closes the program with only Setup's progress window as explanation; real UAC prompts | release checklist |
 
+## Review 2 (independent agent; MUST 0, SHOULD 4) and UX test 2 (independent agent; MUST 1)
+
+All fixes of review 1 and UX test 1 confirmed (three saltests negative controls caught: the
+installer-name rule, the exit launch cap, the test-launched rule).
+
+| Finding | What | Done |
+|---|---|---|
+| R2 S1 | A cancelled installer / a declined elevation prompt came back at the next start (forced, up to twice) - the item (*Expected* 5) says a declined prompt leaves the update **offered** | start-up decision `susaOffer`: completed at the start only when the exit did **not start** the installer (crash, kill, shutdown, another instance, reopened during the exit); a started installer that did not install it -> the notification offers it, nothing starts at the start; the exit retries within 3 launches. Spec FR-013 + clarification; saltests; probe S1 start1 / offer2 / offer3 / giveup |
+| R2 S2 | Program reopened during the exit: the exit's installer closed it and did not restart it | `RunAtExit` checks "last instance" and "installer running" again right before the launch |
+| R2 S3 | Certificate renewal impossible with one pin + the build check | pin list `SalUpdSignerThumbprints`; `check_update_pin.py` requires the `codesign.cfg` thumbprint to be in it; renewal procedure in `architecture/12` |
+| R2 S4 / UX2 2, 3 | de/nl damaged message named a button that does not exist; sk/ro/hu/nl pronoun of "install it when you close" | pinned |
+| R2 NOTE | installer copy named "... (1).exe" not recognised as running | any `tandemcommander-...setup....exe/.tmp`; saltests |
+| R2 NOTE | `Download Refused` too broad (any trust failure; also in test mode) | only signer / version, never in test mode |
+| R2 NOTE | an older armed version won over a newer download | a newer downloaded version drops the older arm and its files |
+| R2 NOTE | the deny-write handle was inheritable before / after `CreateProcessW` | inheritable only around that call |
+| R2 NOTE | contract drift (`installer-launch.md`) | updated |
+| R2 NOTE (accepted) | a clicked arm survives "Notify me only" / check off (a user's own click, not "on its own"); metered never downloads (the browser download is the click); `UpdateFlowNotify` shared between two flows; ~8 MB re-hash on the UI thread at a check while a kept installer exists; aux-thread termination at exit (as 123) | recorded, not changed |
+| UX2 1 MUST | The automatic form shown at start-up (without the keyboard) still drew Install Now as the default and focused it on the first activation - Enter installed | styles set again after the base init; first activation moves the keyboard to OK; probe U4 style |
+| UX2 4 | After a failed Install Now nothing was left to act on | the offer comes back after the message (when nothing stays planned); probe IN again |
+| UX2 5 | The translations' hint was 8 DLU wider than the button row | the texts below the band span exactly the button row at run time; probe U4 width |
+| UX2 6 | A skipped version's installer stayed on disk after its download finished | deleted |
+| UX2 7, 8 | fr apostrophes; hu hints | pinned |
+| UX2 verified fine | 3 forms x 9 languages x light/dark (54 windows): fit, row, logo, accelerators, tab order; message boxes in 9 languages; About + test mode; General page; flows (check during download + every answer, Skip, Remind, Install When I Close, OK, check box, two instances, level 0, About Check now) | - |
+
+Checks after round 3: encoding guard 0; build `BUILD SUCCEEDED`; saltests **287,147 checks, 0
+failed**; translations: 0 gaps, pins applied, `slt --verify` byte-exact, `build.cmd full` succeeded;
+probe `autoupd_probe.ps1` **77 PASS, 0 FAIL, 0 NOT DRIVEN** (registry restored, SHA-256 equal);
+`e2e_peruser.ps1 -Fixture` **7 PASS, 0 FAIL** (real installer: install at exit, completion at the
+next start after a kill, one installer start).
+
 ## Translations (stop-rules §2.13, module `salamand`)
 
 Round 2 (after review 1 / UX test 1): new `IDS_UPDATE_BUSY`, `IDS_UPDATE_INSTALL_LATER`,

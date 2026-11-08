@@ -187,9 +187,14 @@ inline BOOL SalUpdIsRedirectStatus(DWORD status)
 // The signer pin and the version resource (contracts/download-and-verification.md D4)
 //
 
-// SHA-1 thumbprint of the project's code-signing certificate. MUST equal 'thumbprint' in
-// tools/codesign/codesign.cfg - tools/check_update_pin.py compares them on every build.
-#define SALUPD_SIGNER_THUMBPRINT "a3d05ccf5ca13eaff49cc7f64d1832f0e6ef6733"
+// SHA-1 thumbprints of the project's code-signing certificates - the one releases are signed with
+// now ('thumbprint' in tools/codesign/codesign.cfg, which tools/check_update_pin.py requires to be
+// in this list on every build) and, around a certificate renewal, the next or the previous one.
+// Review 2: a single pin made a renewal impossible without one release that every installed copy
+// refuses; the procedure is in architecture/12-project-reference.md ("Automatic update").
+static const char* const SalUpdSignerThumbprints[] = {
+    "a3d05ccf5ca13eaff49cc7f64d1832f0e6ef6733", // Certum, valid to 2027-03-08 (feature 050)
+};
 
 inline int SalUpdHexValue(char c)
 {
@@ -202,11 +207,10 @@ inline int SalUpdHexValue(char c)
     return -1;
 }
 
-// TRUE when the 'len' bytes are the pinned thumbprint
-inline BOOL SalUpdSignerPinned(const unsigned char* sha1, DWORD len)
+// TRUE when the 'len' bytes are the 40 hex digits of 'pin'
+inline BOOL SalUpdThumbprintIs(const unsigned char* sha1, DWORD len, const char* pin)
 {
-    static const char pin[] = SALUPD_SIGNER_THUMBPRINT;
-    if (sha1 == NULL || len != 20 || sizeof(pin) != 41)
+    if (sha1 == NULL || len != 20 || pin == NULL || strlen(pin) != 40)
         return FALSE;
     for (int i = 0; i < 20; i++)
     {
@@ -216,6 +220,17 @@ inline BOOL SalUpdSignerPinned(const unsigned char* sha1, DWORD len)
             return FALSE;
     }
     return TRUE;
+}
+
+// TRUE when the 'len' bytes are one of the pinned thumbprints
+inline BOOL SalUpdSignerPinned(const unsigned char* sha1, DWORD len)
+{
+    for (int i = 0; i < (int)(sizeof(SalUpdSignerThumbprints) / sizeof(SalUpdSignerThumbprints[0])); i++)
+    {
+        if (SalUpdThumbprintIs(sha1, len, SalUpdSignerThumbprints[i]))
+            return TRUE;
+    }
+    return FALSE;
 }
 
 // Inno Setup pads the strings of its version resource with spaces (measured, fix-log M7):
@@ -369,39 +384,38 @@ inline BOOL SalUpdKeepUpdateFile(CSalUpdFileKind kind, const CSalUpdVersion& fil
 // "tandemcommander-<ver>-x64-setup.exe" or its extracted "tandemcommander-<ver>-x64-setup.tmp"
 // (ASCII case ignored, as Windows compares names). While one runs, no other is started: two setups
 // replacing the same files at once could leave a mixed installation.
+// Review 2: also a copy the user downloaded under another name ("... -setup (1).exe") - any
+// "tandemcommander-...setup....exe/.tmp" counts (a false positive only postpones an update).
 inline BOOL SalUpdIsInstallerProcessName(const WCHAR* name)
 {
     static const char prefix[] = "tandemcommander-";
-    static const char exeSuffix[] = "-x64-setup.exe";
-    static const char tmpSuffix[] = "-x64-setup.tmp";
+    static const char setup[] = "setup";
     if (name == NULL)
         return FALSE;
     int len = (int)wcslen(name);
-    if (len <= 16 + 14)
+    if (len <= 16 + 5 + 4)
         return FALSE;
     for (int i = 0; i < 16; i++)
     {
         if (SalUpdLowerAscii(name[i]) != (WCHAR)prefix[i])
             return FALSE;
     }
-    BOOL exe = TRUE, tmp = TRUE;
-    for (int i = 0; i < 14; i++)
-    {
-        WCHAR c = SalUpdLowerAscii(name[len - 14 + i]);
-        if (c != (WCHAR)exeSuffix[i])
-            exe = FALSE;
-        if (c != (WCHAR)tmpSuffix[i])
-            tmp = FALSE;
-    }
+    const WCHAR* ext = name + len - 4;
+    BOOL exe = SalUpdLowerAscii(ext[0]) == L'.' && SalUpdLowerAscii(ext[1]) == L'e' &&
+               SalUpdLowerAscii(ext[2]) == L'x' && SalUpdLowerAscii(ext[3]) == L'e';
+    BOOL tmp = SalUpdLowerAscii(ext[0]) == L'.' && SalUpdLowerAscii(ext[1]) == L't' &&
+               SalUpdLowerAscii(ext[2]) == L'm' && SalUpdLowerAscii(ext[3]) == L'p';
     if (!exe && !tmp)
         return FALSE;
-    // between them a version: digits and dots only
-    for (int i = 16; i < len - 14; i++)
+    for (int i = 16; i + 5 <= len - 4; i++) // "setup" somewhere between the prefix and the extension
     {
-        if (!(name[i] >= L'0' && name[i] <= L'9') && name[i] != L'.')
-            return FALSE;
+        int k = 0;
+        while (k < 5 && SalUpdLowerAscii(name[i + k]) == (WCHAR)setup[k])
+            k++;
+        if (k == 5)
+            return TRUE;
     }
-    return TRUE;
+    return FALSE;
 }
 
 enum CSalUpdLaunchKind
@@ -476,7 +490,10 @@ enum CSalUpdStartupArm
     susaGiveUp,    // SALUPD_MAX_LAUNCHES did not get there: nothing is started on its own any more; the
                    // arm is KEPT (review S1: a new arm of the same version keeps the count), so the
                    // update is only offered (Install Now) until a newer version or the version is reached
-    susaComplete   // install it now (Install Now route) - the exit did not do it
+    susaComplete,  // install it now (Install Now route) - the exit did not start the installer at all
+    susaOffer      // review 2 S1: the installer WAS started and the version is still the old one (it
+                   // was cancelled, the elevation declined, it failed) - offer it now, never force it
+                   // at the start; the arm stays (the exit tries again within SALUPD_MAX_LAUNCHES)
 };
 
 inline const char* SalUpdStartupArmName(CSalUpdStartupArm d)
@@ -495,6 +512,8 @@ inline const char* SalUpdStartupArmName(CSalUpdStartupArm d)
         return "give-up";
     case susaComplete:
         return "complete";
+    case susaOffer:
+        return "offer";
     }
     return "unknown";
 }
@@ -517,6 +536,8 @@ inline CSalUpdStartupArm SalUpdStartupArmDecision(const CSalUpdArm& arm, BOOL ho
         return susaDone; // a launched same-version install cannot be told from a failed one
     if (arm.Launches >= SALUPD_MAX_LAUNCHES)
         return susaGiveUp;
+    if (arm.Launches > 0)
+        return susaOffer; // started before and not installed: the user decides (item, Expected 5)
     return susaComplete;
 }
 

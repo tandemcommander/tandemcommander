@@ -3525,10 +3525,10 @@ SLGINCOMPLETE,""
 14000,1,"[ongeldig]"
 14001,1,"Zoeken: %s (%d van %d)"
 14002,1,"Er wordt al een update van Tandem Commander geïnstalleerd. Probeer het opnieuw wanneer dit is voltooid."
-14003,1,"Wilt u het installeren wanneer u Tandem Commander afsluit?"
+14003,1,"Wilt u deze installeren wanneer u Tandem Commander sluit?"
 14004,1,"Tandem Commander bijwerken"
 14005,1,"Beheerder"
-14006,1,"Het gedownloade installatieprogramma van versie %s ontbreekt of is gewijzigd en is verwijderd.\n\nGebruik ‘Downloaden’ om het installatieprogramma via uw webbrowser op te halen."
+14006,1,"Het gedownloade installatieprogramma van versie %s ontbreekt of is gewijzigd en is verwijderd.\n\nGebruik ‘Download’ om het installatieprogramma via uw webbrowser op te halen."
 
 [STRINGTABLE 153]
 14096,1,"Alleen melden"

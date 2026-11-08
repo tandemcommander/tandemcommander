@@ -378,7 +378,8 @@
       "IDS_UPDATE_BTN_INSTALLNOW": "Nainštalovať &teraz",
       "IDS_UPDATE_BTN_INSTALLEXIT": "Nainštalovať pri &zatvorení",
       "IDS_UPDATE_ABOUT_TESTMODE": "Testovací režim aktualizácie.",
-      "IDS_UPDATE_HINT_OFFER": "Nová verzia bola stiahnutá a overená. Tlačidlo Nainštalovať teraz zatvorí Tandem Commander, nainštaluje aktualizáciu a program znova spustí; vaše nastavenia zostanú zachované."
+      "IDS_UPDATE_HINT_OFFER": "Nová verzia bola stiahnutá a overená. Tlačidlo Nainštalovať teraz zatvorí Tandem Commander, nainštaluje aktualizáciu a program znova spustí; vaše nastavenia zostanú zachované.",
+      "IDS_UPDATE_INSTALL_LATER": "Chcete ju nainštalovať pri zatvorení programu Tandem Commander?"
     },
     "german": {
       "IDS_MENU_TAB_MOVETOOTHER": "In das andere &Fenster verschieben",
@@ -437,7 +438,8 @@
       "IDS_UPDATE_LEVEL_AUTO": "Beim Schließen von Tandem Commander automatisch installieren",
       "IDS_UPDATE_BTN_INSTALLNOW": "Jetzt &installieren",
       "IDS_UPDATE_BTN_INSTALLEXIT": "&Beim Schließen installieren",
-      "IDS_UPDATE_ABOUT_TESTMODE": "Update-Testmodus."
+      "IDS_UPDATE_ABOUT_TESTMODE": "Update-Testmodus.",
+      "IDS_UPDATE_ERR_DAMAGED": "Das heruntergeladene Installationsprogramm der Version %s fehlt oder wurde verändert und wurde gelöscht.\\n\\nMit „Download“ erhalten Sie das Installationsprogramm in Ihrem Webbrowser."
     },
     "french": {
       "IDS_MENU_TAB_MOVETOOTHER": "Dé&placer vers l'autre panneau",
@@ -486,7 +488,9 @@
       "IDS_UPDATE_BTN_INSTALLNOW": "I&nstaller maintenant",
       "IDS_UPDATE_BTN_INSTALLEXIT": "Installer à la &fermeture",
       "IDS_UPDATE_ABOUT_TESTMODE": "Mode de test des mises à jour.",
-      "IDS_UPDATE_TESTMODE": "Mode de test des mises à jour : la version publiée est considérée comme nouvelle."
+      "IDS_UPDATE_TESTMODE": "Mode de test des mises à jour : la version publiée est considérée comme nouvelle.",
+      "IDS_UPDATE_INSTALL_LATER": "Souhaitez-vous l’installer à la fermeture de Tandem Commander ?",
+      "IDS_UPDATE_ERR_DAMAGED": "Le programme d’installation téléchargé de la version %s est manquant ou a été modifié et a été supprimé.\\n\\nUtilisez « Télécharger » pour obtenir le programme d’installation dans votre navigateur Web."
     },
     "dutch": {
       "IDS_MENU_TAB_MOVETOOTHER": "Naar ander paneel &verplaatsen",
@@ -528,7 +532,9 @@
       "IDS_UPDATE_BTN_INSTALLNOW": "&Nu installeren",
       "IDS_UPDATE_BTN_INSTALLEXIT": "Installeren bij slui&ten",
       "IDS_UPDATE_TESTMODE": "Testmodus voor updates: de gepubliceerde versie wordt als nieuw beschouwd.",
-      "IDS_UPDATE_ABOUT_TESTMODE": "Testmodus voor updates."
+      "IDS_UPDATE_ABOUT_TESTMODE": "Testmodus voor updates.",
+      "IDS_UPDATE_ERR_DAMAGED": "Het gedownloade installatieprogramma van versie %s ontbreekt of is gewijzigd en is verwijderd.\\n\\nGebruik ‘Download’ om het installatieprogramma via uw webbrowser op te halen.",
+      "IDS_UPDATE_INSTALL_LATER": "Wilt u deze installeren wanneer u Tandem Commander sluit?"
     },
     "hungarian": {
       "IDS_MENU_TAB_MOVETOOTHER": "Át&helyezés a másik panelre",
@@ -565,7 +571,9 @@
       "IDS_UPDATE_BTN_INSTALLEXIT": "Telepítés &bezáráskor",
       "IDS_UPDATE_ERR_RUN": "A(z) %s verzió telepítőjét nem sikerült elindítani.\\n\\n%s",
       "IDS_UPDATE_INSTALL_FAILED": "A(z) %s verzióra való frissítés nem lett telepítve. A telepítés megszakadt vagy nem fejeződhetett be (kód: %u).",
-      "IDS_UPDATE_ERR_DAMAGED": "A(z) %s verzió letöltött telepítője hiányzik vagy megváltozott, ezért törölve lett.\\n\\nA Letöltés gombbal a böngészőben töltheti le a telepítőt."
+      "IDS_UPDATE_ERR_DAMAGED": "A(z) %s verzió letöltött telepítője hiányzik vagy megváltozott, ezért törölve lett.\\n\\nA Letöltés gombbal a böngészőben töltheti le a telepítőt.",
+      "IDS_UPDATE_INSTALL_LATER": "Szeretné telepíteni a frissítést a Tandem Commander bezárásakor?",
+      "IDS_UPDATE_HINT_AUTO": "Az új verzió letöltése és ellenőrzése megtörtént. A frissítés a Tandem Commander bezárásakor települ; a beállítások megmaradnak."
     },
     "romanian": {
       "IDS_MENU_TAB_MOVETOOTHER": "&Mutare în celălalt panou",
@@ -598,7 +606,8 @@
       "IDS_UPDATE_BTN_INSTALLEXIT": "Instalați la închi&dere",
       "IDS_UPDATE_ABOUT_TESTMODE": "Modul de testare a actualizării.",
       "IDS_UPDATE_INSTALL_FAILED": "Actualizarea la versiunea %s nu a fost instalată. Instalarea a fost anulată sau nu a putut fi finalizată (cod %u).",
-      "IDS_UPDATE_HINT_OFFER": "Noua versiune a fost descărcată și verificată. „Instalați acum” închide Tandem Commander, instalează actualizarea și repornește programul; setările dvs. sunt păstrate."
+      "IDS_UPDATE_HINT_OFFER": "Noua versiune a fost descărcată și verificată. „Instalați acum” închide Tandem Commander, instalează actualizarea și repornește programul; setările dvs. sunt păstrate.",
+      "IDS_UPDATE_INSTALL_LATER": "Doriți să o instalați la închiderea Tandem Commander?"
     },
     "spanish": {
       "IDS_MENU_TAB_MOVETOOTHER": "&Mover al otro panel",
@@ -716,7 +725,8 @@
       "Automatic update: the three items of the level list describe what the program does - DeepL made them commands to the reader (de 'Laden Sie ... herunter und bieten Sie ... an', fr 'Telechargez-la et proposez', es 'Descarguela y proponga', cs 'Stahnete si ji a nabidnete', sk 'Stiahnite si ju', hu 'Toltse le', ro 'Descarcati-o', nl 'Download het'); hu 'Csak akkor ertesits' (informal, 'only then') was wrong.",
       "The About line of the test mode is a noun phrase: de/nl/ro made it 'update the test mode' (Testmodus aktualisieren / bijwerken, Actualizati modul).",
       "Notification buttons: accelerators unique among the window's buttons and its check box per language (the classic Download button is not shown together with them); hu IDS_UPDATE_ERR_RUN failed validation (one %s and one \\n lost); ro 'Instalarea' lower case; cs pinned whole as in feature 123.",
-      "Round 2 (review 1 + UX test 1): the hint names the button as it is pinned per language; ro formal register in the buttons and the hint (the window's other buttons say Reamintiti-mi / Omiteti); hu 'A(z) %s' - a fixed suffix after a version number is wrong for many versions; fr / nl one term in a window; cs pinned whole."
+      "Round 2 (review 1 + UX test 1): the hint names the button as it is pinned per language; ro formal register in the buttons and the hint (the window's other buttons say Reamintiti-mi / Omiteti); hu 'A(z) %s' - a fixed suffix after a version number is wrong for many versions; fr / nl one term in a window; cs pinned whole.",
+      "Round 3 (review 2 + UX test 2): IDS_UPDATE_ERR_DAMAGED names the Download button as the window labels it (de 'D&ownload' -> Download, nl '&Download' -> Download); IDS_UPDATE_INSTALL_LATER refers back to 'the update' - feminine in sk (aktualizacia: ju, 'pri zatvoreni' as the button), ro (actualizarea: o), hu 'a frissitest' (not 'the program'), nl 'de update' (deze, 'sluit' as the other texts); fr one apostrophe form in a window (typographic); hu the two hints open alike."
     ]
   },
   "zip": {

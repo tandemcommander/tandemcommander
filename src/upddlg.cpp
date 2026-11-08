@@ -123,6 +123,7 @@ protected:
     CSalUpdRelease Release;
     BOOL Activate; // FALSE: the window must not take the activation or the keyboard when it appears
     CUpdateNoticeForm Form;
+    BOOL FocusPlaced; // the automatic form put the keyboard on OK at its first activation
     CBitmap* HeaderBitmap;
     RECT WordmarkR;
     RECT LogoR;
@@ -139,6 +140,7 @@ CUpdateNoticeDialog::CUpdateNoticeDialog(HWND parent, const CSalUpdRelease& rele
     Release = release;
     Activate = activate;
     Form = form;
+    FocusPlaced = FALSE;
     HeaderBitmap = NULL;
     memset(&WordmarkR, 0, sizeof(WordmarkR));
     memset(&LogoR, 0, sizeof(LogoR));
@@ -287,17 +289,6 @@ void CUpdateNoticeDialog::ApplyForm()
         GetWindowRect(HWindow, &wr);
         SetWindowPos(HWindow, NULL, 0, 0, wr.right - wr.left + grow, wr.bottom - wr.top,
                      SWP_NOZORDER | SWP_NOMOVE | SWP_NOACTIVATE);
-        static const int widen[] = {IDC_UPDN_HINT, IDC_UPDN_ATSTARTUP, IDC_UPDN_RELEASED, IDC_UPDN_NOTES, IDC_UPDN_ACCENT};
-        for (int i = 0; i < (int)_countof(widen); i++)
-        {
-            HWND h = GetDlgItem(HWindow, widen[i]);
-            RECT r;
-            if (h != NULL && GetWindowRect(h, &r))
-            {
-                MapWindowPoints(NULL, HWindow, (POINT*)&r, 2);
-                SetWindowPos(h, NULL, 0, 0, r.right - r.left + grow, r.bottom - r.top, SWP_NOZORDER | SWP_NOMOVE | SWP_NOACTIVATE);
-            }
-        }
         HWND logo = GetDlgItem(HWindow, IDC_UPDN_LOGO); // a placeholder: its rectangle is read later
         RECT lr;
         if (logo != NULL && GetWindowRect(logo, &lr))
@@ -332,6 +323,29 @@ void CUpdateNoticeDialog::ApplyForm()
             SetWindowPos(h, NULL, pos, r.top, w, r.bottom - r.top, SWP_NOZORDER | SWP_NOACTIVATE);
             pos += w + gap;
         }
+    }
+
+    // UX test 1 / 2: the texts below the band span exactly the row of buttons (the same margins) -
+    // also when the window grew, and whatever width a translation's layout gave them
+    GetClientRect(HWindow, &client);
+    static const int texts[] = {IDC_UPDN_HINT, IDC_UPDN_ATSTARTUP, IDC_UPDN_RELEASED, IDC_UPDN_NOTES};
+    for (int i = 0; i < (int)_countof(texts); i++)
+    {
+        HWND h = GetDlgItem(HWindow, texts[i]);
+        RECT r;
+        if (h != NULL && GetWindowRect(h, &r))
+        {
+            MapWindowPoints(NULL, HWindow, (POINT*)&r, 2);
+            SetWindowPos(h, NULL, first.left, r.top, client.right - 2 * first.left, r.bottom - r.top,
+                         SWP_NOZORDER | SWP_NOACTIVATE);
+        }
+    }
+    HWND accent = GetDlgItem(HWindow, IDC_UPDN_ACCENT); // a placeholder spanning the window
+    RECT ar;
+    if (accent != NULL && GetWindowRect(accent, &ar))
+    {
+        MapWindowPoints(NULL, HWindow, (POINT*)&ar, 2);
+        SetWindowPos(accent, NULL, 0, ar.top, client.right, ar.bottom - ar.top, SWP_NOZORDER | SWP_NOACTIVATE);
     }
 }
 
@@ -441,12 +455,21 @@ CUpdateNoticeDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         CheckDlgButton(HWindow, IDC_UPDN_ATSTARTUP, state.CheckAtStartup ? BST_CHECKED : BST_UNCHECKED);
 
         CCommonDialog::DialogProc(uMsg, wParam, lParam); // centres the window on its owner
+        if (Form == unfAutomatic)
+        {
+            // UX test 2 (MUST): OK is the default also in its drawing - set again after the base
+            // initialisation, which leaves the template's DEFPUSHBUTTON (Install Now) styled
+            SendDlgItemMessage(HWindow, IDOK, BM_SETSTYLE, BS_PUSHBUTTON, TRUE);
+            SendDlgItemMessage(HWindow, IDCANCEL, BM_SETSTYLE, BS_DEFPUSHBUTTON, TRUE);
+            SendMessage(HWindow, DM_SETDEFID, IDCANCEL, 0);
+        }
         // TRUE lets the dialog manager give the keyboard focus to the first control - and with it
         // the activation, even for a window that is not visible yet. A notification that arrives
         // while the user works must take neither (contracts/ui.md, "Showing").
         if (Activate && Form == unfAutomatic) // UX test 3: the keyboard starts on OK, not on Install Now
         {
             SetFocus(GetDlgItem(HWindow, IDCANCEL));
+            FocusPlaced = TRUE;
             return FALSE;
         }
         return Activate;
@@ -459,6 +482,14 @@ CUpdateNoticeDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             CUpdateState state;
             UpdateCheck_LoadState(&state);
             CheckDlgButton(HWindow, IDC_UPDN_ATSTARTUP, state.CheckAtStartup ? BST_CHECKED : BST_UNCHECKED);
+            // UX test 2: the automatic form shown without the keyboard - at its first activation the
+            // dialog manager would focus its first tab stop (Install Now), making it the default for
+            // Enter; the keyboard starts on OK instead (after the default handling, hence posted)
+            if (Form == unfAutomatic && !FocusPlaced)
+            {
+                FocusPlaced = TRUE;
+                PostMessage(HWindow, WM_NEXTDLGCTL, (WPARAM)GetDlgItem(HWindow, IDCANCEL), TRUE);
+            }
         }
         break;
     }

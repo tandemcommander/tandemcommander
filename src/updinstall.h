@@ -92,8 +92,17 @@ void UpdInstall_SkipVersion(const CSalUpdVersion& version);
 void UpdInstall_OnStartupComplete(HWND mainWindow);
 void UpdInstall_CompleteArmed(HWND parent);
 
-// reports a failed Install Now (WM_USER_UPDATEINSTALL_DONE)
-void UpdInstall_OnInstallerEnded(HWND parent, DWORD exitCode);
+// review 2: the armed update as a release (version + digest) when its installer is still the
+// verified one - for the offer at start-up (WM_USER_UPDATEINSTALL with wParam 1); FALSE (the arm is
+// dropped) otherwise
+BOOL UpdInstall_GetArmedRelease(CSalUpdRelease* release);
+
+// reports a failed Install Now (WM_USER_UPDATEINSTALL_DONE); TRUE when nothing stays planned - the
+// caller offers the update again (UpdInstall_GetLaunchedRelease)
+BOOL UpdInstall_OnInstallerEnded(HWND parent, DWORD exitCode);
+// the release whose installer Install Now / the start-up completion started, when its installer is
+// still the verified one
+BOOL UpdInstall_GetLaunchedRelease(CSalUpdRelease* release);
 
 // Program exit: PrepareExit right after the main message loop decides whether the armed update
 // is installed now (and keeps the verified file open); RunAtExit, the last statement of the

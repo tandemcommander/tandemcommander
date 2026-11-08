@@ -490,7 +490,7 @@ static BOOL UpdiHashFile(HANDLE file, unsigned char* digest)
 }
 
 // Authenticode: a valid signature (no network: no revocation lookup, only cached addresses) whose
-// signer certificate is the project's (SALUPD_SIGNER_THUMBPRINT)
+// signer certificate is one of the project's (SalUpdSignerThumbprints)
 static CUpdVerifyResult UpdiVerifySignature(const WCHAR* path, HANDLE file)
 {
     LARGE_INTEGER zero;
@@ -623,6 +623,7 @@ static BOOL UpdiHasVerified(const CSalUpdRelease& release)
 static HWND UpdiWatchNotify = NULL;
 static BOOL UpdiNowPreArmed = FALSE;         // Install Now: an arm of that version existed before the click
 static CSalUpdVersion UpdiNowVersion = {0, 0, 0}; // Install Now: the version being installed
+static unsigned char UpdiNowDigest[SALUPD_DIGEST_BYTES]; // ... and its installer's digest
 
 // Review M1: TRUE while an installer of the product runs in this session (started by us at an exit,
 // by Install Now, by the start-up completion, or by the user) - no second one is started then. A
@@ -762,6 +763,8 @@ static BOOL UpdiLaunch(CSalUpdLaunchKind kind, const CSalUpdVersion& version, HA
         }
         ok = CreateProcessW(exe, cmd, NULL, NULL, inherit, inherit ? EXTENDED_STARTUPINFO_PRESENT : 0, NULL, folder,
                             inherit ? &si.StartupInfo : (STARTUPINFOW*)&si.StartupInfo, &pi);
+        if (inherit) // review 2: inheritable only for this one CreateProcessW
+            SetHandleInformation(held, HANDLE_FLAG_INHERIT, 0);
         if (si.lpAttributeList != NULL)
             DeleteProcThreadAttributeList(si.lpAttributeList);
         if (!ok)
@@ -868,6 +871,7 @@ int UpdInstall_InstallNow(HWND parent, const CSalUpdRelease& release)
     CSalUpdArm before;
     UpdiNowPreArmed = UpdInstall_LoadArm(&before) && SalUpdVersionCompare(before.Version, release.Version) == 0;
     UpdiNowVersion = release.Version;
+    memcpy(UpdiNowDigest, release.Digest, sizeof(UpdiNowDigest));
     UpdInstall_Arm(release, SALUPD_ARM_USER);
     UpdiWatchNotify = MainWindow != NULL ? MainWindow->HWindow : parent;
     DWORD error;
@@ -881,7 +885,7 @@ int UpdInstall_InstallNow(HWND parent, const CSalUpdRelease& release)
     return UPDNOW_STARTED;
 }
 
-void UpdInstall_OnInstallerEnded(HWND parent, DWORD exitCode)
+BOOL UpdInstall_OnInstallerEnded(HWND parent, DWORD exitCode)
 {
     // The installer of Install Now (or of the start-up completion) ended with a failure while the
     // program still runs - it was cancelled, the elevation was declined, or it could not close the
@@ -908,12 +912,24 @@ void UpdInstall_OnInstallerEnded(HWND parent, DWORD exitCode)
     }
     char title[200];
     lstrcpyn(title, LoadStrU8(IDS_UPDATE_INSTALL_TITLE), _countof(title));
-    if (SalMessageBox(parent, text, title, later ? (MB_YESNO | MB_ICONQUESTION) : (MB_OK | MB_ICONEXCLAMATION)) == IDNO &&
-        later)
+    int answer = SalMessageBox(parent, text, title, later ? (MB_YESNO | MB_ICONQUESTION) : (MB_OK | MB_ICONEXCLAMATION));
+    if (answer == IDNO && later)
     {
         TRACE_I("UpdInstall: the user does not want the update at the exit - the arm is dropped");
         UpdInstall_DropArm();
     }
+    // UX test 2 (item 4): when nothing stays planned the update must not just vanish - the offer
+    // comes back (Install Now / Install When I Close / Remind Me Later / Skip)
+    return !later || answer == IDNO;
+}
+
+BOOL UpdInstall_GetLaunchedRelease(CSalUpdRelease* release)
+{
+    memset(release, 0, sizeof(*release));
+    release->Version = UpdiNowVersion;
+    release->HasDigest = TRUE;
+    memcpy(release->Digest, UpdiNowDigest, sizeof(release->Digest));
+    return UpdiHasVerified(*release);
 }
 
 void UpdInstall_SkipVersion(const CSalUpdVersion& version)
@@ -1271,7 +1287,10 @@ static BOOL UpdiDownload(CUpdDownloadContext* ctx)
         // review NOTE: an installer that is not ours (another signer - e.g. after a certificate
         // rotation -, no signature, another version) is remembered, so that the daily check does
         // not download it again; a damaged download (hash, I/O) is tried again next time
-        if (vr == suvUnsigned || vr == suvSigner || vr == suvVersion)
+        // review 2: only a signature that verified but is not the project's, or another version - a
+        // failed trust check can have local causes (root certificates, the offline lookup); never in
+        // test mode
+        if ((vr == suvSigner || vr == suvVersion) && !UpdateTestMode)
             UpdiSetRefused(rel.Version);
     }
     return ok;
@@ -1527,6 +1546,12 @@ void UpdInstall_OnStartupComplete(HWND mainWindow)
         else
             PostMessage(mainWindow, WM_USER_UPDATEINSTALL, 0, 0); // the update the exit did not install
     }
+    else if (decision == susaOffer)
+    {
+        // review 2 S1: an installer started earlier did not install it - offered, the user decides
+        TRACE_I("UpdInstall: an earlier installer did not install the armed update - it is offered");
+        PostMessage(mainWindow, WM_USER_UPDATEINSTALL, 1, 0);
+    }
 }
 
 void UpdInstall_CompleteArmed(HWND parent)
@@ -1547,6 +1572,7 @@ void UpdInstall_CompleteArmed(HWND parent)
     }
     TRACE_I("UpdInstall: completing the update the exit did not install");
     UpdiNowVersion = arm.Version;
+    memcpy(UpdiNowDigest, arm.Digest, sizeof(UpdiNowDigest));
     UpdiNowPreArmed = TRUE; // armed before: a failure keeps it for the exit (and counts its launch)
     UpdiWatchNotify = MainWindow != NULL ? MainWindow->HWindow : parent;
     DWORD error;
@@ -1649,7 +1675,31 @@ void UpdInstall_RunAtExit()
     DWORD error;
     HANDLE held = UpdiExitHeld;
     UpdiExitHeld = NULL;
-    UpdiLaunch(sulkExit, UpdiExitVersion, held, FALSE, &error); // a failure: the next start completes it
+    // review 2 S2: the program may have been opened again during the exit (seconds pass since
+    // PrepareExit) - its windows would be closed by the installer and not brought back
+    if (!UpdiLastInstance() || UpdiInstallerRunning())
+    {
+        NOHANDLES(CloseHandle(held));
+        return; // the arm stays; that instance's exit (or the next start) installs it
+    }
+    UpdiLaunch(sulkExit, UpdiExitVersion, held, FALSE, &error); // a failure: offered at the next start
+}
+
+BOOL UpdInstall_GetArmedRelease(CSalUpdRelease* release)
+{
+    CSalUpdArm arm;
+    memset(release, 0, sizeof(*release));
+    if (!UpdInstall_LoadArm(&arm))
+        return FALSE;
+    release->Version = arm.Version;
+    release->HasDigest = TRUE;
+    memcpy(release->Digest, arm.Digest, sizeof(release->Digest));
+    if (!UpdiHasVerified(*release))
+    {
+        UpdInstall_DropArm(); // not ours any more (UpdiHasVerified deleted it) or gone
+        return FALSE;
+    }
+    return TRUE;
 }
 
 void UpdInstall_Shutdown()

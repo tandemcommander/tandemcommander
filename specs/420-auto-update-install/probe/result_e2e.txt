@@ -1,11 +1,11 @@
-Feature 420 end-to-end, 2026-11-08T12:07:34; official 0.2.0 exe C:\Program Files\Tandem Commander\tandemcommander.exe SHA-256 3621ECA58C655A4D19662253F1B462C66462A4F0B5A22DB55A1831D31EA9363B
+Feature 420 end-to-end, 2026-11-08T13:16:11; official 0.2.0 exe C:\Program Files\Tandem Commander\tandemcommander.exe SHA-256 3621ECA58C655A4D19662253F1B462C66462A4F0B5A22DB55A1831D31EA9363B
 source: the loopback fixture server (the published signed 0.2.0 installer)
 E0         install PASS        published 0.1.9 installed per user: exit 0, InstallLocation C:\Users\pavel\AppData\Local\Programs\Tandem Commander\
 E1         overlay PASS        the Debug build of the feature copied over the installation
 E1         armed  PASS        real check + real download + verification: arm 0.2.0 source 2 test 1 launches 0; files tandemcommander-0.2.0-x64-setup.exe
-E1         installed PASS        installer seen True, finished after 1,7 s; installed exe 3621ECA58C655A4D19662253F1B462C66462A4F0B5A22DB55A1831D31EA9363B (published 0.2.0 3621ECA58C655A4D19662253F1B462C66462A4F0B5A22DB55A1831D31EA9363B); arm 0.2.0 source 2 test 1 launches 1; log: 2026-11-08 12:07:46.296   Need to restart Windows? No / 2026-11-08 12:07:46.299   Deinitializing Setup. / 2026-11-08 12:07:46.303   Log closed.
+E1         installed PASS        installer seen True, finished after 1,7 s; installed exe 3621ECA58C655A4D19662253F1B462C66462A4F0B5A22DB55A1831D31EA9363B (published 0.2.0 3621ECA58C655A4D19662253F1B462C66462A4F0B5A22DB55A1831D31EA9363B); arm 0.2.0 source 2 test 1 launches 1; log: 2026-11-08 13:16:23.027   Need to restart Windows? No / 2026-11-08 13:16:23.030   Deinitializing Setup. / 2026-11-08 13:16:23.034   Log closed.
 E2         killed PASS        armed, then killed without its exit: arm 0.2.0 source 2 test 1 launches 0; nothing installed yet
-E2         completed PASS        next start: installer seen True, finished after 3,3 s; the program closed by it: True; installed exe 3621ECA58C655A4D19662253F1B462C66462A4F0B5A22DB55A1831D31EA9363B (published 3621ECA58C655A4D19662253F1B462C66462A4F0B5A22DB55A1831D31EA9363B); arm 0.2.0 source 2 test 1 launches 1
+E2         completed PASS        next start: installer seen True, finished after 3,4 s; the program closed by it: True; installed exe 3621ECA58C655A4D19662253F1B462C66462A4F0B5A22DB55A1831D31EA9363B (published 3621ECA58C655A4D19662253F1B462C66462A4F0B5A22DB55A1831D31EA9363B); arm 0.2.0 source 2 test 1 launches 1
 E2         once   PASS        installer starts seen: 1; launches recorded: 1 (the exit caused by the installer must not start another one)
 uninstalled: entry gone True, folder gone True
 Registry: restored; identical=True; SHA-256 before 6BE47F3139614B80B4238667F2F7FF900B02639CB5A4F24835A556378BCB56E5 / after 6BE47F3139614B80B4238667F2F7FF900B02639CB5A4F24835A556378BCB56E5

@@ -184,14 +184,15 @@ Alternative scripts in `src\vcxproj\`: `build.cmd` (simple), `rebuild.cmd` (inte
   the release's installer (`api.github.com/.../releases/assets/<id>`, redirects only to
   `release-assets.githubusercontent.com` / `objects.githubusercontent.com`) into
   `%LOCALAPPDATA%\Tandem Commander\Updates`, verifies it (record digest, Authenticode, signer
-  thumbprint pinned in `src/common/salupdinstall.h`, version resource) and offers it, or installs
-  it at exit / at the next start (level on Configuration > General). **A certificate rotation
-  moves the pin**: `SALUPD_SIGNER_THUMBPRINT` must equal `tools/codesign/codesign.cfg`
-  (`tools/check_update_pin.py`, run by `build.cmd`); installers signed with a certificate the
-  running version does not know are offered only as a browser download - so a release signed with
-  a new certificate cannot update older versions automatically; ship one release whose program
-  already pins the new thumbprint before signing with it. A release must keep the installer asset
-  name and publish its `digest` (GitHub does for every upload).
+  thumbprints pinned in `src/common/salupdinstall.h`, version resource) and offers it, or installs
+  it at exit / at the next start (level on Configuration > General). **A certificate renewal**:
+  the pin is a list (`SalUpdSignerThumbprints`); `tools/check_update_pin.py` (run by `build.cmd`)
+  requires the `codesign.cfg` thumbprint to be in it. Installers signed with a certificate the
+  running version does not know are offered only as a browser download. So: (1) as soon as the new
+  certificate exists, add its thumbprint to the list and ship a release still signed with the old
+  certificate; (2) switch `codesign.cfg` to the new certificate for the next release - installed
+  copies of (1) and later accept it; (3) the old thumbprint may leave the list once it expired. A
+  release must keep the installer asset name and publish its `digest` (GitHub does for every upload).
   - **Test mode for the maintainer**: start an *installed* copy with `--updatetest` (new
     multi-word options take two dashes). The check runs at once, the published release counts as
     newer even when it is installed, nothing of the check's stored state is written; the download,

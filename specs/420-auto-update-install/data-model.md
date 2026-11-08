@@ -52,6 +52,7 @@ Invalid or partial values = nothing armed (all are removed together).
 | launches >= 3 | give up: nothing is started; the arm is kept with its count (review 1 S1), so a later check at the automatic level does not restart it - the update is only offered (Install Now) |
 | (at completion) the installer file fails verification / is missing | drop the state + file |
 | (at completion) an installer of the product runs | nothing now (review 1 M1); the arm waits |
+| launches > 0 (an installer was started and did not install it) | offer (notification), never started at the start; the arm stays (review 2 S1) |
 | otherwise | complete now (*Install Now* route) - only when no other instance of the executable runs in the session (fix-log F1: the arm then belongs to that instance's exit, and the installer would close its windows); otherwise the arm waits |
 
 ### Exit decision (`SalUpdExitDecision`)

@@ -766,6 +766,13 @@ static void ShowDownloadedUpdate(CMainWindow* wnd, const CSalUpdRelease& release
     CUpdateNoticeForm form = unfOffer;
     CSalUpdArm arm;
     BOOL hasArm = UpdInstall_LoadArm(&arm);
+    if (hasArm && SalUpdVersionCompare(arm.Version, release.Version) < 0)
+    {
+        // review 2: an update armed for an older version gives way to the newer one (the exit must
+        // not install the older version)
+        UpdInstall_SkipVersion(arm.Version);
+        hasArm = FALSE;
+    }
     // review S1: an arm whose launches are used up is not promised for the exit again - offered only
     if (level == sulAutomatic && SalUpdAutomaticArmUsable(hasArm, arm, release.Version))
     {
@@ -825,15 +832,19 @@ void CMainWindow::OnUpdateDownloadDone()
     UpdateClassicDuringDownload = FALSE;
     HWND open = UpdateNotice_GetWindow();
     BOOL classicOpen = open != NULL && IsWindow(open) && UpdateNotice_GetForm() == unfClassic;
+    // a version skipped meanwhile (also on another instance's notification) is neither offered nor
+    // armed, and its installer does not stay on disk (UX test 2, item 6)
+    CUpdateState state;
+    UpdateCheck_LoadState(&state);
+    if (done.Ok && !UpdateTestMode && state.HasSkipped && SalUpdVersionCompare(state.Skipped, done.Release.Version) == 0)
+    {
+        UpdInstall_SkipVersion(done.Release.Version);
+        return;
+    }
     if (classicShown && !classicOpen)
         return; // the user already answered it: the verified installer waits for the next check
     if (done.Ok)
     {
-        // a version skipped meanwhile (also on another instance's notification) is neither offered nor armed
-        CUpdateState state;
-        UpdateCheck_LoadState(&state);
-        if (!UpdateTestMode && state.HasSkipped && SalUpdVersionCompare(state.Skipped, done.Release.Version) == 0)
-            return;
         // the downloaded form: in place of the classic one still open, else when nothing is in its way
         ShowDownloadedUpdate(this, done.Release, classicShown ? UPDSHOW_REPLACE : UPDSHOW_QUEUE);
         return;
@@ -6595,13 +6606,22 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
 
     case WM_USER_UPDATEINSTALL: // feature 420: an armed update the exit did not install
     {
-        UpdInstall_CompleteArmed(HWindow);
+        if (wParam == 1) // review 2: its installer ran and did not install it - offered, not forced
+        {
+            CSalUpdRelease release;
+            if (UpdInstall_GetArmedRelease(&release))
+                ShowDownloadedUpdate(this, release, UPDSHOW_QUEUE);
+        }
+        else // the exit did not start the installer at all - completed now
+            UpdInstall_CompleteArmed(HWindow);
         return 0;
     }
 
     case WM_USER_UPDATEINSTALL_DONE: // feature 420: Install Now's installer ended with a failure
     {
-        UpdInstall_OnInstallerEnded(HWindow, (DWORD)wParam);
+        CSalUpdRelease release;
+        if (UpdInstall_OnInstallerEnded(HWindow, (DWORD)wParam) && UpdInstall_GetLaunchedRelease(&release))
+            UpdateNotice_Show(HWindow, release, TRUE, unfOffer); // UX test 2: the offer comes back
         return 0;
     }
 
