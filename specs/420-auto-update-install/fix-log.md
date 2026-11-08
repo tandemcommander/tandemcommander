@@ -32,4 +32,24 @@ completed at the next start**. Logged in the item's *Log*.
 
 ## Progress
 
-- 2026-11-08: branch, spec.
+- 2026-11-08: branch, spec, clarify (5 autonomous answers), plan, tasks, analyze (3 small fixes).
+- Implementation: `src/common/salupdinstall.h` (pure rules), `salupdcheck.h` (asset id / size /
+  digest / API url), `src/updhttp.h` (async WinHTTP helpers shared with 123), `src/updinstall.*`,
+  notification forms (`upddlg.cpp`, `IDD_UPDATENOTICE`), General page level list, About test line,
+  `--updatetest`, start-up completion and exit hook (`salamdr1.cpp`), `tools/check_update_pin.py`
+  run by `build.cmd`. First build: `BUILD SUCCEEDED`; saltests `287127 checks, 0 failed`.
+
+## Findings fixed on the way (found by this run's own tests)
+
+| # | Finding | Severity | How found | Fix |
+|---|---|---|---|---|
+| F1 | A second instance started while the first held an automatic arm would "complete" the update at its start - the installer would close the first instance's windows | 5 | writing probe group X (design review of the start-up decision) | completion at start-up only when no other instance of the executable runs in the session (`UpdiLastInstance`); probe X1 |
+| F2 | **An installer's close (Restart Manager, feature 080) started a second installer at the end of the exit**: `UnattendedClose` is set only for the time of `WM_ENDSESSION`, `PrepareExit` read it after it was reset | 5 (would have run two installers at once after every Install Now / start-up completion) | end-to-end run E2 with the real installer: `Install Launches` 2 after one completion (negative control, `probe/result_e2e.txt` first run) | the exit kind is recorded in the main window's `WM_DESTROY` (`UpdInstall_Shutdown`), where the flag is still set; E2 `once`: 1 installer start, launches 1 |
+
+## Probes
+
+| Probe | Result |
+|---|---|
+| `probe/autoupd_probe.ps1` (Debug, fixture server `updserver420.py`, hidden desktop) | first full run 39 PASS / 11 FAIL - all 11 probe defects (V read the form after the program closed; S3 started before the killed process was gone, so the program correctly waited for "another instance"; G opened Configuration on the last-used page). Diagnosed with group `Dbg`. Final: **54 PASS, 0 FAIL, 0 NOT DRIVEN**, registry restored (SHA-256 equal) |
+| `probe/e2e_peruser.ps1 -Fixture` (real published 0.1.9 installed per user, Debug build copied over it, real signed 0.2.0 installer served by the fixture, real Inno Setup) | before F2: 6 PASS but launches 2; after F2: **7 PASS, 0 FAIL** - at-exit install (installed exe = published 0.2.0 by SHA-256), completion at the next start after a kill (the installer closed the program through the Restart Manager), one installer start; per-user installation uninstalled, registry restored |
+| real GitHub (`-Only Real`, `e2e_peruser.ps1` without `-Fixture`) | **not runnable on 2026-11-08**: api.github.com answered with GitHub's "Unicorn!" error page (HTML) and the download addresses with 504 - an outage at GitHub, also outside the tool sandbox. The real-endpoint run is repeated before closing or owed to a person. |

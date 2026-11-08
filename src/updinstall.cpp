@@ -1447,6 +1447,9 @@ static BOOL UpdiLastInstance()
 }
 
 static HANDLE UpdiExitHeld = NULL; // the verified installer, held from PrepareExit to RunAtExit
+// TRUE: the main window was destroyed by an installer's close, a critical shutdown or a sign-out /
+// shutdown of Windows (recorded by UpdInstall_Shutdown while those flags were still set)
+static BOOL UpdiExitNotNormal = FALSE;
 static CSalUpdVersion UpdiExitVersion;
 
 void UpdInstall_PrepareExit()
@@ -1460,7 +1463,7 @@ void UpdInstall_PrepareExit()
         return;
     CSalUpdVersion running;
     UpdateCheck_GetInstalledVersion(&running);
-    BOOL normalExit = !UnattendedClose && !CriticalShutdown && GetSystemMetrics(SM_SHUTTINGDOWN) == 0;
+    BOOL normalExit = !UpdiExitNotNormal && !UnattendedClose && !CriticalShutdown && GetSystemMetrics(SM_SHUTTINGDOWN) == 0;
     BOOL honoured = UpdInstall_ArmHonoured(arm);
     BOOL eligible = UpdInstall_IsEligible(NULL);
     BOOL last = normalExit && honoured && eligible && UpdiLastInstance();
@@ -1494,6 +1497,12 @@ void UpdInstall_RunAtExit()
 
 void UpdInstall_Shutdown()
 {
+    // The main window is being destroyed. Whether this exit is the user's is decided NOW: an
+    // installer's close (feature 080) sets UnattendedClose only for the time of its WM_ENDSESSION
+    // and resets it before the end of the exit runs PrepareExit - measured in the end-to-end run:
+    // without this, the exit started a second installer while the first was installing.
+    UpdiExitNotNormal = UnattendedClose || CriticalShutdown || GetSystemMetrics(SM_SHUTTINGDOWN) != 0;
+    TRACE_I("UpdInstall: the main window closes; a user's exit: " << !UpdiExitNotNormal);
     UpdiWatchNotify = NULL;
     if (UpdiCSInitialized == 0)
         return;

@@ -6741,7 +6741,7 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
             CloseAppExecuting = TRUE;
             WindowProc(WM_QUERYENDSESSION, 0, lParam);
             CloseAppExecuting = FALSE;
-            UnattendedClose = FALSE;
+            UnattendedClose = FALSE; // feature 420: the main window's WM_DESTROY recorded it (UpdInstall_Shutdown)
             // if we are still here the close was abandoned: measure the WM_CLOSE swallow from NOW - the
             // Restart Manager posts its WM_CLOSE when WM_ENDSESSION returns, or 5 s after sending it
             // (measured), and the attempt itself may have taken long

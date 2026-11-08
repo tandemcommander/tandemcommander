@@ -479,6 +479,22 @@ $Groups['Dbg'] = {
     Kill-Wait $id
 }
 
+# Real: the real GitHub (no fixture), test mode, level 1 - run only when named (-Only Real)
+$Groups['Real'] = {
+    Reset-State 1; Set-Env -Pretend ''
+    Remove-Item Env:\TC_UPDATECHECK_URL -ErrorAction SilentlyContinue
+    $id = Start-420 @('--updatetest')
+    for ($i = 0; $i -lt 60; $i++) {
+        $h = [P420]::Notice([uint32]$id)
+        Out ('t={0,3}s notice {1}; {2}; {3}' -f $i, (Form $h), (FilesStr), (ArmStr (Arm)))
+        if ((Form $h) -eq 'offer') { break }
+        Start-Sleep -Seconds 1
+    }
+    $f = Form ([P420]::Notice([uint32]$id))
+    T 'R1' 'github' ($f -eq 'offer' -and (UpdFiles) -contains $InstallerName) ('real GitHub, --updatetest: notice {0}, {1}' -f $f, (FilesStr))
+    [void](Quit $id)
+}
+
 # ---- run ------------------------------------------------------------------------------------
 if ((Test-Path -LiteralPath $Upd) -and @(Get-ChildItem -LiteralPath $Upd -Force).Count -gt 0) { Write-Host "NOT RUN: $Upd is not empty"; exit 98 }
 $updParentExisted = Test-Path -LiteralPath (Split-Path $Upd)
@@ -492,7 +508,7 @@ try {
     Start-Server
     foreach ($g in $Groups.Keys) {
         if ($Only.Count -and -not ($Only | Where-Object { $g -like $_ })) { continue }
-        if ($g -eq 'Dbg' -and -not ($Only -contains 'Dbg')) { continue }
+        if (($g -eq 'Dbg' -or $g -eq 'Real') -and -not ($Only -contains $g)) { continue }
         Out ('--- group ' + $g)
         try { & $Groups[$g] }
         catch { Row $g 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.InvocationInfo.ScriptLineNumber) }
