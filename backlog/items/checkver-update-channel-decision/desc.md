@@ -7,7 +7,7 @@ area: other-plugins
 source: leftover:072
 who: person
 created: 2026-08-29
-updated: 2026-10-26
+updated: 2026-11-08
 verified: -
 effort: -
 feature: -
@@ -53,3 +53,4 @@ B — feature 123 already checks GitHub Releases from the core, so a second chec
 - 2026-10-17 — unblocked
 - 2026-10-17 — migration review S8: unblocked; #426090 mentioned only in Notes; migration remark removed
 - 2026-10-26 — related item winget-submit-release-after-pr-426090 closed: done: #426090 merged 2026-10-08, 0.1.9, 0.1.10 and 0.2.0 submitted by the workflow and merged, the catalogue is current and works; maintainer 2026-10-26
+- 2026-11-08 — related decision 2026-11-08 on automatic-update-background-download: the program downloads its installer itself (notify / download and offer (default) / install at exit); state the checkver channel in line with it

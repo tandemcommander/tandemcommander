@@ -1,11 +1,11 @@
 ---
 title: Automatic update: download the new installer in the background and install it
-type: decision
-status: new
+type: feature
+status: open
 severity: 4
 area: privacy-security
 source: manual
-who: person
+who: agent
 created: 2026-11-08
 updated: 2026-11-08
 verified: -
@@ -20,7 +20,7 @@ reason: -
 
 ## Problem
 
-Since feature 123 the program tells the user that a newer version exists, but the user still has to download the installer, run it and click through it. The maintainer's idea (2026-11-08): the program downloads the new installer in the background by itself and installs it, e.g. at the next start. **To be discussed with the maintainer before anything is planned** - the shape (when to install, how silent, what is the default) is a product decision.
+Since feature 123 the program tells the user that a newer version exists, but the user still has to download the installer, run it and click through it. The maintainer decided on 2026-11-08 (see *Question* / *Options* / *Recommendation* below and the *Log*) that the program downloads the new installer by itself and installs it on the user's click or automatically at exit, by a setting with three levels.
 
 ## Evidence
 
@@ -33,11 +33,29 @@ By reading at 91ff7c45; nothing was reproduced.
 
 ## Expected
 
-The maintainer has decided whether and in which form the program updates itself. Then either this item becomes a feature (type changed, *Problem* / *Expected* rewritten for the chosen option) or it is closed as decided "notify only, as today".
+The decision of 2026-11-08, binding for the run:
+
+1. **One setting on Configuration > General, three levels**: *Notify only* (today's behaviour, 123) / *Download and offer installation* / *Install automatically when the program closes*. It takes effect only while the new-version check (123) is on; with the check off nothing is downloaded.
+2. **Default: Download and offer installation** - for new installs and for existing users after the update to this version.
+3. **Download and offer**: after the check finds a newer version, the installer is downloaded in the background into a folder under `%LOCALAPPDATA%` and verified (point 6); the notification then offers *Install now* and *Install when I close the program*. Nothing is installed without a click.
+4. **Install automatically**: the same download and verification; the installer runs **when the program closes** (never at the next start, which would delay the user when they want to work), silently (`/VERYSILENT /SUPPRESSMSGBOXES` with the Restart Manager options of 080 / 088 / 118), and the next start runs the new version.
+5. **The update keeps the install mode of the existing install, chosen explicitly**: the program reads where the Uninstall entry of the AppId (`{35C0B0DC-DB73-429C-AAA8-FBC41C937F66}_is1`) lives - HKLM passes `/ALLUSERS`, HKCU `/CURRENTUSER` - and does not rely on Inno Setup's `UsePreviousPrivileges`. A per-user install updates with no prompt at all; an all-users install shows the **UAC prompt, which is accepted** (also at the *automatic* level); declining it leaves the downloaded installer offered as in point 3. **No elevated service or scheduled task.** No Uninstall entry (a portable copy, a build tree) -> the levels act as *Notify only*.
+6. **Integrity before running** (mandatory): `WinVerifyTrust` plus a check that the signer is **our** certificate (`tools/codesign/codesign.cfg`, as `tools/winget/publish.ps1` checks it in 072), not merely any valid signature; a file that fails is deleted and never run; the version inside the installer equals the version the check announced.
+7. `PRIVACY.md` updated in the same change (the download is new network communication; a file stored under `%LOCALAPPDATA%`, removed after the install or when superseded).
+
+## Approach
+
+- Download: the asset address from `SalUpdInstallerUrl` (`src/common/salupdcheck.h`); GitHub answers it with a redirect (to `release-assets.githubusercontent.com` - verify the host when implementing). 123 disables redirects (`WINHTTP_DISABLE_REDIRECTS`); allow a redirect only to an exact list of GitHub hosts, over HTTPS. The pure rules (host allow-list, file names, the level decision, the mode choice from the Uninstall entry) go into a header under `src/common/` with `saltests` checks.
+- A partial download is resumed or deleted, never run; a metered connection (`GetConnectionCost`) does not download in the background, only after the user's click; a new version announced later replaces the old download.
+- Closing for the installer goes through the existing Restart Manager route (080, 088, 118: decide at the question without side effects, act at the instruction with `UnattendedClose`).
+- winget users are unaffected in their tooling: winget reads the same Uninstall entry and the installer is the same.
+- Antivirus heuristics (076): a program that downloads and runs an `.exe` may be flagged more often; the signer check and the signed installer lower the risk - note it in the closing report.
+- Probes: an installer probe on the hidden desktop like 080's for both modes (per-user silent end to end; all-users up to the elevation request), the integrity refusals (unsigned, foreign-signed, truncated file), the redirect allow-list. A real UAC prompt and the interactive *Install now* flow go as lines into *Manual checks owed before the next release*.
+- New UI strings (the setting, the notification buttons) need the two-stage `.slt` refresh in the same run.
 
 ## Notes
 
-The maintainer asked to record it as an idea "to be discussed further" - do not triage it into *Next* without that discussion. `checkver-update-channel-decision` decides the update channel of the legacy checkver plug-in; whatever is chosen here should be stated there too.
+The idea was recorded on 2026-11-08 and discussed with the maintainer the same day in an interactive triage; the decision is in *Expected* above and in the *Log*. `checkver-update-channel-decision` decides the update channel of the legacy checkver plug-in; the decision here is logged there too. Inno Setup's `UsePreviousPrivileges` (default `yes`) would reuse the previous install's mode by itself according to its documentation; not measured here, and the decision is not to depend on it. Measured in 072: `/VERYSILENT /CURRENTUSER` installs into `%LOCALAPPDATA%\Programs` with no elevation with this exact installer configuration (`PrivilegesRequiredOverridesAllowed=dialog`, comment at `setup/tandemcommander.iss:34`).
 
 ## Question
 
@@ -65,3 +83,6 @@ B as the new default, with one setting on Configuration > General in three level
 ## Log
 
 - 2026-11-08 — created (source manual)
+- 2026-11-08 — maintainer decision 2026-11-08: one setting on Configuration > General with three levels - notify only / download and offer installation (default, new and existing users) / install automatically at exit; the update keeps the mode of the existing install, chosen explicitly from the Uninstall key (HKLM -> /ALLUSERS, HKCU -> /CURRENTUSER); a UAC prompt for all-users installs is accepted, no elevated service
+- 2026-11-08 — decision converted to work
+- 2026-11-08 — moved to Next position 1
