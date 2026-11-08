@@ -274,6 +274,7 @@ Last triaged: 2026-11-08
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Automatic update: download the new installer in the background and install it](items/automatic-update-background-download/desc.md) | decision | 4 | privacy-security | manual | 2026-11-08 |
 
 ## Parked
 
