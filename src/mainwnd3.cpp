@@ -1011,6 +1011,18 @@ void CMainWindow::TrySilentUpdateInstall()
     if (d != susiNow)
     {
         TRACE_I("Update: the silent automatic install is not made in this session");
+        // found on the way (fix-log): the level was lowered meanwhile (Configuration > General drops the
+        // automatic plan) - the downloaded update is shown as that level shows it, instead of vanishing
+        // until the next check a day later; never for a skipped version, never with the check off
+        CUpdateState state;
+        UpdateCheck_LoadState(&state);
+        BOOL skipped = state.HasSkipped && SalUpdVersionCompare(state.Skipped, release.Version) == 0;
+        if (!hasArm && !tried && UpdInstall_GetLevel() != sulAutomatic && (state.CheckAtStartup || UpdateTestMode) &&
+            (UpdateTestMode || !skipped) && UpdInstall_HasVerified(release))
+        {
+            CSalUpdRelease shown = release;
+            ShowDownloadedUpdate(this, shown, UPDSHOW_QUEUE);
+        }
         return; // the exit / the next start of 420 decide
     }
     UpdateSilentTried = TRUE;

@@ -356,6 +356,16 @@ $Groups['L'] = {
     Choose-Level $h 1; Start-Sleep -Seconds 1
     T 'L5' 'same' ([Drv098f]::IsWindow($h) -and (Form $h) -eq 'offer' -and (Uc-Get 'Update Level') -eq 1 -and $null -eq (Arm)) ('the same level: window {0}, form {1}, {2}' -f [Drv098f]::IsWindow($h), (Form $h), (ArmStr (Arm)))
     Kill-Mine $id
+    # L6 (found on the way) the level lowered on the General page while the silent install waits: the
+    # update is offered instead of vanishing (the page stores the level and drops the automatic plan -
+    # the probe writes the same values)
+    Reset-State 2; Set-Env -Idle $IdleBusy
+    $id = Start-421; $a = Wait-Arm 30; Start-Sleep -Seconds 2
+    Uc-Set 'Update Level' 1
+    foreach ($n in @('Install Version', 'Install Digest', 'Install Source', 'Install Test', 'Install Launches', 'Install Confirmed')) { Uc-Del $n }
+    $h = Wait-Form $id 'offer' 20
+    T 'L6' 'lowered' ($null -ne $a -and $a.Source -eq 2 -and (Form $h) -eq 'offer' -and (Runs).Count -eq 0) ('planned {0}; level 1 stored meanwhile: form {1}, {2}; {3}' -f (ArmStr $a), (Form $h), (RunsStr), (SilentStr))
+    Kill-Mine $id
 }
 
 # A: the silent automatic install (US4, FR-011 - FR-013)
