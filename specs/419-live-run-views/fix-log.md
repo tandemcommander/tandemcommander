@@ -48,4 +48,111 @@ Result: `probe/layout_before.json`. The test fails, as it must.
 
 ## Implementation
 
-(see below as tasks are done)
+All under `tools/backlog-app/`.
+
+- `packages/web/src/features/live/run-views.ts` (new): the pure rules.
+  - `RUN_VIEWS`, `availableViews` (Chat only for a live item run), `viewFromAddress` (an empty, unknown or
+    unavailable value gives `overview`).
+  - `chatSignature` (turns, the last state, answered yes / no), `chatMark`.
+  - Unit test `packages/web/test/run-views.test.ts`: 8 tests, the first file of the `web` Vitest project.
+  - Negative control: with the chat offered to every run and a mark without the "first report" and "shown"
+    guards, 4 of the 8 fail. Restored, 8/8 pass.
+- `app/router.tsx`: `/live` and `/runs/$id` take an optional `view` search parameter. Links without it stay
+  valid.
+- `features/live/run-dashboard.tsx`: one column.
+  - The title row holds the heading and `RunSummaryLine` (*Run in short*).
+  - The tab row reads Overview … Raw trace, then Chat for a live item run.
+  - Every view is `min-h-0 flex-1`. Story, Raw trace and Chat hand their height down to their list or log.
+    The other views scroll as a whole.
+  - Chat is `forceMount` and hidden while inactive (its draft and a streaming answer survive), inside
+    `section` *Chat about the run*. The tab shows a dot with "new answer" by `chatMark`.
+  - Removed: the `<aside>`, its open / close buttons, `initialChat` and the localStorage key
+    `backlog-app.live.chat`.
+- `features/live/progress-header.tsx`: `RunSummaryLine` (title link, step, a thin bar `aria-hidden`, percentage,
+  elapsed, remaining / finished / stopped).
+- `features/live/live-page.tsx`, `features/runs/run-page.tsx`: the root is `flex min-h-0 flex-1 flex-col
+  overflow-hidden`, and the view goes to the address with `replace: true`. A run without a trace keeps its
+  normal page.
+- `features/live/story-view.tsx`, `features/runs/trace-view.tsx`: the list box is `min-h-0 flex-1` instead of
+  `h-[68vh]` / `h-[60vh]`. An opened story line no longer has its own `max-h-80` scroll box.
+- `features/live/now-panel.tsx`: the latest message no longer has its own `max-h-48` scroll box.
+- `features/chat/chat-panel.tsx`:
+  - The log scrolls itself (`scrollTop`) and follows the end unless the reader scrolled up. It does so again
+    when shown or resized (ResizeObserver).
+  - No `scrollIntoView`; the tool-use list has no scroll box of its own.
+  - New props `placeholder`, `shown`, `onSignature`; `compact` went with the column.
+- `e2e/us7-live-dashboard.spec.ts`:
+  - It follows the views: Overview first, Story before the story checks, the chat through its tab and region.
+  - axe runs on Overview, Story and Chat in both themes.
+  - The ended run has no Chat tab.
+- `e2e/us8-live-layout.spec.ts`: the measurement above, extended by:
+  - the 10 views of the row;
+  - nested scroll areas;
+  - the live story following its real end, staying where the reader scrolled it, and "Latest";
+  - the chat at full width (> 90 % of `main`);
+  - *Run in short* on Story and Chat;
+  - the draft surviving a view switch;
+  - the mark of a new answer (the fake chat claude in `slow` mode);
+  - the view kept across a reload, and an unknown view giving Overview.
+
+### The live story stopped following its end - three attempts
+
+The first run of `us7` after the change failed SC-003: the story's last line did not appear within 3 s, and
+*Latest* showed.
+
+1. The container (`absolute inset-0` vs a flowing child at `height: 100%`): the same failure, so not the
+   cause.
+2. A diagnostic spec (deleted afterwards) sampled the scroller every 0.7-2 s during the replay. The list kept
+   to its end only while it fitted. The first line past the bottom left it 116 px short: Virtuoso's
+   `followOutput` scrolls to its *estimate* of the new line, and the "AGENT SAYS" boxes are taller. That is
+   past the 80 px `atBottomThreshold`, so following stopped for good.
+   - Fix: "follow" is decided by the reader, `stuck` until the reader scrolls away. After every
+     `totalListHeightChanged` a stuck list scrolls to its end.
+   - The first form of "the reader scrolled" (scrollTop went down) was fooled by Virtuoso moving its own
+     position while it measured: 123 -> 103, unstuck.
+   - Now only a scroll within 1 s of the reader's own input (wheel, touchmove, keydown, pointerdown on the
+     scroller) unsticks.
+3. Even so, the list stopped exactly 60 px short of its end. Each phase heading's root had `mt-3`, a margin
+   that collapses out of Virtuoso's row wrapper and is missing from the measured height: 5 headings x 12 px =
+   60 px. The gap is now padding of a wrapper.
+   - After the fix the diagnostic ends with `top 537 = 1500 - 963` (gap 0).
+   - `us8` now requires the real end (<= 2 px) while lines arrive and after the last one. The 80 px
+     tolerance had hidden the 60 px.
+
+Whether 415 already lost the follow at times is not established. Its fixed 68vh list passed `us7`, and the 60 px
+of margins existed there too.
+
+## Findings fixed on the way (severity <= 5, stop-rules rule 11)
+
+| Finding | Severity | Before | After / test |
+|---|---|---|---|
+| The live story's measured height missed the margins of its phase headings (12 px each), so a following story never reached its real end | 3 | the list stood 60 px short of its end after the whole replay | padding instead of a margin; `us8` "the story at its real end" <= 2 px (fails on cbf0cf1f) |
+| The story stopped following when a new line was taller than estimated | 3 | following lost at the first overflow (116 px short, *Latest* shown) | the reader-input rule; `us7` SC-003 and `us8` follow checks pass |
+| The DECISION pill inside a decision box of the story had 4.50:1 contrast (light theme; axe `color-contrast` on Story once the list shows its end) | 2 | `bg-warn/14` on `bg-warn/8`: 4.50 (computed, `contrast.py`) | pill `bg-warn/10`, box `bg-warn/5`: 4.96 inside the box, 5.30 elsewhere; `us7` axe passes on Story in both themes |
+| The chat's `scrollIntoView` scrolled every scrollable ancestor (the page included) | 2 | latent: at 1920 the sticky column hid it | the log sets its own `scrollTop`; `us8` "after a chat answer" main 0 px |
+
+## Verification (after)
+
+- `npm run check` (typecheck, lint with doc comments, prettier, Vitest): clean; Vitest 519 passed, 2 skipped
+  (8 new in `packages/web/test/run-views.test.ts`).
+- `us8-live-layout` on the new client: pass. `probe/layout_after.json` covers 40 view/size cases plus "after a chat
+  answer":
+  - the document and `main` scroll 0 px in every case;
+  - nothing is covered;
+  - at most one scroll area per view, none nested: Story and Raw trace their list; Overview, Decisions,
+    Architecture and Documents their box when the content is taller (e.g. Overview 455 px at 820x640); the
+    other views and Chat none at this content.
+  - The follow branch ran: "the reader's scroll up was checked while lines arrived".
+  - Screenshots: `probe/shots/` (every view at 1920x1200 and 820x640, the chat answered, the mark on the Chat
+    tab).
+- Negative control (T018): the same spec against the web client built from cbf0cf1f fails with 47 soft
+  failures (`probe/result_negative_cbf0cf1f.txt`, `probe/layout_negative_cbf0cf1f.json`):
+  - all 32 reachable or covered view/size rows (the page scrolls, or the tab is covered);
+  - the 10 views of the row, a Chat view, the run in one line, the chat width (0 of 1704 px), the mark;
+  - the view in the address, a reload, an unknown view;
+  - the story's real end, while growing and at the end.
+  - It ran in a worktree in the scratchpad with linked `node_modules`, which was removed afterwards.
+- Full end-to-end suite `npm run test:e2e`: 40 passed (7.6 min), including `us4-chat`, `us7-live-dashboard` (axe on
+  Overview, Story and Chat in both themes) and `us8-live-layout`.
+- `python tools/check_encoding.py --strict`: `TOTAL: 0 finding(s)`. `.\build.cmd`: `BUILD SUCCEEDED` (the product is
+  unchanged). No product UI strings changed: no `.slt` refresh, no `saltests` run.

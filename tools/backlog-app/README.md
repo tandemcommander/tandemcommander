@@ -32,8 +32,14 @@ and tabs - the run's story in words with labels and outcomes, what is critical,
 the decisions of the spec, a gallery of the screenshots the run looked at (a
 full-screen viewer with swipe and arrow keys), diagrams of the flow and of where
 the change happens, the files, the feature's documents and the raw transcript.
-Beside it, while the item runs, the item's conversation: every message carries
-a fresh snapshot of the run. The rules that turn the trace into the story are
+While the item runs, the item's conversation: every message carries a fresh
+snapshot of the run. Since feature 419 (`specs/419-live-run-views/`) every part
+is a view of one row - Overview (progress, now, figures), Story, Critical,
+Decisions, Gallery, Architecture, Files, Documents, Raw trace and Chat (full
+width, a dot on its tab when an answer came while another view was shown) -
+with the run in one line above the row. The page fills the window and never
+scrolls; each view scrolls by itself, in one area. The chosen view is in the
+address (`/live?view=story`). The rules that turn the trace into the story are
 pure and unit-tested in `packages/shared/src/runs/` (`run-story.ts`,
 `run-metrics.ts`, `pricing.ts`, `run-progress.ts`, `time-index.ts`);
 `node packages/shared/test/fold-real-trace.ts <trace.jsonl>` folds a real

@@ -272,8 +272,8 @@ test("the live run page never scrolls; each view has at most one scroll area", a
     timeout: 3000,
   });
   await expect
-    .poll(async () => (await story()).gap, { message: "the story at its real end", timeout: 3000 })
-    .toBeLessThanOrEqual(2);
+    .soft(async () => expect((await story()).gap).toBeLessThanOrEqual(2), "the story at its real end")
+    .toPass({ timeout: 3000 });
   await page.waitForTimeout(1500);
 
   const results: Measure[] = [];
@@ -318,7 +318,10 @@ test("the live run page never scrolls; each view has at most one scroll area", a
   // page's width.
   await page.setViewportSize(SIZES[0]);
   const chatTab = tabs.filter({ hasText: "Chat" });
-  if ((await chatTab.count()) > 0) await chatTab.first().click();
+  // Before feature 419 the chat was a column beside the views (the negative control runs on).
+  const hasChat = (await chatTab.count()) > 0;
+  expect.soft(hasChat, "a Chat view in the row").toBe(true);
+  if (hasChat) await chatTab.first().click();
   else await tabs.filter({ hasText: "Story" }).first().click();
   const main = page.locator("main");
   await main.evaluate((el) => {
@@ -342,7 +345,7 @@ test("the live run page never scrolls; each view has at most one scroll area", a
   });
   const chatRegion = page.getByRole("region", { name: "Chat about the run" });
   const widths = {
-    chat: (await chatRegion.boundingBox())?.width ?? 0,
+    chat: (await chatRegion.count()) > 0 ? ((await chatRegion.boundingBox())?.width ?? 0) : 0,
     main: await main.evaluate((el) => el.clientWidth),
   };
   expect
@@ -352,7 +355,7 @@ test("the live run page never scrolls; each view has at most one scroll area", a
 
   // The run in one line stays above the story and the chat (FR-010).
   const summary = page.getByRole("region", { name: "Run in short" });
-  for (const view of ["Story", "Chat"]) {
+  for (const view of hasChat ? ["Story", "Chat"] : ["Story"]) {
     await tabs.filter({ hasText: view }).first().click();
     await expect
       .soft(summary, `the run in one line on ${view}`)
@@ -361,11 +364,11 @@ test("the live run page never scrolls; each view has at most one scroll area", a
   }
 
   // A draft survives a switch to another view and back (FR-008).
-  await tabs.filter({ hasText: "Chat" }).first().click();
+  if (hasChat) await tabs.filter({ hasText: "Chat" }).first().click();
   const composer = page.getByRole("textbox", { name: "Your message" });
   await composer.fill("A draft of feature 419");
   await tabs.filter({ hasText: "Story" }).first().click();
-  await tabs.filter({ hasText: "Chat" }).first().click();
+  if (hasChat) await tabs.filter({ hasText: "Chat" }).first().click();
   await expect.soft(composer, "the draft after a view switch").toHaveValue("A draft of feature 419");
   await composer.fill("");
 
@@ -382,8 +385,10 @@ test("the live run page never scrolls; each view has at most one scroll area", a
     .soft(page.getByRole("log", { name: "The story of the run" }), "the story beside a hidden chat")
     .toContainText("Final marker line", { timeout: 10_000 });
   if (shots) await page.screenshot({ path: join(shots, "419-chat-mark.png") });
-  await chatNamed.click();
-  await expect.soft(chatNamed, "the mark after opening Chat").toHaveAccessibleName("Chat");
+  if (hasChat) {
+    await chatNamed.click();
+    await expect.soft(chatNamed, "the mark after opening Chat").toHaveAccessibleName("Chat");
+  }
   // The answer of the second turn (the fake echoes the first line after its marker; from the second
   // message on that is the live snapshot's heading, so the maintainer's text is checked on its own).
   await expect.soft(page.getByLabel("You").nth(1)).toContainText("What are the risks or problems?");

@@ -1,0 +1,59 @@
+
+419 follow: the reader's scroll up was checked while lines arrived
+  ✘  1 e2e\us8-live-layout.spec.ts:198:1 › the live run page never scrolls; each view has at most one scroll area (2.8m)
+    Error: the live story at its end while it grows
+    Error: the story at its real end
+    Error: the views of the row
+    Error: a Chat view in the row
+    Error: the chat spans the page (0 of 1704 px)
+    Error: the run in one line on Story
+    expect(locator).toContainText(expected) failed
+    Error: element(s) not found
+    Error: the percentage on Story
+    expect(locator).toContainText(expected) failed
+    Error: element(s) not found
+    Error: the mark of a new answer
+    expect(locator).toHaveAccessibleName(expected) failed
+    Error: element(s) not found
+    Error: the view in the address
+    expect(page).toHaveURL(expected) failed
+    Error: Documents after a reload
+    expect(locator).toHaveAttribute(expected) failed
+    Error: an unknown view opens the overview
+    expect(locator).toHaveAttribute(expected) failed
+    Error: element(s) not found
+    Error: Story at 1920x1200: the page (main) scrolls
+    Error: Critical at 1920x1200: the page (main) scrolls
+    Error: Decisions at 1920x1200: the page (main) scrolls
+    Error: Gallery at 1920x1200: the page (main) scrolls
+    Error: Architecture at 1920x1200: the page (main) scrolls
+    Error: Files at 1920x1200: the page (main) scrolls
+    Error: Documents at 1920x1200: the page (main) scrolls
+    Error: Raw trace at 1920x1200: the page (main) scrolls
+    Error: Story at 1280x800: the page (main) scrolls
+    Error: Critical at 1280x800: the page (main) scrolls
+    Error: Decisions at 1280x800: the page (main) scrolls
+    Error: Gallery at 1280x800: the page (main) scrolls
+    Error: Architecture at 1280x800: the page (main) scrolls
+    Error: Files at 1280x800: the page (main) scrolls
+    Error: Documents at 1280x800: the page (main) scrolls
+    Error: Raw trace at 1280x800: the page (main) scrolls
+    Error: Story at 1024x700: the page (main) scrolls
+    Error: Critical at 1024x700: the page (main) scrolls
+    Error: Decisions at 1024x700: the page (main) scrolls
+    Error: Gallery at 1024x700: the page (main) scrolls
+    Error: Architecture at 1024x700: the view's tab is covered
+    Error: Files at 1024x700: the view's tab is covered
+    Error: Documents at 1024x700: the view's tab is covered
+    Error: Raw trace at 1024x700: the view's tab is covered
+    Error: Story at 820x640: the page (main) scrolls
+    Error: Critical at 820x640: the page (main) scrolls
+    Error: Decisions at 820x640: the page (main) scrolls
+    Error: Gallery at 820x640: the view's tab is covered
+    Error: Architecture at 820x640: the view's tab is covered
+    Error: Files at 820x640: the view's tab is covered
+    Error: Documents at 820x640: the view's tab is covered
+    Error: Raw trace at 820x640: the page (main) scrolls
+    test-results\us8-live-layout-the-live-r-5889e-has-at-most-one-scroll-area\test-failed-1.png
+  1 failed
+
