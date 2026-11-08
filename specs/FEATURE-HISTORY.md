@@ -27,7 +27,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Build, signing, installer, winget, CI | 002, 050, 072, 077, 080, 091 |
 | Backlog and project tooling | 242, 243, 247, 265, 342, 344, 371, 411, 412, 414, 415, 419 |
 | Releases and pre-release reviews | 056, 068, 243, 343 |
-| Translations (pipeline, policy, pins) | 038, 039, 055, 409; string additions in 084, 101, 106, 123 |
+| Translations (pipeline, policy, pins) | 038, 039, 055, 409; string additions in 084, 101, 106, 123, 420 |
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300, 379, 381, 397, 398 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315, 380, 386, 389, 392 |
@@ -37,14 +37,14 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
 | WebView2 viewers (Markdown, Code) | 081, 085, 262, 314, 408 |
-| Privacy and security | 083, 085, 086, 090, 123 |
+| Privacy and security | 083, 085, 086, 090, 123, 420 |
 | FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279, 288, 303, 323, 341, 345, 347, 348, 384, 385, 410 |
 | PictView | 105, 111, 120, 267 |
 | Undelete | 114, 115, 148, 324 |
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287, 387, 388 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
-| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373, 374, 375, 376, 404, 405, 407, 413, 416, 417, 418 |
+| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373, 374, 375, 376, 404, 405, 407, 413, 416, 417, 418, 420 |
 
 ## Feature notes
 
@@ -6919,3 +6919,52 @@ a few early ones are out of sequence).
   none nested, views filled; mutation run: 68vh story, 60vh transcript and a `scrollIntoView` chat each fail);
   vitest 519 / 0 (+8 `run-views.test.ts`), Playwright full suite 40/40 (`us7` follows the views, axe on Overview,
   Story and Chat in both themes); two refute-first reviews (MUST 0 / 0, SHOULD 1 / 0, NOTE 5 / 3 - fixed).
+- 420-auto-update-install: **the program updates itself** - since 123 it only told the user about a
+  newer release and the user downloaded and ran the installer by hand. Now one setting on
+  Configuration > General (*When a new version is found*: notify only / **download and offer
+  installation** (default) / install automatically when the program closes) makes it download the
+  release's installer, prove it, and offer *Install Now* / *Install When I Close*, or install it
+  silently at the exit. **An update the exit did not start (crash, kill, sign-out, another instance)
+  is completed at the next start**; one whose installer ran and did not install it is only offered.
+  The maintainer's test mode **`--updatetest`** (also Release; new multi-word options take two
+  dashes) repeats the whole update on the installed version.
+  - **Download**: the GitHub API asset address built from the asset's validated number,
+    `Accept: application/octet-stream`; redirects followed by the program itself, only to
+    `release-assets.githubusercontent.com` / `objects.githubusercontent.com`, HTTPS, 3 hops; WinHTTP
+    async on a worker (`src/updhttp.h`, shared with 123), `.part` + streaming SHA-256, exact size;
+    nothing on a metered connection.
+  - **Proof before offering, arming and every start**: the record's `digest`, `WinVerifyTrust`
+    without network revocation, the signer's thumbprint in **`SalUpdSignerThumbprints`** (a list - a
+    certificate renewal adds the new one a release ahead; `tools/check_update_pin.py` in `build.cmd`),
+    the version resource (Inno pads ProductName / ProductVersion with spaces). The installer inherits
+    a deny-write handle to its own file. A refused installer is deleted and not downloaded again.
+  - **Install mode** from the uninstall entry whose `InstallLocation` is the program's folder (HKLM ->
+    `/ALLUSERS`, HKCU -> `/CURRENTUSER`); no entry (portable copy, build tree) = notify only. *Install
+    Now* and the start-up completion `/SILENT /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS` (080's update
+    close), the exit `/VERYSILENT /NORESTARTAPPLICATIONS` after `OleUninitialize`.
+  - **The plan** (`Install *` values in 123's key): source user / automatic / **offered only** (an
+    installer ran and did not install it - never honoured), `Install Launches` (cap 3 outside Install
+    Now) and **`Install Confirmed`** - the count at the user's last word (Install When I Close, Yes to
+    "install it when you close?", a start that failed before anything ran). **The exit never installs
+    a plan whose installer ran since the user's last confirmation; the start offers it** - this one
+    value replaced instance checks that kept failing across windows. Pure rules in
+    `src/common/salupdinstall.h` (`SalUpdStartupArmDecision`, `SalUpdExitDecision`,
+    `SalUpdArmAfterFailedNow`, `SalUpdStartupOfferReachable`, `SalUpdExitArmAvailable`).
+  - **Traps**: an installer's close resets `UnattendedClose` before the end of the exit - the exit
+    started a second installer (record the exit kind in `WM_DESTROY`); a second instance must not
+    complete, offer away or delete the first one's plan; a failed *Install Now* must restore the plan
+    from before the click (an offered update became a silent exit install); a message box inside a
+    dialog command can replace the dialog (copy what is needed first); a file held by a scan is not
+    "not ours"; DeepL turned the level items into commands in every language (pinned).
+  - **Eight refute-first reviews + two UI/UX passes** (9 languages x 3 forms x light/dark); MUST
+    findings in rounds 1, 3, 4 and 5, none in 6-8 (the run went on past stop-rules §3 #3 at the
+    maintainer's explicit request to iterate until stable - recorded in the fix-log).
+  - Stored: `Update Level`, `Install Version/Digest/Source/Test/Launches/Confirmed`, `Download
+    Refused`; files in `%LOCALAPPDATA%\Tandem Commander\Updates`; `PRIVACY.md` updated.
+  - Owed to a person (release checklist): the all-users update with a real UAC prompt (the restarted
+    program not elevated), real mouse / keyboard / Narrator, the keyboard after the forced reshow, the
+    next real release.
+  From backlog item `automatic-update-background-download`. saltests -> 287,190 checks (group
+  `TestAutoUpdate420`); probe `autoupd_probe.ps1` 104 PASS / 0 FAIL / 1 NOT DRIVEN (a person); `e2e_peruser.ps1` **7 PASS against the
+  real GitHub** (published 0.1.9 installed per user, this build over it, the real 0.2.0 installer
+  installs at the exit and completes at the next start after a kill, one installer start).

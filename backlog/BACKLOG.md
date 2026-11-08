@@ -17,7 +17,6 @@ Last triaged: 2026-11-08
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Automatic update: download the new installer in the background and install it](items/automatic-update-background-download/desc.md) | feature | 4 | privacy-security | 420 |
 
 ## Next
 

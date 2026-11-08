@@ -37,7 +37,7 @@
 
 ## Phase 6: User Story 4 - never run a foreign file (P1)
 
-- [ ] T018 [US4] Re-verification before every launch (Install Now, exit, start-up) and the deletion of failed files - covered by T008/T009/T015/T016; probe group V (T022)
+- [X] T018 [US4] Re-verification before every launch (Install Now, exit, start-up) and the deletion of failed files - covered by T008/T009/T015/T016; probe group V (T022)
 
 ## Phase 7: User Story 5 - test mode (P2)
 
@@ -46,20 +46,20 @@
 
 ## Phase 8: User Story 6 - copies that cannot update (P3)
 
-- [ ] T021 [US6] Not eligible / metered -> classic form (covered by T007 + T013); probe rows L-ineligible, L-metered
+- [X] T021 [US6] Not eligible / metered -> classic form (covered by T007 + T013); probe rows L-ineligible, L-metered
 
 ## Phase 9: Verification
 
-- [ ] T022 Probe `specs/420-auto-update-install/probe/autoupd_probe.ps1` + fixture server `updserver420.py` (groups L, V, B, X, S, T of quickstart §2; X also measures the exit time while a slow download runs (SC-006), T also checks that the restart registration carries no `--updatetest` (FR-016)), registry backup / restore; run before (HEAD of main: no download) and after
-- [ ] T023 End-to-end probe `specs/420-auto-update-install/probe/e2e_peruser.ps1` (quickstart §3): at-exit install and completion at the next start with the real published installer over a per-user test installation; uninstall afterwards
-- [ ] T024 Release build string search: the Debug seams `TC_UPDATE_PROBE_*` absent from the Release `tandemcommander.exe`
+- [X] T022 Probe `specs/420-auto-update-install/probe/autoupd_probe.ps1` + fixture server `updserver420.py` (groups L, V, B, X, S, T of quickstart §2; X also measures the exit time while a slow download runs (SC-006), T also checks that the restart registration carries no `--updatetest` (FR-016)), registry backup / restore; run before (HEAD of main: no download) and after
+- [X] T023 End-to-end probe `specs/420-auto-update-install/probe/e2e_peruser.ps1` (quickstart §3): at-exit install and completion at the next start with the real published installer over a per-user test installation; uninstall afterwards
+- [X] T024 Release build string search: the Debug seams `TC_UPDATE_PROBE_*` absent from the Release `tandemcommander.exe`
 
 ## Phase 10: Polish
 
-- [ ] T025 [P] `PRIVACY.md`: summary, *New version check* (stored values), *Checking for a new version* (download, hosts, test mode not mentioned), *Installing and uninstalling*, files under `%LOCALAPPDATA%`, *Removing your data*; validity line
-- [ ] T026 [P] `help/src/hh/salamand/configuration_gener.htm`: the new option; `architecture/12-project-reference.md`: `--updatetest` and the feature's facts
-- [ ] T027 Translations: two-stage `.slt` refresh of module `salamand` (stop-rules §2.13), pins, `slt --verify`, `build.cmd full`
-- [ ] T028 Encoding guard, build, saltests; fix-log; review (SKILL step 7); closing (step 8)
+- [X] T025 [P] `PRIVACY.md`: summary, *New version check* (stored values), *Checking for a new version* (download, hosts, test mode not mentioned), *Installing and uninstalling*, files under `%LOCALAPPDATA%`, *Removing your data*; validity line
+- [X] T026 [P] `help/src/hh/salamand/configuration_gener.htm`: the new option; `architecture/12-project-reference.md`: `--updatetest` and the feature's facts
+- [X] T027 Translations: two-stage `.slt` refresh of module `salamand` (stop-rules §2.13), pins, `slt --verify`, `build.cmd full`
+- [X] T028 Encoding guard, build, saltests; fix-log; review (SKILL step 7); closing (step 8)
 
 ## Dependencies
 

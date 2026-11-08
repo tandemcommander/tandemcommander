@@ -227,8 +227,8 @@ a never-startable installer stops at 3 launches, probe Q4 PASS).
 | R8 NOTE | S1 / S2 also reset the launch cap | fixed with them |
 
 Checks after round 8 fixes: `BUILD SUCCEEDED`; saltests **287,190 checks, 0 failed**; encoding guard 0.
-**Probe not yet run on these fixes** (group R8 added): a `tandemcommander.exe` of the user runs
-(Program Files, PID 25044) and the probe shares its registry key - run when it is closed.
+Probe after the user's instance was closed (15:39): **104 PASS, 0 FAIL, 1 NOT DRIVEN** (R8 Q1-Q4
+PASS; registry restored, SHA-256 equal).
 
 ## Translations (stop-rules §2.13, module `salamand`)
 
