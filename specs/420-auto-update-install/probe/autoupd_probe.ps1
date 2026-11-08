@@ -3,7 +3,7 @@
     Feature 420 (automatic update) - behaviour probe of a Debug build.
     Rows follow specs/420-auto-update-install/spec.md, contracts/*.md and quickstart.md section 2.
     Groups: L levels, V verification, B buttons, X exit, S completion at the next start,
-    T test mode, Rv/Ux/R3/R4/R5/R6/R7 review findings, G Configuration > General. Every row prints PASS / FAIL / NOT DRIVEN.
+    T test mode, Rv/Ux/R3/R4/R5/R6/R7/R8 review findings, G Configuration > General. Every row prints PASS / FAIL / NOT DRIVEN.
     MUST run through tools\run_on_hidden_desktop.ps1. Backs up the product's registry key and
     restores it (verified by SHA-256); creates and removes the updates folder
     %LOCALAPPDATA%\Tandem Commander\Updates and a fake uninstall entry under
@@ -905,6 +905,72 @@ $Groups['R7'] = {
         Kill-Wait $id   # the completion's installer would close the program
         T 'A' ('exit-start-failed-check' + $checkOn) ($a1.Source -eq 1 -and $a1.Launches -eq 1 -and $a1.Confirmed -eq 1 -and (Runs).Count -eq 1 -and (Runs)[0] -like 'now|*' -and $n -eq $Z) ('Install When I Close: {0}; exit, the start fails ({1} s): {2}, {3}; check {4}, next start: notice {5}, {6}; started: {7}' -f (ArmStr $a0), $s0, (ArmStr $a1), $f1, $checkOn, (Form $n), (ArmStr $a2), (RunsStr))
     }
+}
+
+# R8: the findings of the eighth verification (fix-log, Round 8); the reviewer's group Q
+$Groups['R8'] = {
+    $inst = Join-Path $Upd $InstallerName
+    # Q1: Install When I Close; at the exit the installer is held by another process (an antivirus /
+    # backup scan: no sharing) - is the confirmed plan kept?
+    Reset-State 1; Set-Env
+    $id = Start-420; $h = Wait-Form $id 'offer'; Press $h 6296; [void](Gone $h 3); $a0 = Arm
+    NoCheck
+    $fs = [IO.File]::Open($inst, 'Open', 'Read', 'None')
+    try { $s = Quit $id; $a1 = Arm; $f1 = FilesStr } finally { $fs.Close() }
+    T 'Q1' 'exit-file-busy' ($null -ne $a1 -and $a1.Source -eq 1 -and (Runs).Count -eq 0) ('Install When I Close: {0}; file held during the exit ({1} s): {2}, {3}; started: {4}' -f (ArmStr $a0), $s, (ArmStr $a1), $f1, (RunsStr))
+    NoCheck
+    $id = Start-420; [void](Wait-Run 1 15); $n = [P420]::Notice([uint32]$id); $a2 = Arm; Kill-Wait $id
+    T 'Q1' 'next-start' ((Runs).Count -eq 1 -and (Runs)[0] -like 'now|*' -and $n -eq $Z) ('next start (file free): notice {0}, {1}, {2}; started: {3}' -f (Form $n), (ArmStr $a2), (FilesStr), (RunsStr))
+
+    # Q2: Install When I Close, program killed; at the next start (completion) the file is held
+    Reset-State 1; Set-Env
+    $id = Start-420; $h = Wait-Form $id 'offer'; Press $h 6296; [void](Gone $h 3); Kill-Wait $id; $a0 = Arm
+    NoCheck
+    $fs = [IO.File]::Open($inst, 'Open', 'Read', 'None')
+    try { $id = Start-420; Start-Sleep -Seconds 5; $n = [P420]::Notice([uint32]$id); $a1 = Arm; $f1 = FilesStr } finally { $fs.Close() }
+    $s = Quit $id; $a2 = Arm
+    T 'Q2' 'start-file-busy' ($null -ne $a1 -and $a1.Source -eq 1 -and $n -eq $Z -and (Runs).Count -eq 1 -and (Runs)[0] -like 'exit|*') ('Install When I Close, killed: {0}; next start with the file held: notice {1}, {2}, {3}; exit ({4} s): {5}, {6}' -f (ArmStr $a0), (Form $n), (ArmStr $a1), $f1, $s, (ArmStr $a2), (RunsStr))
+
+    # Q3: level 2, Install Now's installer fails; while "install it when you close?" is on screen a
+    # second window is opened; then Yes - is the Yes kept?
+    Reset-State 2; Set-Env
+    $id = Start-420; $h = Wait-Form $id 'automatic'; Press $h 1; [void](Wait-Run 1 10)
+    [void][Drv098f]::PostMessageW((Get-Main $id), 0x8000 + 424, [IntPtr]5, $Z)
+    Start-Sleep -Seconds 2
+    $b = Msg-Box $id; $bt = if ($b -ne $Z) { FullText $b } else { '<no message>' }
+    $aQ = Arm
+    NoCheck
+    $idB = Start-420; Start-Sleep -Seconds 5; $aB = Arm
+    if ($b -ne $Z) { Post-Cmd $b 6; Start-Sleep -Milliseconds 800 }   # IDYES
+    $a0 = Arm
+    $s1 = Quit $idB; Start-Sleep -Milliseconds 500; $s2 = Quit $id; $a1 = Arm
+    T 'Q3' 'yes-after-second-window' ($aB.Source -eq 3 -and $a0.Source -eq 1 -and $a0.Confirmed -eq 1 -and (Runs).Count -eq 2 -and (Runs)[1] -like 'exit|*') ('question {0} ({1}); B started while it is open: {2}; Yes: {3}; B, A closed ({4}, {5} s): {6}; afterwards {7}' -f (Esc $bt), (ArmStr $aQ), (ArmStr $aB), (ArmStr $a0), $s1, $s2, (RunsStr), (ArmStr $a1))
+    NoCheck
+    $id = Start-420; Start-Sleep -Seconds 5; $n = [P420]::Notice([uint32]$id); $a2 = Arm; $s = Quit $id
+    Out ('Q3 next start: notice {0}, {1}; exit ({2} s): {3} line(s)' -f (Form $n), (ArmStr $a2), $s, (Runs).Count)
+
+    # Q4: level 2, the installer can never be started (seam on for every instance): bounded?
+    Reset-State 2; Set-Env
+    $env:TC_UPDATE_PROBE_LAUNCHFAIL = '1'
+    $log = @()
+    try {
+        $id = Start-420; $h = Wait-Form $id 'automatic'; Press $h 2; [void](Gone $h 3)
+        NoCheck; $s = Quit $id; $log += ('exit1 ({0} s): {1}' -f $s, (ArmStr (Arm)))
+        for ($k = 2; $k -le 5; $k++) {
+            NoCheck
+            $id = Start-420; Start-Sleep -Seconds 5
+            $bx = Msg-Box $id; $bt = if ($bx -ne $Z) { Esc (FullText $bx) } else { 'no box' }
+            if ($bx -ne $Z) { Close-Win $bx; Start-Sleep -Milliseconds 800 }
+            $n = [P420]::Notice([uint32]$id); $na = Form $n
+            if ($n -ne $Z) { Press $n 2; [void](Gone $n 3) }
+            $am = ArmStr (Arm)
+            $s = Quit $id
+            $log += ('start{0}: box [{1}], notice {2}, {3}; exit ({4} s): {5}' -f $k, $bt, $na, $am, $s, (ArmStr (Arm)))
+        }
+    }
+    finally { Remove-Item Env:\TC_UPDATE_PROBE_LAUNCHFAIL -ErrorAction SilentlyContinue }
+    $fin = Arm
+    T 'Q4' 'bounded' ($null -eq $fin -or $fin.Launches -le 3) ($log -join ' || ')
 }
 
 $CfgKey = 'HKCU\Software\Tandem Commander\Settings\Configuration'

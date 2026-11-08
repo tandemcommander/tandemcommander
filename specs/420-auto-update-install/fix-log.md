@@ -209,6 +209,27 @@ no loop - every repeat needs a click or stops at the cap).
 Checks after round 7 fixes: `BUILD SUCCEEDED`; saltests **287,190 checks, 0 failed**; probe **99 PASS,
 0 FAIL, 1 NOT DRIVEN** (registry restored, SHA-256 equal).
 
+## Round 8 (independent agent: full review + GUI reproduction, own group Q; MUST 0, SHOULD 3, NOTE 5)
+
+Zero MUST (third round in a row); the round-7 fix verified (registry after `OleUninitialize` is
+safe; it never confirms an offered or unconfirmed arm - the gap between the counts is kept; no loop:
+a never-startable installer stops at 3 launches, probe Q4 PASS).
+
+| Finding | What | Done |
+|---|---|---|
+| R8 SHOULD 1 | At the exit an installer file held by another process (antivirus / backup scan: sharing violation) dropped the confirmed plan without a word (and reset the launch cap) | `UpdInstall_PrepareExit`: a file that is still there only could not be read now - the arm stays, the next start completes it (as `GetArmedRelease`, round 3); a missing file or one that is not ours drops it (`UpdiInstallerStillThere`); probe R8 Q1 exit-file-busy / next-start |
+| R8 SHOULD 2 | The same at the start-up completion (`UpdInstall_CompleteArmed`) | the same rule; probe R8 Q2 |
+| R8 SHOULD 3 | Yes to "install it when you close?" was lost when a second window opened while the question was up (that window marked the arm offered; Yes raised `Install Confirmed` but left source 3) | `UpdiConfirmArm`: a confirmation is a click - an offered arm becomes the user's again; probe R8 Q3 |
+| R8 NOTE | `contracts/installer-launch.md` stale (the exit retries; run-log format; the seam list; "last statement") | rewritten (rounds 3-8 rules, `kind|command line`, `TC_UPDATE_PROBE_LAUNCHFAIL`) |
+| R8 NOTE | `data-model.md` start-up table had no row for an offered arm | added (done when reached, otherwise none) |
+| R8 NOTE | `contracts/stored-state.md` said `Install Launches` 0..3 | "Install Now may count past 3" |
+| R8 NOTE | `PRIVACY.md` "confirmed by you" - an automatic arm is confirmed by the setting | "(by you or by the setting)" |
+| R8 NOTE | S1 / S2 also reset the launch cap | fixed with them |
+
+Checks after round 8 fixes: `BUILD SUCCEEDED`; saltests **287,190 checks, 0 failed**; encoding guard 0.
+**Probe not yet run on these fixes** (group R8 added): a `tandemcommander.exe` of the user runs
+(Program Files, PID 25044) and the probe shares its registry key - run when it is closed.
+
 ## Translations (stop-rules §2.13, module `salamand`)
 
 Round 2 (after review 1 / UX test 1): new `IDS_UPDATE_BUSY`, `IDS_UPDATE_INSTALL_LATER`,

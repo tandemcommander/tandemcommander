@@ -10,7 +10,7 @@ Extends `specs/123-new-version-check/contracts/stored-state.md`. All values live
 | `Install Digest` | REG_SZ | arming | 64 lowercase hex |
 | `Install Source` | REG_DWORD 1/2/3 | arming | 1 user, 2 automatic, 3 offered only (never honoured) |
 | `Install Test` | REG_DWORD 0/1 | arming | test mode |
-| `Install Launches` | REG_DWORD | each start of the installer | 0..3 |
+| `Install Launches` | REG_DWORD | each start of the installer | 0..3 (Install Now may count past 3) |
 | `Install Confirmed` | REG_DWORD | Install When I Close, Yes to the question, a start that failed before anything ran | <= `Install Launches`; optional (missing = 0) |
 
 The `Install` values are written and removed together; a missing or invalid one of the first five =

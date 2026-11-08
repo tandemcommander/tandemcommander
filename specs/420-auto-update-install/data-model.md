@@ -47,6 +47,7 @@ Invalid or partial values = nothing armed (all are removed together).
 | nothing armed | none |
 | the running copy is not eligible (portable copy, build tree) | none - the installed copy's arm and files are left alone (review 1) |
 | `Install Test` and not test mode now | drop (state + file) |
+| source 3 (offered only, round 3) | done (state + file) when the running version reached it, otherwise none - it waits for the check to offer it |
 | not honoured | drop the state (file kept, rule of the clarifications) |
 | not test: running version >= armed | done: drop the state + file |
 | test: launches > 0 | done: drop the state + file |

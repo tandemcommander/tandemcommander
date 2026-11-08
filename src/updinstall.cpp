@@ -890,15 +890,28 @@ static void UpdiRestoreArmAfterFailedNow(BOOL started)
                                                          << (keep ? restored.Source : 0));
 }
 
-// round 6: the user confirmed the plan of 'version' now - launches made so far are behind it
+// round 6: the user confirmed the plan of 'version' now - launches made so far are behind it;
+// round 8 S3: a confirmation is a click - an arm another instance marked offered meanwhile (while the
+// question "install it when you close?" was up) becomes the user's again
 static void UpdiConfirmArm(const CSalUpdVersion& version)
 {
     CSalUpdArm arm;
     if (UpdInstall_LoadArm(&arm) && SalUpdVersionCompare(arm.Version, version) == 0)
     {
         arm.ConfirmedAt = arm.Launches;
+        if (arm.Source == SALUPD_ARM_OFFERED)
+            arm.Source = SALUPD_ARM_USER;
         UpdiSaveArm(arm);
     }
+}
+
+// round 8 S1 / S2: the installer of 'version' did not verify - is its file still there? Then it only
+// could not be read now (an antivirus or backup scan holds it; a file that is not ours was deleted by
+// UpdiVerify, or will be at the next try): the arm and its count stay. Gone: the arm goes.
+static BOOL UpdiInstallerStillThere(const CSalUpdVersion& version)
+{
+    WCHAR path[UPDINST_MAX_FOLDER + 100];
+    return UpdiInstallerPath(version, path, _countof(path)) && GetFileAttributesW(path) != INVALID_FILE_ATTRIBUTES;
 }
 
 void UpdInstall_ArmByClick(const CSalUpdRelease& release)
@@ -1680,6 +1693,11 @@ void UpdInstall_CompleteArmed(HWND parent)
     if (!UpdiInstallerPath(arm.Version, path, _countof(path)) ||
         UpdiVerify(path, arm.Version, arm.Digest, &held) != suvOk)
     {
+        if (UpdiInstallerStillThere(arm.Version)) // round 8 S2
+        {
+            TRACE_I("UpdInstall: the armed installer cannot be read now - the arm waits");
+            return;
+        }
         TRACE_I("UpdInstall: the armed installer is gone or not ours - the arm is dropped");
         UpdInstall_DropArm();
         UpdiDeleteFiles(arm.Version);
@@ -1779,6 +1797,8 @@ void UpdInstall_PrepareExit()
     if (!UpdiInstallerPath(arm.Version, path, _countof(path)) ||
         UpdiVerify(path, arm.Version, arm.Digest, &held) != suvOk)
     {
+        if (UpdiInstallerStillThere(arm.Version)) // round 8 S1: held now - the next start completes it
+            return;
         UpdInstall_DropArm();
         UpdiDeleteFiles(arm.Version);
         return;
