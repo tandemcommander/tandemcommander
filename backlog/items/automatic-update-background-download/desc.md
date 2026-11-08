@@ -1,7 +1,7 @@
 ---
 title: Automatic update: download the new installer in the background and install it
 type: feature
-status: open
+status: in-progress
 severity: 4
 area: privacy-security
 source: manual
@@ -10,7 +10,7 @@ created: 2026-11-08
 updated: 2026-11-08
 verified: 2026-11-08 824e8f58
 effort: L
-feature: -
+feature: 420
 related: [new-version-check-123-person-steps, checkver-update-channel-decision, update-close-real-installer-signout-080-088-118]
 depends-on: []
 reason: -
@@ -100,3 +100,4 @@ B as the new default, with one setting on Configuration > General in three level
 - 2026-11-08 — extended: maintainer decision 2026-11-08 - the test-mode option is --updatetest (new multi-word options take two dashes, old switches unchanged); it must work in the Release build
 - 2026-11-08 — verified at 824e8f58: still present at 824e8f58: Download opens the browser (upddlg.cpp IDOK), no download or install code; asset digest present in the API, browser_download_url answered 504, API asset route 302 to release-assets.githubusercontent.com
 - 2026-11-08 — maintainer requirement 2026-11-08 (at the start of the run): a setting the user can change later (off / full automatic), and an update planned for the exit that did not happen at the exit is completed at the next start
+- 2026-11-08 — run started, feature 420
