@@ -8,7 +8,7 @@ source: manual
 who: agent
 created: 2026-11-08
 updated: 2026-11-08
-verified: -
+verified: 2026-11-08 cbf0cf1f
 effort: M
 feature: -
 related: []
@@ -79,3 +79,4 @@ At 87793bd8 (`tools/backlog-app/packages/web/src/`):
 
 - 2026-11-08 — created (source manual)
 - 2026-11-08 — moved to Next position 1: the maintainer asked to do it now; maintainer 2026-11-08
+- 2026-11-08 — verified at cbf0cf1f: present at cbf0cf1f: e2e layout measurement, main scrolls 57-982 px on every view at 4 sizes, story/trace add a 2nd scrollbar, chat overlay covers tabs below 1280 px
