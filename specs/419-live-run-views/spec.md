@@ -5,6 +5,14 @@
 **Status**: Draft
 **Input**: User description: "Backlog item backlog-app-live-run-switchable-views (backlog/items/backlog-app-live-run-switchable-views/desc.md) - implement exactly what it describes." From backlog item backlog-app-live-run-switchable-views.
 
+## Clarifications
+
+### Session 2026-11-08
+
+- Q: Is the compact summary line shown on the Overview view too, where the full progress head already is? → A: yes, on every view, so the row of views never moves when the view changes (autonomous run: recommended)
+- Q: Does the Chat view stretch the conversation across the whole width, or keep a narrower reading column inside it? → A: the log and the composer span the full width of the page (autonomous run: item - "the chat window gets the full width of the page")
+- Q: When the maintainer switches to Story or Raw trace during a live run, where does the list start? → A: as in 415 - a live list opens at its end and follows new lines unless the reader scrolled up; an ended run's list opens at the top (autonomous run: conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - The page never scrolls; one scrollbar per view (Priority: P1)
@@ -114,22 +122,25 @@ the page on Documents opens Documents again.
   as a whole.
 - **FR-005**: An opened story line's detail, the agent's latest message on Overview and the tool-use list of a
   chat answer MUST NOT open a scroll area of their own.
-- **FR-006**: Chat MUST use the full width of the page. Its log is its only scroll area, and the composer with
-  the ready questions stays below the log.
+- **FR-006**: Chat MUST use the full width of the page: the log and the composer span it. The log is the only
+  scroll area, and the composer with the ready questions stays below the log.
 - **FR-007**: A chat update MUST scroll only the conversation's log, never the page or another element. This
   applies on the live page and in the conversation's own window.
 - **FR-008**: The chat MUST stay mounted while another view is shown: a draft and a running answer survive a
   view switch.
 - **FR-009**: When a chat answer arrives or finishes while the Chat view is not shown, the Chat tab MUST show a
   mark until the Chat view is opened.
-- **FR-010**: Above the tab row, one compact line MUST show the item's title (or its slug), the current step,
-  the percentage, the elapsed time and the expected remaining time, for a live run and for an ended one.
+- **FR-010**: Above the tab row, on every view, one compact line MUST show the item's title (or its slug), the
+  current step, the percentage, the elapsed time and the expected remaining time, for a live run and for an
+  ended one. Switching views MUST NOT move the tab row.
 - **FR-011**: The chosen view MUST be kept in the page's address. A reload or link MUST open it. An unknown or
   unavailable view MUST fall back to Overview.
 - **FR-012**: Nothing the 415 dashboard showed may be lost. Every region, list, tab and button keeps its
   accessible name, and both themes pass the accessibility check without a serious or critical finding.
 - **FR-013**: The chat's former column and its open / close button (with its remembered state) MUST be removed,
   so nothing covers the page at any width.
+- **FR-014**: On a live run, Story and Raw trace MUST open at the end of their lists and follow new lines unless
+  the reader scrolled up (415's behaviour). On an ended run they open at the top.
 
 ## Success Criteria *(mandatory)*
 
