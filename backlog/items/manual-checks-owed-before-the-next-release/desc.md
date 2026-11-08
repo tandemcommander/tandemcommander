@@ -78,6 +78,10 @@ Before the release, every line below is ticked (`BL step <slug> <n> --done`). Or
 - [ ] Automatic level, Help > Check for New Version while the notification is in front with its level list open when the download finishes: the window is not closed under you - it becomes the offer (the hidden desktop has no foreground window) (feature 421)
 - [ ] Notification with a real keyboard and mouse: the level list - arrow keys step without acting until a one-second pause, the open list acts when it closes; *Download & Install* is the default (Enter), *Cancel Download* stops it; Narrator reads the level label, the list and the buttons (feature 421)
 - [ ] Notification design in every language, light and dark, 100 / 150 / 200 %: the taller window with the level row, the button row with *Download & Install* (and *Cancel Download* fitting the same width), the portable hint of a copy not installed by the installer (feature 421)
+- [ ] Automatic level on the real desktop, all-users installation: right after the start-up check (while you work) the program closes, the UAC prompt appears, accepted - the update installs with a progress window and the program starts again (not elevated); nothing is ever installed when you close the program (feature 422; supersedes the "install at close" parts of the feature 421 lines above)
+- [ ] The lock-out trap on the real desktop: let the automatic install start, decline the UAC prompt (or cancel the installer after it closed the program), start Tandem Commander again - nothing starts on its own, also at the next start and after the next daily check (only the offer); a failed Install Now shows OK only, no question about installing at close (feature 422)
+- [ ] Automatic level: Help > Check for New Version and the About box's Check now show the window with Install Now and never install on their own; choosing the automatic level in the window keeps it open (feature 422)
+- [ ] Automatic level while you type in the command line or have a Find window open: nothing starts until the line is empty / Find is closed (feature 422)
 
 ## Log
 
@@ -100,3 +104,4 @@ Before the release, every line below is ticked (`BL step <slug> <n> --done`). Or
 - 2026-11-08 — feature 419: one check added
 - 2026-11-08 — edited Steps
 - 2026-11-08 — feature 421: 5 checks added
+- 2026-11-08 — feature 422: 4 checks added

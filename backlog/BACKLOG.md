@@ -17,7 +17,6 @@ Last triaged: 2026-11-08
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Updates install right away with a restart, never when Tandem Commander closes](items/update-install-right-away-never-at-exit/desc.md) | improvement | 5 | privacy-security | 422 |
 
 ## Next
 

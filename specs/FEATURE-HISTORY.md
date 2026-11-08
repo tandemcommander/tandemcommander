@@ -37,14 +37,14 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
 | WebView2 viewers (Markdown, Code) | 081, 085, 262, 314, 408 |
-| Privacy and security | 083, 085, 086, 090, 123, 420, 421 |
+| Privacy and security | 083, 085, 086, 090, 123, 420, 421, 422 |
 | FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279, 288, 303, 323, 341, 345, 347, 348, 384, 385, 410 |
 | PictView | 105, 111, 120, 267 |
 | Undelete | 114, 115, 148, 324 |
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287, 387, 388 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
-| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373, 374, 375, 376, 404, 405, 407, 413, 416, 417, 418, 420, 421 |
+| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373, 374, 375, 376, 404, 405, 407, 413, 416, 417, 418, 420, 421, 422 |
 
 ## Feature notes
 
@@ -6998,3 +6998,27 @@ a few early ones are out of sequence).
   (group `TestUpdateNotice421`); probe `notice421_probe.ps1` silent-install rows FAIL before the idle
   move -> **57 PASS / 0 FAIL**; 420's probe with the busy seam 94 PASS, its 10 FAILs all on the removed
   automatic form; two refute-first reviews (MUST in 1, none in 2).
+- 422-install-now-not-at-exit: **updates install right away with a restart, never when Tandem Commander
+  closes** - with 421 the automatic level waited for 30 s without input (in practice the update was
+  installed only at the exit), and 420 also installed at the exit (*Install When I Close*, the automatic
+  fall-back, the question after a failed *Install Now*). Now, after the background check at start-up,
+  the automatic level installs right away (close, progress window, start again) as soon as nothing can
+  be lost (`DecideCloseApp`, no command-line text, no Quick Rename, no Find window, the last instance, no
+  installer running); nothing installs at the exit (exit route, button, question and their strings
+  removed); a plan not installed while running is completed at the next start. A check the user starts
+  (Help, the About box, a level chosen in the notification) always shows the window with *Install Now*.
+  - **The maintainer's lock-out trap**: an installer that closed the program and was cancelled (or a
+    declined UAC prompt) must never be started again on its own. Held by 420's launch count (counted
+    before the start, now verified by reading it back - otherwise the installer is not started) and
+    `SalUpdArmAfterInstallerFailed` (review M1: a click on nothing planned left no plan, so the next
+    check re-planned it silently - now kept OFFERED with its count). Probe group T: kill after the
+    silent launch / after the start-up completion, three starts with and without a check -> nothing
+    starts; T3 negative control (count reset by hand: it starts).
+  - Traps: without the idle wait an open Find window was closed by the installer (review 2, now held);
+    the probe's copy opened in whichever panel was active (two instances change the activation).
+  - Owed to a person (release checklist): real UAC accept / decline and the restart, the trap on the real
+    desktop, Help / About check, command line / Find. No `## [Unreleased]` in `CHANGELOG.md`: the entry
+    is in the closing report.
+  From backlog item `update-install-right-away-never-at-exit`. saltests -> 287,236 checks; probe
+  `install422_probe.ps1` (derived from 421's) **61 PASS / 0 FAIL**; two refute-first reviews (MUST in
+  1, none in 2).
