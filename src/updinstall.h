@@ -82,6 +82,10 @@ int UpdInstall_InstallNow(HWND parent, const CSalUpdRelease& release);
 // told, the file is deleted) when it is missing or changed.
 BOOL UpdInstall_CheckReady(HWND parent, const CSalUpdRelease& release);
 
+// Install When I Close: UpdInstall_Arm(USER); round 5: a click while Install Now's installer of that
+// version runs is what a failure of that installer keeps (not the arm from before Install Now)
+void UpdInstall_ArmByClick(const CSalUpdRelease& release);
+
 // round 4: can Install When I Close still plan 'version' for the exit (its launches not used up)?
 BOOL UpdInstall_ExitArmAvailable(const CSalUpdVersion& version);
 

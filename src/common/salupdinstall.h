@@ -567,7 +567,8 @@ inline CSalUpdArm SalUpdArmAfterFailedNow(BOOL hadArm, const CSalUpdArm& before,
 {
     CSalUpdArm result = before;
     *keep = hadArm && before.Present && now.Present && SalUpdVersionCompare(before.Version, now.Version) == 0;
-    if (*keep)
+    // round 5 NOTE: a launch of the other mode (a test session over a normal arm) is not counted
+    if (*keep && (before.Test != 0) == (now.Test != 0))
         result.Launches = now.Launches > before.Launches ? now.Launches : before.Launches;
     return result;
 }

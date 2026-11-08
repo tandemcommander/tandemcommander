@@ -1,4 +1,4 @@
-# Fix log - 420-auto-update-install
+﻿# Fix log - 420-auto-update-install
 
 Backlog item `automatic-update-background-download` - *Automatic update: download the new installer
 in the background and install it*. Run of `/tandem-backlog-implement`, started 2026-11-08 at
@@ -157,6 +157,22 @@ Checks after round 4 fixes: encoding guard 0; `check_update_pin` OK; `BUILD SUCC
 restored, SHA-256 equal); `e2e_peruser.ps1` against the **real GitHub** (2026-11-08 14:15) **7 PASS,
 0 FAIL** (installed exe = published 0.2.0 by SHA-256, one installer start). No UI text changed in
 round 4 - no `.slt` refresh.
+
+## Round 5 (independent agent: review + GUI reproduction, own probe group; MUST 1, SHOULD 2, NOTE 4)
+
+| Finding | What | Done |
+|---|---|---|
+| R5 MUST | Round 4's "leave it to the other instance" kept an arm whose installer had run honoured: (A) Install Now closed by its installer, the program reopened while that installer still ran (rolling back) - the next normal exit installed it with `/VERYSILENT`; (B) level 2, two windows started at once after the exit's installer did not install it - neither offered, their exit installed again. The round-3 MUST by a new route | the start-up decision "offer" marks the arm offered **in every case**; only showing the offer waits for the last instance with no installer running. Another instance's Install Now that then fails restores its own pre-click arm (round 4). Probe R5 A, B; R4 N installer now also checks the exit |
+| R5 SHOULD 1 | With the check off, a second instance deleted the first instance's plan and installer (`SalUpdStartupOfferReachable` ran before the instance checks) | the rule is applied only by the last instance while no installer runs; probe R5 C |
+| R5 SHOULD 2 | Install When I Close clicked while Install Now's installer ran was undone when that installer failed (the arm before Install Now was restored) | `UpdInstall_ArmByClick`: a click on the version being installed becomes the arm a failure keeps - the question "install it when you close?" is asked, Yes keeps it; probe R5 D |
+| R5 NOTE | The Install Now handler read the dialog object after a nested message box (the window may be replaced meanwhile) | the release, window and parent are copied first; nothing of the object is used after the call; the window is checked with `IsWindow` |
+| R5 NOTE | A test session's launch was added to a normal arm's count | `SalUpdArmAfterFailedNow` merges the count only within the same mode; saltests |
+| R5 NOTE (person) | Keyboard focus after the forced reshow - the hidden desktop has no foreground window | probe R5 E NOT DRIVEN; a line of the release checklist |
+| R5 NOTE (accepted) | A new check during a download forgets an earlier Skip click (the download is offered) | consistent with "a check the user asked for offers a skipped version" |
+| R5 accepted trade-off | A second instance cannot tell that the first one confirmed its plan in its session (Install When I Close + a failed start): it marks the plan only offered | the safe direction - no exit installs it silently; files and arm stay, the offer returns at the next check; probe R5 C asserts it |
+
+Checks after round 5 fixes: encoding guard 0; `BUILD SUCCEEDED`; saltests **287,181 checks, 0 failed**;
+probe **92 PASS, 0 FAIL, 1 NOT DRIVEN** (R5 E, owed to a person; registry restored, SHA-256 equal).
 
 ## Translations (stop-rules §2.13, module `salamand`)
 

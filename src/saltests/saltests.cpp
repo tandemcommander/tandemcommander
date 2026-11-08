@@ -10547,6 +10547,9 @@ static void TestAutoUpdate420()
         CHECK(keep && back.Launches == 1); // the count never goes back
         back = SalUpdArmAfterFailedNow(TRUE, Upd420Arm(0, 2, 0, SALUPD_ARM_USER, FALSE, 0), clickArm, &keep);
         CHECK(!keep); // an arm of another version before: not restored over this one
+        CSalUpdArm testClick = Upd420Arm(0, 2, 1, SALUPD_ARM_USER, TRUE, 1); // round 5: a test session's click
+        back = SalUpdArmAfterFailedNow(TRUE, once, testClick, &keep);
+        CHECK(keep && !back.Test && back.Launches == 1 && back.Source == SALUPD_ARM_AUTOMATIC);
         CSalUpdArm gone;
         memset(&gone, 0, sizeof(gone));
         back = SalUpdArmAfterFailedNow(TRUE, once, gone, &keep);

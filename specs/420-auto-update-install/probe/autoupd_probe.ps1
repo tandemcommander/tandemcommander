@@ -3,7 +3,7 @@
     Feature 420 (automatic update) - behaviour probe of a Debug build.
     Rows follow specs/420-auto-update-install/spec.md, contracts/*.md and quickstart.md section 2.
     Groups: L levels, V verification, B buttons, X exit, S completion at the next start,
-    T test mode, Rv/Ux/R3/R4 review findings, G Configuration > General. Every row prints PASS / FAIL / NOT DRIVEN.
+    T test mode, Rv/Ux/R3/R4/R5 review findings, G Configuration > General. Every row prints PASS / FAIL / NOT DRIVEN.
     MUST run through tools\run_on_hidden_desktop.ps1. Backs up the product's registry key and
     restores it (verified by SHA-256); creates and removes the updates folder
     %LOCALAPPDATA%\Tandem Commander\Updates and a fake uninstall entry under
@@ -723,17 +723,18 @@ $Groups['R4'] = {
     $s = Quit $id
     T 'N' 'skip' ($f1 -eq 'classic' -and $n -eq $Z -and $null -eq (Arm) -and -not ((UpdFiles) -contains $InstallerName) -and (Runs).Count -eq 0) ('skipped earlier, Skip during the download: first {0}, afterwards notice {1}, {2}, {3}; exit ({4} s): {5}' -f $f1, (Form $n), (ArmStr (Arm)), (FilesStr), $s, (RunsStr))
 
-    # NOTE: an instance started while an installer runs does not turn the plan into an offer
+    # NOTE (round 5: marked offered, shown later): an instance started while an installer runs shows
+    # no offer; the plan whose installer ran is never installed silently at an exit
     Reset-State 1; Set-Env
     $id = Start-420; $h = Wait-Form $id 'offer'; Press $h 6296; [void](Gone $h 3); Kill-Wait $id
     Uc-Set 'Install Launches' 1; NoCheck
     Start-FakeSetup
     try {
         $id = Start-420; Start-Sleep -Seconds 4; $n = [P420]::Notice([uint32]$id); $a = Arm
-        Kill-Wait $id
     }
     finally { Stop-FakeSetup }
-    T 'N' 'installer' ($n -eq $Z -and $null -ne $a -and $a.Source -eq 1 -and $a.Launches -eq 1) ('start while an installer runs: notice {0}, {1}' -f (Form $n), (ArmStr $a))
+    $s = Quit $id
+    T 'N' 'installer' ($n -eq $Z -and $null -ne $a -and $a.Source -eq 3 -and $a.Launches -eq 1 -and (Runs).Count -eq 0) ('start while an installer runs: notice {0}, {1}; exit ({2} s): {3}' -f (Form $n), (ArmStr $a), $s, (RunsStr))
 
     # NOTE: with the check off an update that could only be offered is not kept (arm and installer go)
     Reset-State 1; Set-Env
@@ -742,6 +743,80 @@ $Groups['R4'] = {
     $id = Start-420; Start-Sleep -Seconds 4; $n = [P420]::Notice([uint32]$id); $a = Arm; $files = FilesStr
     $s = Quit $id
     T 'N' 'checkoff' ($n -eq $Z -and $null -eq $a -and -not ((UpdFiles) -contains $InstallerName) -and (Runs).Count -eq 1) ('check off, an update whose installer did not install it: notice {0}, {1}, {2}; exit ({3} s): {4} line(s)' -f (Form $n), (ArmStr $a), $files, $s, (Runs).Count)
+}
+
+# R5: the findings of the fifth verification (fix-log, Round 5); rows A-D from the reviewer's probe copy
+function Start-NoWait {
+    $a = @('-t', 'T420', '-l', ('"{0}"' -f $PanelDir), '-r', ('"{0}"' -f $PanelDir))
+    $p = Start-Process -FilePath $Exe -ArgumentList $a -PassThru
+    [void]$Started.Add($p.Id); [void]$p.Handle; $script:Procs[$p.Id] = $p
+    return $p.Id
+}
+function Wait-Main([int]$Id) {
+    $sw = [Diagnostics.Stopwatch]::StartNew()
+    while ($sw.Elapsed.TotalSeconds -lt 60 -and (Test-Alive $Id) -and (Get-Main $Id) -eq $Z) { Start-Sleep -Milliseconds 100 }
+}
+$Groups['R5'] = {
+    # MUST, A: Install Now; its installer closes the program (kill) and still runs when the program is
+    # opened again; it then ends without installing - the exit installs nothing (only offered)
+    Reset-State 1; Set-Env
+    $id = Start-420; $h = Wait-Form $id 'offer'; Press $h 1; [void](Wait-Run 1 10); Kill-Wait $id
+    $a0 = Arm
+    NoCheck
+    Start-FakeSetup
+    try { $id = Start-420; Start-Sleep -Seconds 4; $n = [P420]::Notice([uint32]$id); $a1 = Arm }
+    finally { Stop-FakeSetup }
+    Start-Sleep -Seconds 1
+    $s = Quit $id; $a2 = Arm
+    T 'A' 'installer-exit' ((Runs).Count -eq 1 -and $n -eq $Z -and $a1.Source -eq 3 -and $a2.Source -eq 3) ('Install Now, closed by its installer: {0}; start while that installer runs: notice {1}, {2}; the installer ends, normal exit ({3} s): {4}; afterwards {5}' -f (ArmStr $a0), (Form $n), (ArmStr $a1), $s, (RunsStr), (ArmStr $a2))
+
+    # MUST, B: level 2, the exit's installer did not install it; two windows started at once - no
+    # second silent install at their exits
+    Reset-State 2; Set-Env
+    $id = Start-420; [void](Wait-Form $id 'automatic'); $s0 = Quit $id; $a0 = Arm
+    NoCheck
+    $i1 = Start-NoWait; $i2 = Start-NoWait; Wait-Main $i1; Wait-Main $i2
+    Start-Sleep -Seconds 5
+    $a1 = Arm
+    $s1 = Quit $i1; Start-Sleep -Seconds 1; $s2 = Quit $i2; $a2 = Arm
+    T 'B' 'two-starts' ((Runs).Count -eq 1 -and $a1.Source -eq 3) ('level 2, the exit installer did not install it ({0} s; {1}); two instances at once: {2}; both closed ({3} s, {4} s): {5}; afterwards {6}' -f $s0, (ArmStr $a0), (ArmStr $a1), $s1, $s2, (RunsStr), (ArmStr $a2))
+
+    # SHOULD 1, C: check off; instance A keeps Install When I Close after a failed Install Now;
+    # instance B started then does not delete A's plan or its installer
+    Reset-State 1; Set-Env
+    $env:TC_UPDATE_PROBE_LAUNCHFAIL = '1'
+    try {
+        $id = Start-420; $h = Wait-Form $id 'offer'; Press $h 6296; [void](Gone $h 3)
+        Post-Cmd (Get-Main $id) 2217
+        $h = Wait-Form $id 'offer' 20; Press $h 1; Start-Sleep -Seconds 2; $box = Take-Box $id $h
+        Start-Sleep -Seconds 1
+        $n = [P420]::Notice([uint32]$id); if ($n -ne $Z) { Press $n 2; [void](Gone $n 3) }
+        $a0 = Arm
+        Uc-Set 'Check At Startup' 0
+        $idB = Start-420; Start-Sleep -Seconds 5; $a1 = Arm; $files = FilesStr
+        [void](Quit $idB); [void](Quit $id)
+    }
+    finally { Remove-Item Env:\TC_UPDATE_PROBE_LAUNCHFAIL -ErrorAction SilentlyContinue }
+    # B cannot tell that A confirmed its plan in this session: it keeps the arm and the installer and
+    # marks it only offered (the safe direction - no exit installs it silently; round 5, accepted)
+    T 'C' 'other-instance' ($null -ne $a0 -and $a0.Source -eq 1 -and $null -ne $a1 -and $a1.Source -eq 3 -and $a1.Launches -eq 1 -and (UpdFiles) -contains $InstallerName) ('A: Install When I Close + failed Install Now: {0}; check off, B starts: {1}, {2}' -f (ArmStr $a0), (ArmStr $a1), $files)
+
+    # SHOULD 2, D: Install When I Close clicked while Install Now's installer runs; the installer ends
+    # with 5 - the click stays (the question is asked; Yes keeps it)
+    Reset-State 1; Set-Env
+    $id = Start-420; $h = Wait-Form $id 'offer'; Press $h 1; [void](Wait-Run 1 10)
+    Post-Cmd (Get-Main $id) 2217
+    $h = Wait-Form $id 'offer' 20; $fD = Form $h; Press $h 6296; [void](Gone $h 3); $a0 = Arm
+    [void][Drv098f]::PostMessageW((Get-Main $id), 0x8000 + 424, [IntPtr]5, $Z)
+    Start-Sleep -Seconds 2
+    $box = @(Get-Tops $id | Where-Object { [Drv098f]::Cls($_) -eq '#32770' -and $_ -ne ([P420]::Notice([uint32]$id)) })
+    $boxText = if ($box.Count) { (FullText $box[0]) } else { '<no message>' }
+    if ($box.Count) { Post-Cmd $box[0] 6; Start-Sleep -Milliseconds 800 }   # IDYES
+    $a1 = Arm; $n = [P420]::Notice([uint32]$id)
+    $s = Quit $id
+    T 'D' 'click-kept' ($fD -eq 'offer' -and $a1.Source -eq 1 -and $boxText -like '*close*' -and $n -eq $Z -and (Runs).Count -eq 2 -and (Runs)[1] -like 'exit|*') ('form during the run {0}; after Install When I Close {1}; installer ends 5: {2}; Yes: {3}, notice {4}; exit ({5} s): {6}' -f $fD, (ArmStr $a0), (Esc $boxText), (ArmStr $a1), (Form $n), $s, (RunsStr))
+
+    ND 'E' 'reshow-focus' 'the keyboard after the forced reshow (second failed Install Now) - the hidden desktop has no foreground window; owed to a person (release checklist)'
 }
 
 $CfgKey = 'HKCU\Software\Tandem Commander\Settings\Configuration'

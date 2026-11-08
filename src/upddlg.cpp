@@ -577,16 +577,23 @@ CUpdateNoticeDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
             if (Form != unfClassic) // feature 420: Install Now - the installer closes the program
             {
-                int res = UpdInstall_InstallNow(HWindow, Release);
+                // round 5 NOTE: InstallNow may show a message box, and while it is up this window can be
+                // replaced (destroyed with its object) - nothing of the object is used after the call
+                CSalUpdRelease release = Release;
+                HWND self = HWindow;
+                HWND parent = ::GetParent(HWindow);
+                int res = UpdInstall_InstallNow(self, release);
+                if (!IsWindow(self))
+                    return TRUE;
                 if (res == UPDNOW_STARTED)
-                    DestroyWindow(HWindow);
+                    DestroyWindow(self);
                 else if (res == UPDNOW_DAMAGED) // UX test 5: the browser download is all that is left
-                    PostMessage(::GetParent(HWindow), WM_USER_UPDATENOTICE_FORM, unfClassic, 0);
-                else if (!UpdInstall_ExitArmAvailable(Release.Version))
+                    PostMessage(parent, WM_USER_UPDATENOTICE_FORM, unfClassic, 0);
+                else if (!UpdInstall_ExitArmAvailable(release.Version))
                 {
                     // round 4 SHOULD: that launch used up the last one the exit may make - the form
                     // must not keep offering (or promising) the install at close
-                    PostMessage(::GetParent(HWindow), WM_USER_UPDATENOTICE_FORM, unfOffer, 1);
+                    PostMessage(parent, WM_USER_UPDATENOTICE_FORM, unfOffer, 1);
                 }
                 return TRUE; // otherwise the user was told; the window stays
             }
@@ -621,7 +628,7 @@ CUpdateNoticeDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 // UX test 5: never armed without a verified installer
                 if (UpdInstall_CheckReady(HWindow, Release))
                 {
-                    UpdInstall_Arm(Release, SALUPD_ARM_USER);
+                    UpdInstall_ArmByClick(Release); // round 5: also while Install Now's installer runs
                     DestroyWindow(HWindow);
                 }
                 else

@@ -877,6 +877,20 @@ static void UpdiRestoreArmAfterFailedNow()
                                                          << (keep ? restored.Source : 0));
 }
 
+void UpdInstall_ArmByClick(const CSalUpdRelease& release)
+{
+    UpdInstall_Arm(release, SALUPD_ARM_USER);
+    if (SalUpdVersionCompare(UpdiNowVersion, release.Version) == 0) // launched (by Install Now) in this session
+    {
+        CSalUpdArm arm;
+        if (UpdInstall_LoadArm(&arm))
+        {
+            UpdiNowBefore = arm;
+            UpdiNowPreArmed = TRUE;
+        }
+    }
+}
+
 BOOL UpdInstall_ExitArmAvailable(const CSalUpdVersion& version)
 {
     CSalUpdArm arm;
@@ -1538,9 +1552,13 @@ void UpdInstall_OnStartupComplete(HWND mainWindow)
     UpdateCheck_GetInstalledVersion(&running);
     BOOL eligible = UpdInstall_IsEligible(NULL);
     CSalUpdStartupArm decision = SalUpdStartupArmDecision(arm, UpdInstall_ArmHonoured(arm), UpdateTestMode, running, eligible);
+    // round 5: another instance runs or an installer runs (e.g. another instance's Install Now at its
+    // elevation prompt) - the arm may be that one's plan
+    BOOL alone = !arm.Present || (UpdiLastInstance() && !UpdiInstallerRunning());
     CUpdateState checkState; // round 4 NOTE: with the check off no offer can be shown
     UpdateCheck_LoadState(&checkState);
-    decision = SalUpdStartupOfferReachable(decision, arm, checkState.CheckAtStartup, UpdateTestMode, eligible);
+    if (alone) // round 5 S1: never deletes another instance's plan and installer
+        decision = SalUpdStartupOfferReachable(decision, arm, checkState.CheckAtStartup, UpdateTestMode, eligible);
     TRACE_I("UpdInstall: start-up decision about the armed update: " << SalUpdStartupArmName(decision)
                                                                        << " (launches " << arm.Launches << ")");
     switch (decision)
@@ -1616,17 +1634,16 @@ void UpdInstall_OnStartupComplete(HWND mainWindow)
         // review 2 S1: an installer started earlier did not install it - offered, the user decides;
         // round 3 M1: and nothing installs it on its own any more (not the exit, not the automatic
         // level) until the user clicks Install Now or Install When I Close
-        // round 4 NOTE: as the completion, only the last instance and never while an installer runs
-        // (another instance's Install Now may be waiting at its elevation prompt - its plan is its own)
-        if (!UpdiLastInstance())
-            TRACE_I("UpdInstall: another instance runs - the armed update is left to it");
-        else if (UpdiInstallerRunning())
-            TRACE_I("UpdInstall: an installer runs - the armed update is not offered now");
+        // round 5 MUST: it is marked offered in every case (no exit installs it silently); the offer
+        // is shown only by the last instance while no installer runs - another instance's Install Now
+        // that fails restores its own arm (UpdiRestoreArmAfterFailedNow)
+        arm.Source = SALUPD_ARM_OFFERED;
+        UpdiSaveArm(arm);
+        if (!alone)
+            TRACE_I("UpdInstall: an earlier installer did not install the armed update - offered, shown later");
         else
         {
             TRACE_I("UpdInstall: an earlier installer did not install the armed update - it is offered");
-            arm.Source = SALUPD_ARM_OFFERED;
-            UpdiSaveArm(arm);
             PostMessage(mainWindow, WM_USER_UPDATEINSTALL, 1, 0);
         }
     }
