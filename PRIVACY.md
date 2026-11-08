@@ -492,8 +492,11 @@ project's repository.
 
 ---
 
-This statement describes Tandem Commander 0.2.0 (`CHANGELOG.md`). In 0.1.10,
-the version before it, the settings are kept in the subkey `0.1` (the
+This statement describes Tandem Commander 0.3.0 (`CHANGELOG.md`). In 0.2.0,
+the version before it, the program downloads and installs nothing: it keeps
+no *Update Level*, *Install* and *Download Refused* values and no `Updates`
+folder, and *Download* always hands the address to your web browser. In
+0.1.10: the settings are kept in the subkey `0.1` (the
 `Update Check` values under `0.1\Update Check`) and no `Moved To Settings`
 value is written; the program offers no import of settings from Altap
 Salamander or Open Salamander, keeps no `Settings backups` folder, and does
@@ -511,4 +514,4 @@ FTP login is `name@someserver.com`; a crash that happens while the ZIP
 plugin is using a password can write that password into the crash report; and
 PictView's wallpaper commands wrote no picture file (*Restore Previous* and
 *None* did write the three `Prev...` values).
-Last updated 2026-10-25.
+Last updated 2026-11-08.

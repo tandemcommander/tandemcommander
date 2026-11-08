@@ -9,19 +9,18 @@ publishing and the winget submission are the maintainer's steps; an agent
 session only prepares the tree. Steps that need a person and are not
 repeated per release are items in `BACKLOG.md` (*Person steps*).
 
-## Current release: 0.2.0 (build 195) — published 2026-10-25
+## Current release: 0.3.0 (build 196) — prepared, not published
 
-- Published (checked 2026-10-26): tag `v0.2.0` on `origin`, GitHub release
-  with `tandemcommander-0.2.0-x64-setup.exe` (not a draft, not a
-  pre-release), the installer archived in `setup/output`; `main` and
-  `production` on `origin` at the release commit. The **Publish to winget**
-  workflow ran on the release and `microsoft/winget-pkgs#461652` (0.2.0) was
-  merged the same day; the catalogue holds 0.1.7, 0.1.9, 0.1.10 and 0.2.0.
-- The released state is `main` at the commit "Version 0.2.0: the tree
-  prepared for the release (2026-10-25)" (prepared by `/tandem-release`). It
-  carries features 244–343 (everything since `v0.1.10`). It is the first
-  MINOR release under Semantic Versioning (feature 343): the settings move
-  once from `…\0.1` to `…\Settings` at the first start.
+- The state to release is `main` at the commit "Version 0.3.0: the tree
+  prepared for the release (2026-11-08)" (prepared by `/tandem-release`). It
+  carries features 345–422 (everything since `v0.2.0`; 344 is backlog
+  tooling without a changelog entry). Its main change is that the program
+  updates itself (features 420–422): the first release that can be installed
+  by the previous one's in-app check is the one after 0.3.0, since 0.2.0 only
+  notifies.
+- The previous release, 0.2.0 (build 195), is published: tag `v0.2.0`, the
+  GitHub release with its installer, `microsoft/winget-pkgs#461652` merged;
+  the catalogue holds 0.1.7, 0.1.9, 0.1.10 and 0.2.0.
 - Branches that must not be tagged: `release-0.1.10` (on `origin`) —
   feature 132 without 135, whose *Update Thumbnail* damages the maker notes
   of real camera files; `release-0.1.10-final` (on `origin`) — features

@@ -35,7 +35,7 @@
 // Since feature 343 the numbers follow Semantic Versioning MAJOR.MINOR.PATCH (the rule:
 // backlog/RELEASE.md, "Version numbering"); the configuration root does not depend on them.
 #define VERSINFO_SALAMANDER_MAJOR 0
-#define VERSINFO_SALAMANDER_MINORA 2
+#define VERSINFO_SALAMANDER_MINORA 3
 #define VERSINFO_SALAMANDER_MINORB 0
 
 #define VERSINFO_SALAMANDER_VERSION VERSINFO_xstr(VERSINFO_SALAMANDER_MAJOR) "." VERSINFO_xstr(VERSINFO_SALAMANDER_MINORA) "." VERSINFO_xstr(VERSINFO_SALAMANDER_MINORB) VERSINFO_BETAVERSION_TXT
@@ -212,10 +212,36 @@
 //       268; a file left as salNNN - feature 281; low-memory crashes -
 //       features 293, 295; File Comparator close - feature 266; Undelete
 //       warning - feature 324; see CHANGELOG.md)
+// 196 - Tandem Commander 0.3.0 (the program updates itself: download,
+//       check and install, the level in the new-version window, install at
+//       once with a restart - features 420-422; Fluent 2 icons for the
+//       program and its plug-ins - features 416, 417; panel tabs: rounded
+//       look, move to the other panel, drag to the first place, Dark theme
+//       layout, a switch that asks a question (GitHub) - features 404,
+//       405, 413, 418; WSL: switch-back freeze, share list, Change Drive
+//       items - features 372-374; clipboard check without waiting -
+//       feature 375; quick search opens a folder without a flash - feature
+//       376; Shift+F6 renames in place - feature 346; disc images: later
+//       sessions kept by Unpack, damaged NRG, CloneCD, UDF, ISO 9660 and
+//       Xbox images, Video CD Form 2 files, files of 4 GiB and more, UDF
+//       2.50 from Windows - features 349-370, 377, 378, 400-403; TAR, cpio
+//       and rpm: long names, names "." and ".." - features 393-396; CAB
+//       unpaired surrogates - feature 381; archive folders typed in
+//       another case - features 382, 383; ZIP through a symbolic link -
+//       feature 399; FTP uploads and panels under several names, users and
+//       ports, z/VM names - features 345, 347, 348, 384, 385, 410; Registry
+//       Editor: long paths, View of text, HKCR moves, link loops - features
+//       380, 387, 390, 391, 406; the Documents folder whole - feature 386;
+//       Renamer and folder links - feature 388; long names in the User Menu
+//       and Change Icon - feature 389; refused filter edit - feature 392;
+//       hex Find and viewer Find text - features 397, 398; Find sort order
+//       (GitHub) - feature 407; Markdown Viewer code copy (GitHub) -
+//       feature 408; mask hints link (GitHub) - feature 409;
+//       see CHANGELOG.md)
 
 // ! DULEZITE: nova cisla buildu je nutne zapsat do vetve "default", a pak
 //             teprve do vedlejsi vetve (kompletni seznam je jen v "default" vetvi)
-#define VERSINFO_BUILDNUMBER 195
+#define VERSINFO_BUILDNUMBER 196
 
 // VERSINFO_BETAVERSION_TXT:
 //

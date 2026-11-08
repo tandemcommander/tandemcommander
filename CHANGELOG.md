@@ -10,7 +10,19 @@ numbering*): a release with new features raises MINOR, a fixes-only release
 raises PATCH. Each release also carries an internal build number shared by the
 application and every plugin. Versions up to 0.1.10 raised only the third number.
 
-## [Unreleased]
+## [0.3.0] — 2026-11-08
+
+**Build 196.** Feature release. Tandem Commander can update itself: it
+downloads the new version from GitHub, checks it and installs it with one
+click - or at once, if you choose so - and starts again. Unpack no longer
+deletes a disc image or archive whose files it did not all extract, and many
+damaged disc images no longer crash or freeze the program. Toolbar, menu,
+drive and plug-in icons share one modern style with dark variants, the old
+icons one click away; panel tabs get a rounded look, can move to the other
+panel and sit at the same height in the Dark theme. WSL distributions appear
+in the Change Drive menu, Shift+F6 renames in place, and the reports made on
+GitHub about sorting in Find, copying code in the Markdown Viewer, cut-off
+mask hints and tab dragging are fixed.
 
 - **Updates are installed right away, never when you close Tandem Commander** (feature 422).
   - **Before:** with *Install it automatically* the update was installed only when you closed the program, and the window about a new version offered *Install When I Close*; after a failed installation the program asked whether to install it when you close.

@@ -16,9 +16,9 @@ affected — in `CLAUDE.md`.
 
 ## Product Identity (established in feature 032, renamed in feature 046)
 
-- **Product name**: Tandem Commander, version **0.2.0** (internal build 195,
-  release dated 2026-10-25 — it carries features 244–343,
-  everything made since 0.1.10 / build 194 / tag `v0.1.10`);
+- **Product name**: Tandem Commander, version **0.3.0** (internal build 196,
+  release dated 2026-11-08 — it carries features 345–422,
+  everything made since 0.2.0 / build 195 / tag `v0.2.0`);
   released versions and what changed in each are recorded in `CHANGELOG.md`
   (mandatory per the constitution: a release bumps
   `VERSINFO_SALAMANDER_*` + `VERSINFO_BUILDNUMBER` in
