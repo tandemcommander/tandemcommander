@@ -508,6 +508,8 @@ test("the live run page never scrolls; each view has at most one scroll area", a
   await expect
     .soft(page.getByRole("tab", { name: "Overview" }), "an unknown view opens the overview")
     .toHaveAttribute("aria-selected", "true", { timeout: 20_000 });
+  // The address is corrected to the view shown (review 2).
+  await expect.soft(page, "the corrected address").toHaveURL(/[?&]view=overview/);
 
   const out = process.env["BACKLOG_APP_E2E_MEASURE"];
   if (out) writeFileSync(out, JSON.stringify(results, null, 2));

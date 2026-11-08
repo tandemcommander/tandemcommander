@@ -17,7 +17,6 @@ Last triaged: 2026-11-08
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Backlog app live run: one switchable view at a time, no page scrolling](items/backlog-app-live-run-switchable-views/desc.md) | improvement | 3 | tooling | 419 |
 
 ## Next
 

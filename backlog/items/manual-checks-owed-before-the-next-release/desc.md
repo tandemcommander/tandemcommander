@@ -7,7 +7,7 @@ area: build-release
 source: manual
 who: person
 created: 2026-11-06
-updated: 2026-11-07
+updated: 2026-11-08
 verified: -
 effort: M
 feature: -
@@ -64,6 +64,7 @@ Before the release, every line below is ticked (`BL step <slug> <n> --done`). Or
 - [ ] Default and Dark theme side by side at 100 %, 125 %, 150 % and 200 % display scaling: the toolbar area and the panel tabs at the same height, the Dark frame and the lines between toolbar rows dark (no light line), the toolbar grips at the same place and dark in Dark (no light stripe) (feature 418)
 - [ ] Toolbars moved by their grips with a real mouse in the Dark theme (also with two drive bars shown): the bands move as in the default theme, and no grip shows a light stripe while dragging or after (feature 418)
 - [ ] High Contrast switched on and then off (Windows Settings > Accessibility > Contrast themes) while the Dark theme is selected: the toolbar area takes the system colours, then the dark frame, lines and grips come back without a restart (feature 418)
+- [ ] Backlog app *Live run* during a real loop run, on a real screen with a real mouse, Default and Dark theme: one row of views (Overview first, Chat last), the run in one line above it, the page itself never scrolls, each view scrolls by itself; the Story follows new lines, a wheel move up keeps it where you put it ("Latest" brings it back), opening a line keeps it in place; Chat uses the full width, a real Claude answer scrolls only the conversation and marks the Chat tab when it arrives while another view is shown; a reload keeps the view (`?view=`) (feature 419)
 
 ## Log
 
@@ -82,3 +83,5 @@ Before the release, every line below is ticked (`BL step <slug> <n> --done`). Or
 - 2026-11-07 — feature 416: 5 checks added
 - 2026-11-07 — feature 417: 4 checks added
 - 2026-11-07 — feature 418: 3 checks added
+- 2026-11-08 — edited Steps
+- 2026-11-08 — feature 419: one check added

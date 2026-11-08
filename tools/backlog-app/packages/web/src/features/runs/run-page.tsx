@@ -42,6 +42,7 @@ export function RunPage() {
       // smallest supported window (820x640) it scrolls rather than cut its views off.
       <div className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto p-4" data-run-page>
         <RunDashboard
+          key={run.data.id}
           run={run.data}
           events={trace.events}
           connected={trace.connected}

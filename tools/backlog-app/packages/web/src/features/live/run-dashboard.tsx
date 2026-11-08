@@ -12,7 +12,7 @@
  * nothing: it reads the trace stream and asks the server for the rest.
  */
 
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Phase, Run, TraceEvent } from "@backlog-app/shared";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/overlays.tsx";
 import { useBoard } from "@/lib/queries.ts";
@@ -75,6 +75,11 @@ export function RunDashboard({
   const showChat = live && run.slug !== null;
   const views = useMemo(() => availableViews(live, run.slug !== null), [live, run.slug]);
   const view = viewFromAddress(requested, views);
+  // An address naming a view the run does not have (unknown, or the chat of an ended run) is
+  // corrected to the view shown (review 2).
+  useEffect(() => {
+    if (typeof requested === "string" && requested !== view) onViewChange(view);
+  }, [requested, view, onViewChange]);
   const nowMs = useNow(1000, live);
   const runView = useRunView(run.id, run.kind, events);
   const insight = useInsight(run.id, live && INSIGHT_VIEWS.has(view));

@@ -71,6 +71,9 @@ export function LivePage() {
     // smallest supported window (820x640) it scrolls rather than cut its views off.
     <div className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto p-4" data-run-page>
       <RunDashboard
+        // A new run starts a new dashboard: no chat mark, story choices or draft of the run before
+        // (the page may never show "no run" between two items; review 2).
+        key={run.id}
         run={run}
         events={trace.events}
         connected={trace.connected}

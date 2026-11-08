@@ -25,7 +25,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Area | Features |
 |------|----------|
 | Build, signing, installer, winget, CI | 002, 050, 072, 077, 080, 091 |
-| Backlog and project tooling | 242, 243, 247, 265, 342, 344, 371, 411, 412, 414, 415 |
+| Backlog and project tooling | 242, 243, 247, 265, 342, 344, 371, 411, 412, 414, 415, 419 |
 | Releases and pre-release reviews | 056, 068, 243, 343 |
 | Translations (pipeline, policy, pins) | 038, 039, 055, 409; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
@@ -6892,3 +6892,30 @@ a few early ones are out of sequence).
   switch = fresh start, extra bars, narrow window, drag in both themes); saltests 286948 / 0
   (`TestDarkRebarEtchedPair418`); three refute-first reviews (MUST 0 / 0 / 0, SHOULD 1 / 0 / 1 - a checklist line
   and the hidden-band match, fixed; the grips NOTE of review 1 and NOTE 1 of review 2 fixed here).
+- 419-live-run-views: **the backlog app's *Live run* page was overcrowded and stacked scrollbars** - measured
+  (`e2e/us8-live-layout.spec.ts`, the real loop replaying the 415 trace, every view at 1920x1200, 1280x800, 1024x700
+  and 820x640): the frame's `main` scrolled on every view (57-982 px), the story and the transcript (`h-[68vh]` /
+  `h-[60vh]`) added a second scrollbar inside it, and below 1280 px the chat column was a fixed overlay over the tabs
+  (9 of 32 view/size cases unreachable) - now the page (live run and a run's page) is one column that fills `main`:
+  the title with the run in one line (*Run in short*), one row of views - Overview (progress head, now, figures),
+  Story, Critical, Decisions, Gallery, Architecture, Files, Documents, Raw trace, Chat (live item runs; full width,
+  `forceMount` so a draft and a streaming answer survive, a dot "new answer" on its tab by `chatMark`) - and the
+  chosen view below, which scrolls in one area of its own; the view is in the address (`?view=`, replace; unknown
+  or unavailable -> Overview, corrected in the address); the chat log sets its own `scrollTop` (no `scrollIntoView`,
+  which scrolls every ancestor); the story's search, filters and opened lines are kept across views; the dashboard
+  is keyed by the run. Pure rules in `packages/web/src/features/live/run-views.ts` (the web project's first unit
+  test). Traps: react-virtuoso's `followOutput` scrolls to its *estimate* of a new line - a taller line left the
+  list 116 px short, past `atBottomThreshold`, and the live story stopped following for good; "follow" is now the
+  reader's (stuck until the reader's own wheel / touch / key / scroll-bar press moves up; a press on a line is
+  reading, not scrolling); a *function* `followOutput` counts as "follow" whatever it returns and, after each new
+  prop (every render), pulls a growing list to its end (an opened line jumped 110 px) - pass a value; a margin on a
+  virtual list row's root collapses out of the measured height (phase headings `mt-3`: the story stood 60 px short
+  of its end, hidden by the 80 px slack) - use padding; the DECISION pill inside a decision box had 4.50:1 (axe
+  reached it once the list showed its real end) - tints lowered (4.96); a test that only counts `overflow-y: auto`
+  cannot see a fixed-height list or content cut off (review 1 proved `us8` blind) - measure the part that must fill
+  and count `scrollIntoView` in the chat. Limits: an ended run's story position is not kept across views; below
+  820x640 the page root scrolls rather than cut views off. From backlog item `backlog-app-live-run-switchable-views`.
+  Probe `us8-live-layout` on cbf0cf1f 47 failures -> pass (40 view/size cases: page 0 px, at most one scroll area,
+  none nested, views filled; mutation run: 68vh story, 60vh transcript and a `scrollIntoView` chat each fail);
+  vitest 519 / 0 (+8 `run-views.test.ts`), Playwright full suite 40/40 (`us7` follows the views, axe on Overview,
+  Story and Chat in both themes); two refute-first reviews (MUST 0 / 0, SHOULD 1 / 0, NOTE 5 / 3 - fixed).

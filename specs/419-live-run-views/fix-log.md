@@ -179,3 +179,31 @@ After the fixes:
 - `npm run check`: clean, Vitest 519 passed;
 - `us8` and `us7`: pass;
 - mutation run: fails as above.
+
+### Review 2 (independent agent, refute-first): MUST 0, SHOULD 0, NOTE 3
+
+The reviewer built `d5f12cdd` in a worktree of its own.
+- **Its runs:** `npm run check`, `us8` (54 s), `us7` and `us4-chat` all pass.
+- **Its negative control:** with the story's function `followOutput` put back, `us8` fails on "an opened line
+  stays where it was".
+- **Its own specs on a slow live run** (deleted afterwards). The story stays at its real end (gap 0) through:
+  - the filters on and off, a search typed and cleared;
+  - a switch to Overview and back;
+  - "Latest";
+  - a wheel move up and back down.
+- **Opening a line with Enter** keeps it in place (0 px over 3.2 s).
+- **The chat:**
+  - its position survives a view switch and a resize;
+  - a streaming answer does not pull a reader scrolled up;
+  - in the conversation's own window it opens at its end and the document scrolls 0 px.
+- **An ended run:** Story and Raw trace open at the top, an opened line moves 0 px (98 px on `main`), there is no
+  Latest and no Chat, and `?view=chat` shows Overview.
+
+| # | Finding | What was done |
+|---|---|---|
+| N1 | `/live` did not remount the dashboard per run: with no "no run" page between two items, the next item's conversation would be compared with the previous one (a false chat mark), and the story choices and a chat draft would carry over (the draft already in 415) | `key={run.id}` on `RunDashboard` (live page and run page) |
+| N2 | `/runs/<ended>?view=chat` shows Overview but keeps `?view=chat` in the address | The dashboard corrects an address naming a view the run does not have (replace); `us8` row "the corrected address" (`?view=nonsense` -> `?view=overview`) |
+| N3 | Leftover worktrees of earlier reviews (`rev325`-`rev341r3/neg`, `rev414r5`, `rev414r6` under `%TEMP%`) | Not from this feature; left for the maintainer (named in the closing report) |
+
+After the fixes, `us8`, `us7` and `us4-chat` pass (2.2 min). The full suite had passed 40/40 (7.9 min) on `d5f12cdd`,
+before these two small changes.
