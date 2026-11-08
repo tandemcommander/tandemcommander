@@ -82,8 +82,16 @@ int UpdInstall_InstallNow(HWND parent, const CSalUpdRelease& release);
 // told, the file is deleted) when it is missing or changed.
 BOOL UpdInstall_CheckReady(HWND parent, const CSalUpdRelease& release);
 
+// round 4: can Install When I Close still plan 'version' for the exit (its launches not used up)?
+BOOL UpdInstall_ExitArmAvailable(const CSalUpdVersion& version);
+
 // Skip This Version: drops an arm of that version and deletes its installer
 void UpdInstall_SkipVersion(const CSalUpdVersion& version);
+
+// round 4: the user clicked Skip This Version (NoteSkipClick); TakeSkipClick answers whether it was
+// that version and forgets the click (called when a download starts and when it ends)
+void UpdInstall_NoteSkipClick(const CSalUpdVersion& version);
+BOOL UpdInstall_TakeSkipClick(const CSalUpdVersion& version);
 
 // Called once when start-up is complete (after the check of feature 123 was started): removes
 // leftovers of the updates folder and decides an armed update (data-model.md). An update the

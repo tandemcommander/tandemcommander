@@ -10528,6 +10528,51 @@ static void TestAutoUpdate420()
     CHECK(!SalUpdExitDecision(offered, FALSE, TRUE, TRUE, TRUE, FALSE, v020));
     CHECK(!SalUpdAutomaticArmUsable(TRUE, offered, offered.Version));
     CHECK(SalUpdAutomaticArmUsable(TRUE, offered, v030));
+    // round 4 MUST: a failed Install Now restores the arm that existed before the click, with the new count
+    {
+        BOOL keep = FALSE;
+        CSalUpdArm clickArm = Upd420Arm(0, 2, 1, SALUPD_ARM_USER, FALSE, 2); // the click promoted it, launch counted
+        CSalUpdArm back = SalUpdArmAfterFailedNow(TRUE, offered, clickArm, &keep);
+        CHECK(keep && back.Source == SALUPD_ARM_OFFERED && back.Launches == 2);
+        CHECK(!SalUpdArmHonoured(back, TRUE, sulAutomatic, TRUE)); // still never installed on its own
+        back = SalUpdArmAfterFailedNow(TRUE, once, clickArm, &keep);
+        CHECK(keep && back.Source == SALUPD_ARM_AUTOMATIC && back.Launches == 2);
+        CSalUpdArm userBefore = Upd420Arm(0, 2, 1, SALUPD_ARM_USER, FALSE, 0);
+        back = SalUpdArmAfterFailedNow(TRUE, userBefore, clickArm, &keep);
+        CHECK(keep && back.Source == SALUPD_ARM_USER && back.Launches == 2); // Install When I Close stays
+        back = SalUpdArmAfterFailedNow(FALSE, none, clickArm, &keep);
+        CHECK(!keep); // nothing was armed: nothing stays armed
+        CSalUpdArm notCounted = Upd420Arm(0, 2, 1, SALUPD_ARM_USER, FALSE, 0); // the launch failed before counting
+        back = SalUpdArmAfterFailedNow(TRUE, once, notCounted, &keep);
+        CHECK(keep && back.Launches == 1); // the count never goes back
+        back = SalUpdArmAfterFailedNow(TRUE, Upd420Arm(0, 2, 0, SALUPD_ARM_USER, FALSE, 0), clickArm, &keep);
+        CHECK(!keep); // an arm of another version before: not restored over this one
+        CSalUpdArm gone;
+        memset(&gone, 0, sizeof(gone));
+        back = SalUpdArmAfterFailedNow(TRUE, once, gone, &keep);
+        CHECK(!keep);
+    }
+    // round 4 SHOULD: Install When I Close only while the exit can still install it
+    CHECK(SalUpdExitArmAvailable(FALSE, none, v021, FALSE));
+    CHECK(SalUpdExitArmAvailable(TRUE, twice, twice.Version, FALSE));
+    CHECK(!SalUpdExitArmAvailable(TRUE, tired, tired.Version, FALSE));
+    CHECK(SalUpdExitArmAvailable(TRUE, tired, v030, FALSE));             // another version starts afresh
+    CHECK(SalUpdExitArmAvailable(TRUE, tired, tired.Version, TRUE));     // a test session arms afresh
+    CSalUpdArm tiredOffered = Upd420Arm(0, 2, 1, SALUPD_ARM_OFFERED, FALSE, SALUPD_MAX_LAUNCHES);
+    CHECK(!SalUpdExitArmAvailable(TRUE, tiredOffered, tiredOffered.Version, FALSE));
+    CHECK(SalUpdExitArmAvailable(TRUE, offered, offered.Version, FALSE)); // offered, launches left: a click arms it
+    // round 4 NOTE: with the check off an offer can never be shown - the offered update and its file go
+    CHECK(SalUpdStartupOfferReachable(susaOffer, once, FALSE, FALSE, TRUE) == susaDropAll);
+    CHECK(SalUpdStartupOfferReachable(susaNone, offered, FALSE, FALSE, TRUE) == susaDropAll);
+    CHECK(SalUpdStartupOfferReachable(susaOffer, once, TRUE, FALSE, TRUE) == susaOffer);       // check on: offered
+    CHECK(SalUpdStartupOfferReachable(susaNone, offered, TRUE, FALSE, TRUE) == susaNone);
+    CHECK(SalUpdStartupOfferReachable(susaOffer, once, FALSE, TRUE, TRUE) == susaOffer);       // a test session
+    CHECK(SalUpdStartupOfferReachable(susaNone, offered, FALSE, FALSE, FALSE) == susaNone);    // a portable copy
+    CHECK(SalUpdStartupOfferReachable(susaComplete, aut, FALSE, FALSE, TRUE) == susaComplete); // a plan is kept
+    CHECK(SalUpdStartupOfferReachable(susaNone, user, FALSE, FALSE, TRUE) == susaNone);
+    CHECK(SalUpdStartupOfferReachable(susaGiveUp, tired, FALSE, FALSE, TRUE) == susaDropAll); // used up, nothing shows it
+    CHECK(SalUpdStartupOfferReachable(susaGiveUp, tired, TRUE, FALSE, TRUE) == susaGiveUp);
+    CHECK(SalUpdStartupOfferReachable(susaNone, none, FALSE, FALSE, TRUE) == susaNone);
     CSalUpdArm offeredTest = Upd420Arm(0, 2, 0, SALUPD_ARM_OFFERED, TRUE, 1);
     CHECK(SalUpdStartupArmDecision(offeredTest, FALSE, FALSE, v020, TRUE) == susaDropAll);
     CHECK(SalUpdStartupArmDecision(test, TRUE, TRUE, v020, TRUE) == susaComplete);   // test, never launched

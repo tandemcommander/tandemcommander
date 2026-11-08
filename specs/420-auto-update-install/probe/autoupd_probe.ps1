@@ -1,9 +1,9 @@
-<#
+﻿<#
 .SYNOPSIS
     Feature 420 (automatic update) - behaviour probe of a Debug build.
     Rows follow specs/420-auto-update-install/spec.md, contracts/*.md and quickstart.md section 2.
     Groups: L levels, V verification, B buttons, X exit, S completion at the next start,
-    T test mode, G Configuration > General. Every row prints PASS / FAIL / NOT DRIVEN.
+    T test mode, Rv/Ux/R3/R4 review findings, G Configuration > General. Every row prints PASS / FAIL / NOT DRIVEN.
     MUST run through tools\run_on_hidden_desktop.ps1. Backs up the product's registry key and
     restores it (verified by SHA-256); creates and removes the updates folder
     %LOCALAPPDATA%\Tandem Commander\Updates and a fake uninstall entry under
@@ -211,6 +211,7 @@ function Form([IntPtr]$H) {
     if ($ok -eq '&Download') { return 'classic' }
     if ($ok -eq 'Install &Now' -and $ieVis) { return 'offer' }
     if ($ok -eq 'Install &Now' -and $cancel -eq 'OK' -and -not $ieVis) { return 'automatic' }
+    if ($ok -eq 'Install &Now' -and $cancel -ne 'OK' -and -not $ieVis) { return 'offer-noexit' } # round 4: launches used up
     return ('other(' + $ok + '|' + $cancel + '|' + $ieVis + ')')
 }
 function Press([IntPtr]$Dlg, [int]$CtlId) { $c = Ctl $Dlg $CtlId; if ($c -ne $Z) { Click $c } }
@@ -651,6 +652,98 @@ $Groups['R3'] = {
     [void](Quit $id)
 }
 
+# R4: the findings of the fourth verification (fix-log, Round 4)
+function Take-Box([int]$Id, [IntPtr]$Notice) {
+    $box = @(Get-Tops $Id | Where-Object { [Drv098f]::Cls($_) -eq '#32770' -and $_ -ne $Notice })
+    $t = if ($box.Count) { (FullText $box[0]) } else { '<no message>' }
+    if ($box.Count) { Close-Win $box[0]; Start-Sleep -Milliseconds 800 }
+    return $t
+}
+$Groups['R4'] = {
+    # MUST: Install Now on an offered update cannot start the installer - the update stays only
+    # offered (with the launch counted) and the exit installs nothing; the launch that uses up the
+    # last one removes Install When I Close from the form
+    Reset-State 1; Set-Env
+    $id = Start-420; $h = Wait-Form $id 'offer'; Press $h 1; [void](Wait-Run 1 10); Kill-Wait $id
+    NoCheck
+    $env:TC_UPDATE_PROBE_LAUNCHFAIL = '1'
+    try {
+        $id = Start-420; $h = Wait-Notice $id 20; Start-Sleep -Seconds 1; $h = [P420]::Notice([uint32]$id); $f = Form $h
+        $a0 = Arm
+        Press $h 1; Start-Sleep -Seconds 2; $box1 = Take-Box $id $h
+        $a1 = Arm; $f1 = Form ([P420]::Notice([uint32]$id))
+        $h = [P420]::Notice([uint32]$id); Press $h 1; Start-Sleep -Seconds 2; [void](Take-Box $id $h)
+        Start-Sleep -Seconds 1
+        $n = [P420]::Notice([uint32]$id); $f2 = Form $n; $a2 = Arm
+        if ($n -ne $Z) { Press $n 2; [void](Gone $n 3) }
+        $s = Quit $id; $a3 = Arm
+    }
+    finally { Remove-Item Env:\TC_UPDATE_PROBE_LAUNCHFAIL -ErrorAction SilentlyContinue }
+    T 'M' 'offered' ($f -eq 'offer' -and $a0.Source -eq 3 -and $box1 -like '*0.2.0*' -and $a1.Source -eq 3 -and $a1.Launches -eq 2 -and $f1 -eq 'offer') ('offered update, Install Now fails to start: before {0}; message {1}; after {2}, form {3}' -f (ArmStr $a0), (Esc $box1), (ArmStr $a1), $f1)
+    T 'M' 'used-up' ($f2 -eq 'offer-noexit' -and $a2.Source -eq 3 -and $a2.Launches -eq 3 -and $a3.Launches -eq 3 -and (Runs).Count -eq 1) ('second failure: form {0}, {1}; exit ({2} s): {3}, {4} line(s) started' -f $f2, (ArmStr $a2), $s, (ArmStr $a3), (Runs).Count)
+
+    # MUST: nothing armed before the click - a failed Install Now leaves nothing armed
+    Reset-State 1; Set-Env
+    $env:TC_UPDATE_PROBE_LAUNCHFAIL = '1'
+    try {
+        $id = Start-420; $h = Wait-Form $id 'offer'; Press $h 1; Start-Sleep -Seconds 2; $box = Take-Box $id $h
+        $a = Arm; $f = Form ([P420]::Notice([uint32]$id))
+        $s = Quit $id; $a2 = Arm
+    }
+    finally { Remove-Item Env:\TC_UPDATE_PROBE_LAUNCHFAIL -ErrorAction SilentlyContinue }
+    T 'M' 'unarmed' ($box -like '*0.2.0*' -and $null -eq $a -and $f -eq 'offer' -and $null -eq $a2 -and (Runs).Count -eq 0) ('Install Now fails, nothing armed before: message {0}; {1}, form {2}; exit ({3} s): {4}' -f (Esc $box), (ArmStr $a), $f, $s, (RunsStr))
+
+    # SHOULD 1: an update whose launches are used up - the offer has no Install When I Close
+    Reset-State 1; Set-Env
+    $id = Start-420; $h = Wait-Form $id 'offer'; Press $h 6296; [void](Gone $h 3); Kill-Wait $id
+    Uc-Set 'Install Launches' 3
+    $id = Start-420; Start-Sleep -Seconds 1
+    Post-Cmd (Get-Main $id) 2217
+    $h = Wait-Form $id 'offer-noexit' 30; $f = Form $h
+    if ($h -ne $Z) { Press $h 2; [void](Gone $h 3) }
+    $s = Quit $id
+    T 'S1' 'hidden' ($f -eq 'offer-noexit' -and (Runs).Count -eq 0) ('launches used up: Help > Check shows {0}; exit ({1} s): {2}' -f $f, $s, (RunsStr))
+
+    # SHOULD 2: level 2, a check the user asked for on a version skipped earlier offers it, never arms it
+    Reset-State 2; Set-Env 'rel-medium'; NoCheck; Uc-Set 'Skipped Version' '0.2.0' 'String'
+    $id = Start-420; Start-Sleep -Seconds 1
+    Post-Cmd (Get-Main $id) 2217
+    $h = Wait-Form $id 'offer' 40; $f = Form $h; $a = Arm
+    if ($h -ne $Z) { Press $h 2; [void](Gone $h 3) }
+    $s = Quit $id
+    T 'S2' 'skipped' ($f -eq 'offer' -and $null -eq $a -and $null -eq (Arm) -and (Runs).Count -eq 0) ('level 2, a check the user asked for on a skipped version: form {0}, {1}; exit ({2} s): {3}' -f $f, (ArmStr $a), $s, (RunsStr))
+
+    # NOTE: Skip clicked on the classic form during the download of a version skipped earlier - the
+    # finished download is deleted, nothing offered
+    Reset-State 1; Set-Env 'rel-medium'; NoCheck; Uc-Set 'Skipped Version' '0.2.0' 'String'
+    $id = Start-420; Start-Sleep -Seconds 1
+    Post-Cmd (Get-Main $id) 2217
+    $h = Wait-Notice $id 15; $f1 = Form $h; Press $h 6250; [void](Gone $h 3)
+    Start-Sleep -Seconds 10; $n = [P420]::Notice([uint32]$id)
+    $s = Quit $id
+    T 'N' 'skip' ($f1 -eq 'classic' -and $n -eq $Z -and $null -eq (Arm) -and -not ((UpdFiles) -contains $InstallerName) -and (Runs).Count -eq 0) ('skipped earlier, Skip during the download: first {0}, afterwards notice {1}, {2}, {3}; exit ({4} s): {5}' -f $f1, (Form $n), (ArmStr (Arm)), (FilesStr), $s, (RunsStr))
+
+    # NOTE: an instance started while an installer runs does not turn the plan into an offer
+    Reset-State 1; Set-Env
+    $id = Start-420; $h = Wait-Form $id 'offer'; Press $h 6296; [void](Gone $h 3); Kill-Wait $id
+    Uc-Set 'Install Launches' 1; NoCheck
+    Start-FakeSetup
+    try {
+        $id = Start-420; Start-Sleep -Seconds 4; $n = [P420]::Notice([uint32]$id); $a = Arm
+        Kill-Wait $id
+    }
+    finally { Stop-FakeSetup }
+    T 'N' 'installer' ($n -eq $Z -and $null -ne $a -and $a.Source -eq 1 -and $a.Launches -eq 1) ('start while an installer runs: notice {0}, {1}' -f (Form $n), (ArmStr $a))
+
+    # NOTE: with the check off an update that could only be offered is not kept (arm and installer go)
+    Reset-State 1; Set-Env
+    $id = Start-420; $h = Wait-Form $id 'offer'; Press $h 1; [void](Wait-Run 1 10); Kill-Wait $id
+    Uc-Set 'Check At Startup' 0
+    $id = Start-420; Start-Sleep -Seconds 4; $n = [P420]::Notice([uint32]$id); $a = Arm; $files = FilesStr
+    $s = Quit $id
+    T 'N' 'checkoff' ($n -eq $Z -and $null -eq $a -and -not ((UpdFiles) -contains $InstallerName) -and (Runs).Count -eq 1) ('check off, an update whose installer did not install it: notice {0}, {1}, {2}; exit ({3} s): {4} line(s)' -f (Form $n), (ArmStr $a), $files, $s, (Runs).Count)
+}
+
 $CfgKey = 'HKCU\Software\Tandem Commander\Settings\Configuration'
 function Cfg-General { & cmd.exe /c "reg add `"$CfgKey`" /v `"Last Focused Page`" /t REG_DWORD /d 0 /f >nul 2>&1" }
 $Groups['G'] = {
@@ -753,7 +846,7 @@ finally {
     if (Test-Path -LiteralPath $Upd) { Remove-Item -LiteralPath $Upd -Recurse -Force }
     if (-not $updParentExisted -and (Test-Path -LiteralPath (Split-Path $Upd))) { Remove-Item -LiteralPath (Split-Path $Upd) -Recurse -Force }
     $restoredOk = Restore-Reg $regFile $existed
-    foreach ($n in @('TC_UPDATECHECK_URL', 'TC_UPDATECHECK_PRETEND_VERSION', 'TC_UPDATE_PROBE_UNINSTALL', 'TC_UPDATE_PROBE_METERED', 'TC_UPDATE_PROBE_RUNLOG', 'TC_UPDATECHECK_OPENLOG')) { Remove-Item ('Env:\' + $n) -ErrorAction SilentlyContinue }
+    foreach ($n in @('TC_UPDATECHECK_URL', 'TC_UPDATECHECK_PRETEND_VERSION', 'TC_UPDATE_PROBE_UNINSTALL', 'TC_UPDATE_PROBE_METERED', 'TC_UPDATE_PROBE_RUNLOG', 'TC_UPDATECHECK_OPENLOG', 'TC_UPDATE_PROBE_LAUNCHFAIL')) { Remove-Item ('Env:\' + $n) -ErrorAction SilentlyContinue }
 }
 $pass = @($script:Rows | Where-Object { $_.Verdict -eq 'PASS' }).Count
 $fail = @($script:Rows | Where-Object { $_.Verdict -eq 'FAIL' }).Count

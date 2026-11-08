@@ -624,6 +624,7 @@ static HWND UpdiWatchNotify = NULL;
 static BOOL UpdiNowPreArmed = FALSE;         // Install Now: an arm of that version existed before the click
 static CSalUpdVersion UpdiNowVersion = {0, 0, 0}; // Install Now: the version being installed
 static unsigned char UpdiNowDigest[SALUPD_DIGEST_BYTES]; // ... and its installer's digest
+static CSalUpdArm UpdiNowBefore;                          // Install Now: that arm, as it was before the click
 
 // Review M1: TRUE while an installer of the product runs in this session (started by us at an exit,
 // by Install Now, by the start-up completion, or by the user) - no second one is started then. A
@@ -715,10 +716,17 @@ static BOOL UpdiLaunch(CSalUpdLaunchKind kind, const CSalUpdVersion& version, HA
 
     BOOL ok = FALSE;
 #ifdef _DEBUG
-    // test seam, Debug builds only: the probe reads what would be started
+    // test seams, Debug builds only: round 4 - the start fails (as when an antivirus blocks the
+    // file); the probe reads what would be started
+    WCHAR failSeam[8];
     WCHAR runLog[MAX_PATH];
     DWORD len = GetEnvironmentVariableW(L"TC_UPDATE_PROBE_RUNLOG", runLog, _countof(runLog));
-    if (len > 0 && len < _countof(runLog))
+    if (GetEnvironmentVariableW(L"TC_UPDATE_PROBE_LAUNCHFAIL", failSeam, _countof(failSeam)) > 0)
+    {
+        *error = ERROR_ACCESS_DENIED;
+        TRACE_I("UpdInstall: probe seam - the start of the installer fails");
+    }
+    else if (len > 0 && len < _countof(runLog))
     {
         HANDLE f = NOHANDLES(CreateFileW(runLog, FILE_APPEND_DATA, FILE_SHARE_READ, NULL, OPEN_ALWAYS,
                                          FILE_ATTRIBUTE_NORMAL, NULL));
@@ -850,6 +858,32 @@ BOOL UpdInstall_CheckReady(HWND parent, const CSalUpdRelease& release)
     return FALSE;
 }
 
+// Round 4 MUST: the launch of Install Now failed (it could not be started, or the installer ended
+// without installing while the program runs) - the arm that existed before the click comes back with
+// the new launch count (an offered update stays only offered), a click on nothing armed leaves nothing
+static void UpdiRestoreArmAfterFailedNow()
+{
+    CSalUpdArm now;
+    BOOL hasNow = UpdInstall_LoadArm(&now);
+    if (!hasNow || SalUpdVersionCompare(now.Version, UpdiNowVersion) != 0)
+        return; // another version was armed since (a newer check) - not ours to change
+    BOOL keep = FALSE;
+    CSalUpdArm restored = SalUpdArmAfterFailedNow(UpdiNowPreArmed, UpdiNowBefore, now, &keep);
+    if (keep)
+        UpdiSaveArm(restored);
+    else
+        UpdInstall_DropArm();
+    TRACE_I("UpdInstall: Install Now failed - the arm " << (keep ? "is restored, source " : "is dropped")
+                                                         << (keep ? restored.Source : 0));
+}
+
+BOOL UpdInstall_ExitArmAvailable(const CSalUpdVersion& version)
+{
+    CSalUpdArm arm;
+    BOOL hasArm = UpdInstall_LoadArm(&arm);
+    return SalUpdExitArmAvailable(hasArm, arm, version, UpdateTestMode);
+}
+
 int UpdInstall_InstallNow(HWND parent, const CSalUpdRelease& release)
 {
     CALL_STACK_MESSAGE1("UpdInstall_InstallNow()");
@@ -871,8 +905,8 @@ int UpdInstall_InstallNow(HWND parent, const CSalUpdRelease& release)
     }
     // the arm counts the launch and lets the next start finish an installation the installer did
     // not complete after it closed the program; a failure while we still run is reported (below)
-    CSalUpdArm before;
-    UpdiNowPreArmed = UpdInstall_LoadArm(&before) && SalUpdVersionCompare(before.Version, release.Version) == 0;
+    UpdiNowPreArmed = UpdInstall_LoadArm(&UpdiNowBefore) &&
+                      SalUpdVersionCompare(UpdiNowBefore.Version, release.Version) == 0;
     UpdiNowVersion = release.Version;
     memcpy(UpdiNowDigest, release.Digest, sizeof(UpdiNowDigest));
     UpdInstall_Arm(release, SALUPD_ARM_USER);
@@ -880,8 +914,7 @@ int UpdInstall_InstallNow(HWND parent, const CSalUpdRelease& release)
     DWORD error;
     if (!UpdiLaunch(sulkNow, release.Version, held, TRUE, &error))
     {
-        if (!UpdiNowPreArmed)
-            UpdInstall_DropArm();
+        UpdiRestoreArmAfterFailedNow();
         UpdiReportRunError(parent, release.Version, error);
         return UPDNOW_FAILED;
     }
@@ -894,13 +927,9 @@ BOOL UpdInstall_OnInstallerEnded(HWND parent, DWORD exitCode)
     // program still runs - it was cancelled, the elevation was declined, or it could not close the
     // program. Review NOTE: a click that only asked for "now" does not turn into a silent install at
     // the exit; an update armed before (Install When I Close, the automatic level) stays armed.
+    UpdiRestoreArmAfterFailedNow(); // round 4 MUST: the click's arm gives way to the one before it
     CSalUpdArm arm;
     BOOL armed = UpdInstall_LoadArm(&arm) && SalUpdVersionCompare(arm.Version, UpdiNowVersion) == 0;
-    if (armed && !UpdiNowPreArmed && arm.Source == SALUPD_ARM_USER)
-    {
-        UpdInstall_DropArm();
-        armed = FALSE;
-    }
     BOOL later = armed && UpdInstall_ArmHonoured(arm) && arm.Launches < SALUPD_MAX_LAUNCHES;
     char ver[SALUPD_VERSION_TEXT_MAX] = "";
     SalUpdFormatVersion(UpdiNowVersion, ver, sizeof(ver));
@@ -944,6 +973,25 @@ BOOL UpdInstall_GetLaunchedRelease(CSalUpdRelease* release)
     memcpy(release->Digest, UpdiNowDigest, sizeof(release->Digest));
     UpdiFillPublished(release);
     return UpdiHasVerified(*release);
+}
+
+// round 4 NOTE: Skip This Version clicked on this instance's notification while the installer of
+// that version downloads - the finished download is deleted (also when the version had been skipped
+// before the download started, and in a test session, which stores no skip)
+static BOOL UpdiSkipClicked = FALSE;
+static CSalUpdVersion UpdiSkipClickedVersion = {0, 0, 0};
+
+void UpdInstall_NoteSkipClick(const CSalUpdVersion& version)
+{
+    UpdiSkipClicked = TRUE;
+    UpdiSkipClickedVersion = version;
+}
+
+BOOL UpdInstall_TakeSkipClick(const CSalUpdVersion& version)
+{
+    BOOL clicked = UpdiSkipClicked && SalUpdVersionCompare(UpdiSkipClickedVersion, version) == 0;
+    UpdiSkipClicked = FALSE;
+    return clicked;
 }
 
 void UpdInstall_SkipVersion(const CSalUpdVersion& version)
@@ -1490,6 +1538,9 @@ void UpdInstall_OnStartupComplete(HWND mainWindow)
     UpdateCheck_GetInstalledVersion(&running);
     BOOL eligible = UpdInstall_IsEligible(NULL);
     CSalUpdStartupArm decision = SalUpdStartupArmDecision(arm, UpdInstall_ArmHonoured(arm), UpdateTestMode, running, eligible);
+    CUpdateState checkState; // round 4 NOTE: with the check off no offer can be shown
+    UpdateCheck_LoadState(&checkState);
+    decision = SalUpdStartupOfferReachable(decision, arm, checkState.CheckAtStartup, UpdateTestMode, eligible);
     TRACE_I("UpdInstall: start-up decision about the armed update: " << SalUpdStartupArmName(decision)
                                                                        << " (launches " << arm.Launches << ")");
     switch (decision)
@@ -1565,10 +1616,19 @@ void UpdInstall_OnStartupComplete(HWND mainWindow)
         // review 2 S1: an installer started earlier did not install it - offered, the user decides;
         // round 3 M1: and nothing installs it on its own any more (not the exit, not the automatic
         // level) until the user clicks Install Now or Install When I Close
-        TRACE_I("UpdInstall: an earlier installer did not install the armed update - it is offered");
-        arm.Source = SALUPD_ARM_OFFERED;
-        UpdiSaveArm(arm);
-        PostMessage(mainWindow, WM_USER_UPDATEINSTALL, 1, 0);
+        // round 4 NOTE: as the completion, only the last instance and never while an installer runs
+        // (another instance's Install Now may be waiting at its elevation prompt - its plan is its own)
+        if (!UpdiLastInstance())
+            TRACE_I("UpdInstall: another instance runs - the armed update is left to it");
+        else if (UpdiInstallerRunning())
+            TRACE_I("UpdInstall: an installer runs - the armed update is not offered now");
+        else
+        {
+            TRACE_I("UpdInstall: an earlier installer did not install the armed update - it is offered");
+            arm.Source = SALUPD_ARM_OFFERED;
+            UpdiSaveArm(arm);
+            PostMessage(mainWindow, WM_USER_UPDATEINSTALL, 1, 0);
+        }
     }
 }
 
@@ -1592,6 +1652,7 @@ void UpdInstall_CompleteArmed(HWND parent)
     UpdiNowVersion = arm.Version;
     memcpy(UpdiNowDigest, arm.Digest, sizeof(UpdiNowDigest));
     UpdiNowPreArmed = TRUE; // armed before: a failure keeps it for the exit (and counts its launch)
+    UpdiNowBefore = arm;
     UpdiWatchNotify = MainWindow != NULL ? MainWindow->HWindow : parent;
     DWORD error;
     if (!UpdiLaunch(sulkNow, arm.Version, held, TRUE, &error))

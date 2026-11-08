@@ -558,6 +558,44 @@ inline BOOL SalUpdAutomaticArmUsable(BOOL hasArm, const CSalUpdArm& arm, const C
     return arm.Source != SALUPD_ARM_OFFERED && arm.Launches < SALUPD_MAX_LAUNCHES;
 }
 
+// Round 4 MUST: Install Now makes its own (user) arm to count the launch; when that launch fails -
+// the installer could not be started, or it ended without installing while the program runs - the
+// arm that existed before the click comes back with the new launch count (an offered update stays
+// only offered, an automatic one stays subject to the settings); a click on nothing armed leaves
+// nothing armed ('*keep' FALSE).
+inline CSalUpdArm SalUpdArmAfterFailedNow(BOOL hadArm, const CSalUpdArm& before, const CSalUpdArm& now, BOOL* keep)
+{
+    CSalUpdArm result = before;
+    *keep = hadArm && before.Present && now.Present && SalUpdVersionCompare(before.Version, now.Version) == 0;
+    if (*keep)
+        result.Launches = now.Launches > before.Launches ? now.Launches : before.Launches;
+    return result;
+}
+
+// Round 4 NOTE: an update that can only be offered is not kept where no offer can come - with the
+// check at start-up off nothing shows the offer, so the arm and its installer (~8 MB) go - also one
+// whose launches are used up (the exit refuses it, only an offer could bring it back). A copy not
+// installed by the installer ('eligible' FALSE) touches nothing; a test session keeps its test arm.
+inline CSalUpdStartupArm SalUpdStartupOfferReachable(CSalUpdStartupArm decision, const CSalUpdArm& arm, BOOL checkOn,
+                                                     BOOL testMode, BOOL eligible)
+{
+    if (checkOn || testMode || !eligible || !arm.Present)
+        return decision;
+    if (decision == susaOffer || decision == susaGiveUp || (decision == susaNone && arm.Source == SALUPD_ARM_OFFERED))
+        return susaDropAll;
+    return decision;
+}
+
+// Round 4 SHOULD: can "Install When I Close" still plan 'version' for the exit? Not when its arm used
+// up its launches (the exit decision refuses it, the click would promise what never happens). An arm
+// of another version, or of the other mode (a test arm in a normal session, ...), starts afresh.
+inline BOOL SalUpdExitArmAvailable(BOOL hasArm, const CSalUpdArm& arm, const CSalUpdVersion& version, BOOL testMode)
+{
+    if (!hasArm || !arm.Present || SalUpdVersionCompare(arm.Version, version) != 0 || (arm.Test != 0) != (testMode != 0))
+        return TRUE;
+    return arm.Launches < SALUPD_MAX_LAUNCHES;
+}
+
 // data-model.md, "Exit decision". 'normalExit': not an installer's close, not a critical
 // shutdown, Windows not shutting down or signing out. 'lastInstance': no other instance of
 // this executable runs in the session (an exit must not close the user's other windows).

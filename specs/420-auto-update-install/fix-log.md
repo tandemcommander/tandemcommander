@@ -114,6 +114,50 @@ probe `autoupd_probe.ps1` **77 PASS, 0 FAIL, 0 NOT DRIVEN** (registry restored, 
 `e2e_peruser.ps1 -Fixture` **7 PASS, 0 FAIL** (real installer: install at exit, completion at the
 next start after a kill, one installer start).
 
+## Round 3 (independent agent: review + GUI reproduction; MUST 2, SHOULD 1)
+
+| Finding | What | Done |
+|---|---|---|
+| R3 MUST 1 | After Install Now whose installer closed the program and did not install (cancelled / declined), the next start showed the offer (or at level 0 the classic form) while the arm stayed honoured - the exit then installed it silently | new arm state `SALUPD_ARM_OFFERED` (3): set when the start-up decision offers an update whose installer ran; never honoured (no exit install, no automatic re-arm - `SalUpdAutomaticArmUsable`); only a click (Install Now / Install When I Close) arms it again; launch count and digest kept; saltests; probe R3 A level1 / level0, S1 offer / nocycle / click |
+| R3 MUST 2 | Help > Check for New Version on a version skipped earlier: the downloaded form never came, the downloaded file was deleted every time | the skip rule applies only to a skip made **during** the download (`UpdateDownloadSkippedAtStart`); probe R3 B |
+| R3 SHOULD | The first click on the automatic form shown at start-up was swallowed (the posted focus move cancelled the button press) | OK is the first tab stop (top of the z-order, `WS_GROUP`) on the automatic form - no focus message at all; probe R3 C click / tab |
+| R3 NOTE | The offer at start-up / after a failure had no release date | taken from 123's stored state when it is that version |
+| R3 NOTE | `GetArmedRelease` dropped the arm on a transient read failure | only when the file is gone or not ours |
+| R3 NOTE | inheritance flag not reset if the attribute list failed; `GetLastError` overwritten after `CreateProcessW` | reset after every launch; the error is taken at once |
+| R3 NOTE | `check_update_pin.py` counted a thumbprint in a comment | comments ignored |
+| R3 NOTE (accepted) | the offer returns after a failed Install Now whatever the level - the user's own click | - |
+
+Checks after round 3 fixes: encoding guard 0; `BUILD SUCCEEDED`; saltests **287,154 checks, 0 failed**;
+probe **80 PASS, 0 FAIL, 0 NOT DRIVEN** (registry restored); `e2e_peruser.ps1` against the **real
+GitHub** (2026-11-08 13:17 and again after round 3) **7 PASS, 0 FAIL**: the real check, the download
+through the API asset address and the redirect to `release-assets.githubusercontent.com`, the
+verification, the install at the exit and the completion at the next start after a kill - the
+installed exe equals the published 0.2.0 by SHA-256.
+
+## Round 4 (independent agent: review + GUI reproduction with a negative-control build; MUST 1, SHOULD 2, NOTE 5)
+
+Stop-rules §3 #3 (a third review with MUST): the maintainer asked in this session to have the
+findings of independent agents worked in iteratively until the behaviour is functional, stable and
+user-friendly; each round found another, narrower defect (none repeated), so the run continued and
+records the deviation here and in the closing report.
+
+| Finding | What | Done |
+|---|---|---|
+| R4 MUST | Install Now first rewrites the arm as a click arm (source 1); when the installer could not be started (an antivirus / AppLocker block), an **offered** arm stayed source 1 - honoured, so the next normal exit installed it with `/VERYSILENT`. Same cause: an automatic arm became a click arm (survives "notify me only" / the check turned off); after a failed installer the user was asked "install it when you close?" for an update that was only offered | pure rule `SalUpdArmAfterFailedNow`: the arm that existed before the click comes back with the new launch count, a click on nothing armed leaves nothing (`UpdiRestoreArmAfterFailedNow`, on a failed start and in `OnInstallerEnded`); saltests; Debug seam `TC_UPDATE_PROBE_LAUNCHFAIL` (the start fails with error 5); probe R4 M offered / used-up / unarmed - **negative control** (restore disabled): all three FAIL with `source 1` |
+| R4 SHOULD 1 | After the three-launch limit "Install When I Close" was shown and did nothing (the exit refuses a used-up arm) | pure rule `SalUpdExitArmAvailable`: the button is hidden (and its click ignored) when that version's arm used up its launches; a failed Install Now that uses up the last launch shows the form again without it (`UpdateNotice_Reshow(..., force)`); saltests; probe R4 S1 hidden, M used-up |
+| R4 SHOULD 2 | The round-3 skipped-version fix armed a skipped version for a silent exit install at the automatic level (Help > Check for New Version) | a version in `Skipped Version` is never armed by the automatic level - it is offered (a test session ignores the skip as before); probe R4 S2 |
+| R4 NOTE | Skip clicked during the download of a version skipped before the download no longer removed the finished download | the click is recorded (`UpdInstall_NoteSkipClick` / `TakeSkipClick`, cleared when a download starts) and always deletes it; probe R4 N skip |
+| R4 NOTE | Tab order on the automatic form (OK first) differed from the order on screen (Install Now \| OK \| Skip) | the automatic form lays out OK \| Install Now \| Skip - seen order = Tab order |
+| R4 NOTE | An instance started while another instance's installer runs (at its elevation prompt) turned that plan into an offer | the offer decision, as the completion, only on the last instance and never while an installer runs; probe R4 N installer |
+| R4 NOTE | With the check at start-up off, an update that can only be offered stayed armed with its ~8 MB installer (nothing could show the offer) | pure rule `SalUpdStartupOfferReachable`: then the arm and the installer go (also an arm whose launches are used up); a test session and a copy not installed by the installer are untouched; saltests; probe R4 N checkoff |
+| R4 NOTE (accepted) | "could not be started" shows Windows' own error text in the Windows language | as every other error message of the program (`GetErrorText`) |
+
+Checks after round 4 fixes: encoding guard 0; `check_update_pin` OK; `BUILD SUCCEEDED`; saltests
+**287,180 checks, 0 failed**; probe **88 PASS, 0 FAIL, 0 NOT DRIVEN** (new group R4: 8 rows; registry
+restored, SHA-256 equal); `e2e_peruser.ps1` against the **real GitHub** (2026-11-08 14:15) **7 PASS,
+0 FAIL** (installed exe = published 0.2.0 by SHA-256, one installer start). No UI text changed in
+round 4 - no `.slt` refresh.
+
 ## Translations (stop-rules §2.13, module `salamand`)
 
 Round 2 (after review 1 / UX test 1): new `IDS_UPDATE_BUSY`, `IDS_UPDATE_INSTALL_LATER`,
@@ -159,4 +203,4 @@ Round 1:
 |---|---|
 | `probe/autoupd_probe.ps1` (Debug, fixture server `updserver420.py`, hidden desktop) | first full run 39 PASS / 11 FAIL - all 11 probe defects (V read the form after the program closed; S3 started before the killed process was gone, so the program correctly waited for "another instance"; G opened Configuration on the last-used page). Diagnosed with group `Dbg`. Final: **54 PASS, 0 FAIL, 0 NOT DRIVEN**, registry restored (SHA-256 equal) |
 | `probe/e2e_peruser.ps1 -Fixture` (real published 0.1.9 installed per user, Debug build copied over it, real signed 0.2.0 installer served by the fixture, real Inno Setup) | before F2: 6 PASS but launches 2; after F2: **7 PASS, 0 FAIL** - at-exit install (installed exe = published 0.2.0 by SHA-256), completion at the next start after a kill (the installer closed the program through the Restart Manager), one installer start; per-user installation uninstalled, registry restored |
-| real GitHub (`-Only Real`, `e2e_peruser.ps1` without `-Fixture`) | **not runnable on 2026-11-08**: api.github.com answered with GitHub's "Unicorn!" error page (HTML) and the download addresses with 504 - an outage at GitHub, also outside the tool sandbox. The real-endpoint run is repeated before closing or owed to a person. |
+| real GitHub (`-Only Real`, `e2e_peruser.ps1` without `-Fixture`) | **not runnable on 2026-11-08**: api.github.com answered with GitHub's "Unicorn!" error page (HTML) and the download addresses with 504 - an outage at GitHub, also outside the tool sandbox. Repeated after GitHub recovered (2026-11-08 13:17, after round 3, after round 4): **7 PASS, 0 FAIL** (Round 3 section). |

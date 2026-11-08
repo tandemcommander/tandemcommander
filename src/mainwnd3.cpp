@@ -774,8 +774,11 @@ static void ShowDownloadedUpdate(CMainWindow* wnd, const CSalUpdRelease& release
         UpdInstall_SkipVersion(arm.Version);
         hasArm = FALSE;
     }
-    // review S1: an arm whose launches are used up is not promised for the exit again - offered only
-    if (level == sulAutomatic && SalUpdAutomaticArmUsable(hasArm, arm, release.Version))
+    // review S1: an arm whose launches are used up is not promised for the exit again - offered only;
+    // round 4 SHOULD: a version the user skipped is never installed on its own either - a check the
+    // user asked for offers it (Install Now / Install When I Close stay the user's choice)
+    BOOL skipped = !UpdateTestMode && state.HasSkipped && SalUpdVersionCompare(state.Skipped, release.Version) == 0;
+    if (level == sulAutomatic && !skipped && SalUpdAutomaticArmUsable(hasArm, arm, release.Version))
     {
         UpdInstall_Arm(release, SALUPD_ARM_AUTOMATIC);
         form = unfAutomatic;
@@ -804,6 +807,7 @@ void CMainWindow::StartUpdateFlow(const CSalUpdRelease& release, BOOL classicNow
         CUpdateState skipState; // round 3 M2: was this version skipped already when the download started?
         UpdateCheck_LoadState(&skipState);
         UpdateDownloadSkippedAtStart = skipState.HasSkipped && SalUpdVersionCompare(skipState.Skipped, release.Version) == 0;
+        UpdInstall_TakeSkipClick(release.Version); // round 4: only a click during this download counts
         if (classicNow && notify) // a check the user asked for answers at once
         {
             UpdateNotice_Show(HWindow, release, TRUE, unfClassic);
@@ -844,8 +848,10 @@ void CMainWindow::OnUpdateDownloadDone()
     // version skipped earlier offers it (123: "also a version skipped earlier")
     BOOL skippedAtStart = UpdateDownloadSkippedAtStart;
     UpdateDownloadSkippedAtStart = FALSE;
-    if (done.Ok && !UpdateTestMode && !skippedAtStart && state.HasSkipped &&
-        SalUpdVersionCompare(state.Skipped, done.Release.Version) == 0)
+    // round 4 NOTE: and Skip clicked on this instance's notification during the download, always
+    BOOL skipClicked = UpdInstall_TakeSkipClick(done.Release.Version);
+    if (done.Ok && (skipClicked || (!UpdateTestMode && !skippedAtStart && state.HasSkipped &&
+                                    SalUpdVersionCompare(state.Skipped, done.Release.Version) == 0)))
     {
         UpdInstall_SkipVersion(done.Release.Version);
         return;
@@ -6637,7 +6643,7 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
     case WM_USER_UPDATENOTICE_FORM: // feature 420: the notification asks to be shown in another form
     {
         if (wParam <= (WPARAM)unfAutomatic)
-            UpdateNotice_Reshow(HWindow, (CUpdateNoticeForm)wParam);
+            UpdateNotice_Reshow(HWindow, (CUpdateNoticeForm)wParam, lParam != 0);
         return 0;
     }
 

@@ -220,12 +220,15 @@ void CUpdateNoticeDialog::ApplyForm()
         SetDlgItemTextW(HWindow, IDOK, LoadStrW(IDS_UPDATE_BTN_INSTALLNOW));
         SetDlgItemTextW(HWindow, IDC_UPDN_HINT, LoadStrW(Form == unfOffer ? IDS_UPDATE_HINT_OFFER : IDS_UPDATE_HINT_AUTO));
     }
-    if (Form == unfOffer)
+    // round 4 SHOULD: Install When I Close only while the exit can still install it (an update whose
+    // installer was started three times without installing it is offered for Install Now only)
+    BOOL exitOffered = Form == unfOffer && UpdInstall_ExitArmAvailable(Release.Version);
+    if (exitOffered)
         SetDlgItemTextW(HWindow, IDC_UPDN_INSTALLEXIT, LoadStrW(IDS_UPDATE_BTN_INSTALLEXIT));
     if (Form == unfAutomatic)
         SetDlgItemTextW(HWindow, IDCANCEL, LoadStrW(IDS_UPDATE_BTN_OK)); // closes; the update stays armed
     HWND installExit = GetDlgItem(HWindow, IDC_UPDN_INSTALLEXIT);
-    if (installExit != NULL && Form != unfOffer)
+    if (installExit != NULL && !exitOffered)
     {
         ShowWindow(installExit, SW_HIDE);
         EnableWindow(installExit, FALSE);
@@ -247,7 +250,11 @@ void CUpdateNoticeDialog::ApplyForm()
 
     // the visible buttons left to right, each at least as wide as in the template and wide enough
     // for its text (translations); the window grows when they do not fit
-    static const int ids[4] = {IDOK, IDC_UPDN_INSTALLEXIT, IDCANCEL, IDC_UPDN_SKIP};
+    static const int idsUsual[4] = {IDOK, IDC_UPDN_INSTALLEXIT, IDCANCEL, IDC_UPDN_SKIP};
+    // round 4 NOTE: on the automatic form OK (the default, the first tab stop) is also the first button
+    // from the left - the order seen is the order Tab takes
+    static const int idsAutomatic[4] = {IDCANCEL, IDOK, IDC_UPDN_INSTALLEXIT, IDC_UPDN_SKIP};
+    const int* ids = Form == unfAutomatic ? idsAutomatic : idsUsual;
     RECT gapR = {0, 0, 6, 0}; // the gap between buttons, in dialog units
     RECT padR = {0, 0, 8, 0}; // the margin left and right of a button's text
     MapDialogRect(HWindow, &gapR);
@@ -575,6 +582,12 @@ CUpdateNoticeDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                     DestroyWindow(HWindow);
                 else if (res == UPDNOW_DAMAGED) // UX test 5: the browser download is all that is left
                     PostMessage(::GetParent(HWindow), WM_USER_UPDATENOTICE_FORM, unfClassic, 0);
+                else if (!UpdInstall_ExitArmAvailable(Release.Version))
+                {
+                    // round 4 SHOULD: that launch used up the last one the exit may make - the form
+                    // must not keep offering (or promising) the install at close
+                    PostMessage(::GetParent(HWindow), WM_USER_UPDATENOTICE_FORM, unfOffer, 1);
+                }
                 return TRUE; // otherwise the user was told; the window stays
             }
             char url[SALUPD_URL_MAX];
@@ -596,13 +609,14 @@ CUpdateNoticeDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             if (!UpdateTestMode) // feature 420: a test writes none of 123's stored state
                 UpdateCheck_SetSkippedVersion(Release.Version);
             UpdInstall_SkipVersion(Release.Version); // feature 420: no arm, no installer of it any more
+            UpdInstall_NoteSkipClick(Release.Version); // round 4: also not the one downloading now
             DestroyWindow(HWindow);
             return TRUE;
         }
 
         case IDC_UPDN_INSTALLEXIT: // feature 420: Install When I Close
         {
-            if (Form == unfOffer)
+            if (Form == unfOffer && UpdInstall_ExitArmAvailable(Release.Version))
             {
                 // UX test 5: never armed without a verified installer
                 if (UpdInstall_CheckReady(HWindow, Release))
@@ -677,12 +691,14 @@ CUpdateNoticeForm UpdateNotice_GetForm()
     return UpdateNoticeForm;
 }
 
-void UpdateNotice_Reshow(HWND mainWindow, CUpdateNoticeForm form)
+void UpdateNotice_Reshow(HWND mainWindow, CUpdateNoticeForm form, BOOL force)
 {
-    if (UpdateNoticeWindow == NULL || !IsWindow(UpdateNoticeWindow) || UpdateNoticeForm == form)
+    if (UpdateNoticeWindow == NULL || !IsWindow(UpdateNoticeWindow) || (UpdateNoticeForm == form && !force))
         return;
     CSalUpdRelease release = UpdateNoticeShownRelease;
     BOOL active = GetForegroundWindow() == UpdateNoticeWindow; // the user works with it: it stays in front
+    if (UpdateNoticeForm == form) // forced: UpdateNotice_Show replaces only another version or form
+        UpdateNotice_Close();
     UpdateNotice_Show(mainWindow, release, active, form);
 }
 
