@@ -1,7 +1,7 @@
 ---
 title: Backlog app live run: one switchable view at a time, no page scrolling
 type: improvement
-status: open
+status: in-progress
 severity: 3
 area: tooling
 source: manual
@@ -10,7 +10,7 @@ created: 2026-11-08
 updated: 2026-11-08
 verified: 2026-11-08 cbf0cf1f
 effort: M
-feature: -
+feature: 419
 related: []
 depends-on: []
 reason: -
@@ -80,3 +80,4 @@ At 87793bd8 (`tools/backlog-app/packages/web/src/`):
 - 2026-11-08 — created (source manual)
 - 2026-11-08 — moved to Next position 1: the maintainer asked to do it now; maintainer 2026-11-08
 - 2026-11-08 — verified at cbf0cf1f: present at cbf0cf1f: e2e layout measurement, main scrolls 57-982 px on every view at 4 sizes, story/trace add a 2nd scrollbar, chat overlay covers tabs below 1280 px
+- 2026-11-08 — run started, feature 419
