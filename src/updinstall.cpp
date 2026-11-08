@@ -131,7 +131,7 @@ BOOL UpdInstall_LoadArm(CSalUpdArm* arm)
               SalUpdParseVersion(text, -1, FALSE, &arm->Version) &&
               UpdiReadText(key, UPDINST_VAL_DIGEST, text, sizeof(text)) && SalUpdParseDigestHex(text, arm->Digest) &&
               UpdiReadDword(key, UPDINST_VAL_SOURCE, &source) &&
-              (source == SALUPD_ARM_USER || source == SALUPD_ARM_AUTOMATIC) &&
+              (source == SALUPD_ARM_USER || source == SALUPD_ARM_AUTOMATIC || source == SALUPD_ARM_OFFERED) &&
               UpdiReadDword(key, UPDINST_VAL_TEST, &test) && test <= 1 &&
               UpdiReadDword(key, UPDINST_VAL_LAUNCHES, &launches);
     NOHANDLES(RegCloseKey(key));
@@ -763,12 +763,13 @@ static BOOL UpdiLaunch(CSalUpdLaunchKind kind, const CSalUpdVersion& version, HA
         }
         ok = CreateProcessW(exe, cmd, NULL, NULL, inherit, inherit ? EXTENDED_STARTUPINFO_PRESENT : 0, NULL, folder,
                             inherit ? &si.StartupInfo : (STARTUPINFOW*)&si.StartupInfo, &pi);
-        if (inherit) // review 2: inheritable only for this one CreateProcessW
+        DWORD createError = ok ? 0 : GetLastError(); // before the calls below overwrite it
+        if (held != NULL) // review 2 / round 3: inheritable only for this one CreateProcessW, whatever failed
             SetHandleInformation(held, HANDLE_FLAG_INHERIT, 0);
         if (si.lpAttributeList != NULL)
             DeleteProcThreadAttributeList(si.lpAttributeList);
         if (!ok)
-            *error = GetLastError();
+            *error = createError;
         else
         {
             TRACE_I("UpdInstall: the installer was started (" << SalUpdLaunchKindName(kind) << ")");
@@ -807,6 +808,8 @@ void UpdInstall_Arm(const CSalUpdRelease& release, DWORD source)
         arm.Launches = old.Launches; // review S1: the count is never restarted for the same version
         if (old.Source == SALUPD_ARM_USER)
             arm.Source = SALUPD_ARM_USER; // a click is not weakened by the automatic level
+        else if (old.Source == SALUPD_ARM_OFFERED && source == SALUPD_ARM_AUTOMATIC)
+            arm.Source = SALUPD_ARM_OFFERED; // round 3 M1: only a click arms an offered update again
     }
     UpdiSaveArm(arm);
     TRACE_I("UpdInstall: armed for the exit, source " << arm.Source << ", test " << arm.Test);
@@ -923,12 +926,23 @@ BOOL UpdInstall_OnInstallerEnded(HWND parent, DWORD exitCode)
     return !later || answer == IDNO;
 }
 
+// round 3 NOTE: the release date of a version the program learned of (123's stored state) - the
+// notification's "Released" line
+static void UpdiFillPublished(CSalUpdRelease* release)
+{
+    CUpdateState state;
+    UpdateCheck_LoadState(&state);
+    if (state.HasLatest && SalUpdVersionCompare(state.Latest, release->Version) == 0)
+        release->PublishedUtc = state.LatestPublished;
+}
+
 BOOL UpdInstall_GetLaunchedRelease(CSalUpdRelease* release)
 {
     memset(release, 0, sizeof(*release));
     release->Version = UpdiNowVersion;
     release->HasDigest = TRUE;
     memcpy(release->Digest, UpdiNowDigest, sizeof(release->Digest));
+    UpdiFillPublished(release);
     return UpdiHasVerified(*release);
 }
 
@@ -1548,8 +1562,12 @@ void UpdInstall_OnStartupComplete(HWND mainWindow)
     }
     else if (decision == susaOffer)
     {
-        // review 2 S1: an installer started earlier did not install it - offered, the user decides
+        // review 2 S1: an installer started earlier did not install it - offered, the user decides;
+        // round 3 M1: and nothing installs it on its own any more (not the exit, not the automatic
+        // level) until the user clicks Install Now or Install When I Close
         TRACE_I("UpdInstall: an earlier installer did not install the armed update - it is offered");
+        arm.Source = SALUPD_ARM_OFFERED;
+        UpdiSaveArm(arm);
         PostMessage(mainWindow, WM_USER_UPDATEINSTALL, 1, 0);
     }
 }
@@ -1694,12 +1712,18 @@ BOOL UpdInstall_GetArmedRelease(CSalUpdRelease* release)
     release->Version = arm.Version;
     release->HasDigest = TRUE;
     memcpy(release->Digest, arm.Digest, sizeof(release->Digest));
-    if (!UpdiHasVerified(*release))
-    {
-        UpdInstall_DropArm(); // not ours any more (UpdiHasVerified deleted it) or gone
+    UpdiFillPublished(release);
+    WCHAR path[UPDINST_MAX_FOLDER + 100];
+    if (!UpdiInstallerPath(arm.Version, path, _countof(path)))
         return FALSE;
-    }
-    return TRUE;
+    CUpdVerifyResult vr = GetFileAttributesW(path) == INVALID_FILE_ATTRIBUTES ? suvIo : UpdiVerify(path, arm.Version, arm.Digest, NULL);
+    if (vr == suvOk)
+        return TRUE;
+    // gone, or not ours any more (UpdiVerify deleted it): the arm goes; round 3 NOTE: a file that
+    // only could not be read now (e.g. held by an antivirus) keeps the arm and its count
+    if (GetFileAttributesW(path) == INVALID_FILE_ATTRIBUTES)
+        UpdInstall_DropArm();
+    return FALSE;
 }
 
 void UpdInstall_Shutdown()

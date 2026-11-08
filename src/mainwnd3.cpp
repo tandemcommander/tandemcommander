@@ -736,6 +736,7 @@ static void QueueUpdateNotice(CMainWindow* wnd, const CSalUpdRelease& release, C
 // and nothing more happens when the user already answered it (Remind Me Later, Skip, Download)
 static BOOL UpdateClassicDuringDownload = FALSE;
 static CSalUpdVersion UpdateClassicVersion;
+static BOOL UpdateDownloadSkippedAtStart = FALSE; // round 3 M2: the version was skipped before the download
 
 // how ShowDownloadedUpdate shows the notification
 #define UPDSHOW_QUEUE 0   // when nothing is in its way, without the keyboard when the user works (123)
@@ -800,6 +801,9 @@ void CMainWindow::StartUpdateFlow(const CSalUpdRelease& release, BOOL classicNow
             return;
         }
         UpdateFlowNotify = notify;
+        CUpdateState skipState; // round 3 M2: was this version skipped already when the download started?
+        UpdateCheck_LoadState(&skipState);
+        UpdateDownloadSkippedAtStart = skipState.HasSkipped && SalUpdVersionCompare(skipState.Skipped, release.Version) == 0;
         if (classicNow && notify) // a check the user asked for answers at once
         {
             UpdateNotice_Show(HWindow, release, TRUE, unfClassic);
@@ -836,7 +840,12 @@ void CMainWindow::OnUpdateDownloadDone()
     // armed, and its installer does not stay on disk (UX test 2, item 6)
     CUpdateState state;
     UpdateCheck_LoadState(&state);
-    if (done.Ok && !UpdateTestMode && state.HasSkipped && SalUpdVersionCompare(state.Skipped, done.Release.Version) == 0)
+    // round 3 M2: only a skip made DURING the download counts - a check the user asked for on a
+    // version skipped earlier offers it (123: "also a version skipped earlier")
+    BOOL skippedAtStart = UpdateDownloadSkippedAtStart;
+    UpdateDownloadSkippedAtStart = FALSE;
+    if (done.Ok && !UpdateTestMode && !skippedAtStart && state.HasSkipped &&
+        SalUpdVersionCompare(state.Skipped, done.Release.Version) == 0)
     {
         UpdInstall_SkipVersion(done.Release.Version);
         return;

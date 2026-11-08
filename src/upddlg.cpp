@@ -123,7 +123,6 @@ protected:
     CSalUpdRelease Release;
     BOOL Activate; // FALSE: the window must not take the activation or the keyboard when it appears
     CUpdateNoticeForm Form;
-    BOOL FocusPlaced; // the automatic form put the keyboard on OK at its first activation
     CBitmap* HeaderBitmap;
     RECT WordmarkR;
     RECT LogoR;
@@ -140,7 +139,6 @@ CUpdateNoticeDialog::CUpdateNoticeDialog(HWND parent, const CSalUpdRelease& rele
     Release = release;
     Activate = activate;
     Form = form;
-    FocusPlaced = FALSE;
     HeaderBitmap = NULL;
     memset(&WordmarkR, 0, sizeof(WordmarkR));
     memset(&LogoR, 0, sizeof(LogoR));
@@ -237,6 +235,14 @@ void CUpdateNoticeDialog::ApplyForm()
         SendDlgItemMessage(HWindow, IDOK, BM_SETSTYLE, BS_PUSHBUTTON, FALSE);
         SendDlgItemMessage(HWindow, IDCANCEL, BM_SETSTYLE, BS_DEFPUSHBUTTON, FALSE);
         SendMessage(HWindow, DM_SETDEFID, IDCANCEL, 0);
+        // round 3: OK is the first tab stop (top of the z-order) - the first activation, whether by
+        // the keyboard or by a click on the window, focuses it without any message of ours
+        HWND ok = GetDlgItem(HWindow, IDCANCEL);
+        if (ok != NULL)
+        {
+            SetWindowLong(ok, GWL_STYLE, GetWindowLong(ok, GWL_STYLE) | WS_GROUP);
+            SetWindowPos(ok, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+        }
     }
 
     // the visible buttons left to right, each at least as wide as in the template and wide enough
@@ -469,7 +475,6 @@ CUpdateNoticeDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (Activate && Form == unfAutomatic) // UX test 3: the keyboard starts on OK, not on Install Now
         {
             SetFocus(GetDlgItem(HWindow, IDCANCEL));
-            FocusPlaced = TRUE;
             return FALSE;
         }
         return Activate;
@@ -482,14 +487,9 @@ CUpdateNoticeDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             CUpdateState state;
             UpdateCheck_LoadState(&state);
             CheckDlgButton(HWindow, IDC_UPDN_ATSTARTUP, state.CheckAtStartup ? BST_CHECKED : BST_UNCHECKED);
-            // UX test 2: the automatic form shown without the keyboard - at its first activation the
-            // dialog manager would focus its first tab stop (Install Now), making it the default for
-            // Enter; the keyboard starts on OK instead (after the default handling, hence posted)
-            if (Form == unfAutomatic && !FocusPlaced)
-            {
-                FocusPlaced = TRUE;
-                PostMessage(HWindow, WM_NEXTDLGCTL, (WPARAM)GetDlgItem(HWindow, IDCANCEL), TRUE);
-            }
+            // UX test 2: on the automatic form OK is the first tab stop (ApplyForm), so the dialog
+            // manager gives it the keyboard at the first activation itself. Round 3: moving the focus
+            // by a posted message here cancelled the click that activated the window.
         }
         break;
     }

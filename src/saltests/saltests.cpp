@@ -10520,6 +10520,16 @@ static void TestAutoUpdate420()
     CSalUpdArm once = Upd420Arm(0, 2, 1, SALUPD_ARM_AUTOMATIC, FALSE, 1);
     CHECK(SalUpdStartupArmDecision(once, TRUE, FALSE, v020, TRUE) == susaOffer);
     CHECK(strcmp(SalUpdStartupArmName(susaOffer), "offer") == 0);
+    // round 3 M1: an update that is only offered is never installed on its own
+    CSalUpdArm offered = Upd420Arm(0, 2, 1, SALUPD_ARM_OFFERED, FALSE, 1);
+    CHECK(!SalUpdArmHonoured(offered, TRUE, sulAutomatic, TRUE));
+    CHECK(SalUpdStartupArmDecision(offered, FALSE, FALSE, v020, TRUE) == susaNone);
+    CHECK(SalUpdStartupArmDecision(offered, FALSE, FALSE, v021, TRUE) == susaDone);
+    CHECK(!SalUpdExitDecision(offered, FALSE, TRUE, TRUE, TRUE, FALSE, v020));
+    CHECK(!SalUpdAutomaticArmUsable(TRUE, offered, offered.Version));
+    CHECK(SalUpdAutomaticArmUsable(TRUE, offered, v030));
+    CSalUpdArm offeredTest = Upd420Arm(0, 2, 0, SALUPD_ARM_OFFERED, TRUE, 1);
+    CHECK(SalUpdStartupArmDecision(offeredTest, FALSE, FALSE, v020, TRUE) == susaDropAll);
     CHECK(SalUpdStartupArmDecision(test, TRUE, TRUE, v020, TRUE) == susaComplete);   // test, never launched
     CHECK(SalUpdStartupArmDecision(test, TRUE, TRUE, v030, TRUE) == susaComplete);   // test ignores versions
     CHECK(SalUpdStartupArmDecision(user, TRUE, TRUE, v021, TRUE) == susaDone);       // a normal arm in a test session

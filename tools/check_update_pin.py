@@ -34,7 +34,8 @@ def main(argv):
     with open(header, encoding="utf-8-sig") as f:
         m = re.search(r"SalUpdSignerThumbprints\[\]\s*=\s*\{(.*?)\};", f.read(), re.S)
         if m:
-            pins = [p.lower() for p in re.findall(r'"([0-9A-Fa-f]{40})"', m.group(1))]
+            block = re.sub(r"//[^\n]*", "", m.group(1))  # a thumbprint in a comment is not a pin
+            pins = [p.lower() for p in re.findall(r'"([0-9A-Fa-f]{40})"', block)]
     if thumb is None or not pins:
         print("check_update_pin: FAILED - could not read the thumbprint (%s) or the pins (%s)" % (cfg, header))
         return 1

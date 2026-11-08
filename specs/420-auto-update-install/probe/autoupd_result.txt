@@ -1,11 +1,11 @@
-﻿Feature 420 probe, 2026-11-08T13:08:53, exe E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe, registry backup C:\Users\pavel\AppData\Local\Temp\tc420_backup.reg
+﻿Feature 420 probe, 2026-11-08T13:30:57, exe E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe, registry backup C:\Users\pavel\AppData\Local\Temp\tc420_backup.reg
 --- group L
 L0         notify PASS        level 0: notice classic, asset requests 0, no files
 L1         offer  PASS        no level stored (default): notice offer, tandemcommander-0.2.0-x64-setup.exe, no arm, asset requests 1
 L1         hint   PASS        hint: The new version has been downloaded and verified. Install Now closes Tandem Commander, installs the update and starts it again; your settings are kept.
 L1         exit   PASS        exit with an offered but not armed update: nothing started
 L2         auto   PASS        level 2: notice automatic, arm 0.2.0 source 2 test 0 launches 0, tandemcommander-0.2.0-x64-setup.exe
-L2         exit   PASS        normal exit after 1,26 s: exit|"C:\Users\pavel\AppData\Local\Tandem Commander\Updates\tandemcommander-0.2.0-x64-setup.exe" /SP- /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /NORESTARTAPPLICATIONS /CURRENTUSER /LOG="C:\Users\pavel\AppData\Local\Tandem Commander\Updates\setup-0.2.0.log"; arm 0.2.0 source 2 test 0 launches 1
+L2         exit   PASS        normal exit after 1,24 s: exit|"C:\Users\pavel\AppData\Local\Tandem Commander\Updates\tandemcommander-0.2.0-x64-setup.exe" /SP- /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /NORESTARTAPPLICATIONS /CURRENTUSER /LOG="C:\Users\pavel\AppData\Local\Tandem Commander\Updates\setup-0.2.0.log"; arm 0.2.0 source 2 test 0 launches 1
 L3         off    PASS        check off, level 2: notice none, requests 0, no files, no arm
 L4         metered PASS        metered connection: notice classic, asset requests 0, no files
 L5         portable PASS        no matching uninstall entry (the real HKLM entry names Program Files): notice classic, asset requests 0, no files
@@ -24,24 +24,22 @@ V1         loop   PASS        loop: notice classic, asset requests 4, no files, 
 --- group B
 B1         now    PASS        Install Now: now|"C:\Users\pavel\AppData\Local\Tandem Commander\Updates\tandemcommander-0.2.0-x64-setup.exe" /SP- /SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /CURRENTUSER /LOG="C:\Users\pavel\AppData\Local\Tandem Commander\Updates\setup-0.2.0.log"; arm 0.2.0 source 1 test 0 launches 1; notice closed True
 B2         arm    PASS        Install When I Close: notice closed True, arm 0.2.0 source 1 test 0 launches 0, nothing started
-B2         exit   PASS        exit after 1,25 s: exit|"C:\Users\pavel\AppData\Local\Tandem Commander\Updates\tandemcommander-0.2.0-x64-setup.exe" /SP- /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /NORESTARTAPPLICATIONS /CURRENTUSER /LOG="C:\Users\pavel\AppData\Local\Tandem Commander\Updates\setup-0.2.0.log"
+B2         exit   PASS        exit after 1,24 s: exit|"C:\Users\pavel\AppData\Local\Tandem Commander\Updates\tandemcommander-0.2.0-x64-setup.exe" /SP- /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /NORESTARTAPPLICATIONS /CURRENTUSER /LOG="C:\Users\pavel\AppData\Local\Tandem Commander\Updates\setup-0.2.0.log"
 B3         skip   PASS        Skip This Version (offer): closed True, no arm, no files, skipped 0.2.0
 B4         ok     PASS        OK (automatic): closed True, arm 0.2.0 source 2 test 0 launches 0
 B4         skip   PASS        Skip This Version (automatic): closed True, no arm, no files
 B4         exit   PASS        exit after Skip: nothing started
 --- group X
 X1         second PASS        a second instance started while the first holds the arm: nothing started
-X1         first  PASS        the first instance closed while the second runs (after 1,26 s): nothing started
-X1         last   PASS        the last instance closed (after 1,28 s): exit|"C:\Users\pavel\AppData\Local\Tandem Commander\Updates\tandemcommander-0.2.0-x64-setup.exe" /SP- /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /NORESTARTAPPLICATIONS /CURRENTUSER /LOG="C:\Users\pavel\AppData\Local\Tandem Commander\Updates\setup-0.2.0.log"
-X2         time   PASS        exit during a running download: 1,19 s (without a download 1,25 s); .part while downloading 1; files after the exit: no files
+X1         first  PASS        the first instance closed while the second runs (after 1,22 s): nothing started
+X1         last   PASS        the last instance closed (after 1,25 s): exit|"C:\Users\pavel\AppData\Local\Tandem Commander\Updates\tandemcommander-0.2.0-x64-setup.exe" /SP- /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /NORESTARTAPPLICATIONS /CURRENTUSER /LOG="C:\Users\pavel\AppData\Local\Tandem Commander\Updates\setup-0.2.0.log"
+X2         time   PASS        exit during a running download: 1,22 s (without a download 1,19 s); .part while downloading 1; files after the exit: no files
 --- group S
 S1         killed PASS        armed, then the program ended without its exit: arm 0.2.0 source 2 test 0 launches 0, nothing started
-S1         start1 PASS        the exit never started the installer -> next start: installer after 0,8 s: now|"C:\Users\pavel\AppData\Local\Tandem Commander\Updates\tandemcommander-0.2.0-x64-setup.exe" /SP- /SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /CURRENTUSER /LOG="C:\Users\pavel\AppData\Local\Tandem Commander\Updates\setup-0.2.0.log"; arm 0.2.0 source 2 test 0 launches 1
-S1         offer2 PASS        start after 1 launch(es): notice automatic, nothing started at the start (1 lines); normal exit (1,27 s): exit|"C:\Users\pavel\AppData\Local\Tandem Commander\Updates\tandemcommander-0.2.0-x64-setup.exe" /SP- /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /NORESTARTAPPLICATIONS /CURRENTUSER /LOG="C:\Users\pavel\AppData\Local\Tandem Commander\Updates\setup-0.2.0.log"; arm 0.2.0 source 2 test 0 launches 2
-S1         offer3 PASS        start after 2 launch(es): notice automatic, nothing started at the start (2 lines); normal exit (1,26 s): exit|"C:\Users\pavel\AppData\Local\Tandem Commander\Updates\tandemcommander-0.2.0-x64-setup.exe" /SP- /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /NORESTARTAPPLICATIONS /CURRENTUSER /LOG="C:\Users\pavel\AppData\Local\Tandem Commander\Updates\setup-0.2.0.log"; arm 0.2.0 source 2 test 0 launches 3
-S1         giveup PASS        fourth start after 3 launches: 3 launches logged, arm 0.2.0 source 2 test 0 launches 3, tandemcommander-0.2.0-x64-setup.exe
-S1         giveexit PASS        its exit (1,21 s): 3 launches logged
-S1         nocycle PASS        a new check after the launches were used up: notice offer, arm 0.2.0 source 2 test 0 launches 3, after the exit (1,24 s) 3 launches logged
+S1         start1 PASS        the exit never started the installer -> next start: installer after 0,9 s: now|"C:\Users\pavel\AppData\Local\Tandem Commander\Updates\tandemcommander-0.2.0-x64-setup.exe" /SP- /SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /CURRENTUSER /LOG="C:\Users\pavel\AppData\Local\Tandem Commander\Updates\setup-0.2.0.log"; arm 0.2.0 source 2 test 0 launches 1
+S1         offer  PASS        start after a launch that did not install it: notice offer, nothing started (1 line), normal exit (1,2 s): 1 lines; arm 0.2.0 source 3 test 0 launches 1
+S1         nocycle PASS        a new check at the automatic level: notice offer (not automatic), arm 0.2.0 source 3 test 0 launches 1, after the exit (1,26 s) 1 lines
+S1         click  PASS        Install When I Close on the offered update: arm 0.2.0 source 1 test 0 launches 1; exit (1,28 s): exit|"C:\Users\pavel\AppData\Local\Tandem Commander\Updates\tandemcommander-0.2.0-x64-setup.exe" /SP- /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /NORESTARTAPPLICATIONS /CURRENTUSER /LOG="C:\Users\pavel\AppData\Local\Tandem Commander\Updates\setup-0.2.0.log"
 S2         reached PASS        the running version is the armed one: nothing started, no arm, no files
 S3         tampered PASS        the armed installer changed on disk: nothing started, no arm, no files
 S4         lowered PASS        automatic arm, level lowered to 1: nothing started, no arm, tandemcommander-0.2.0-x64-setup.exe
@@ -50,22 +48,22 @@ S5         user   PASS        armed by a click (Install When I Close), level the
 T1         offer  PASS        installed 0.2.0 = published 0.2.0, option off, interval not due, 0.2.0 skipped: notice offer, tandemcommander-0.2.0-x64-setup.exe
 T1         line   PASS        the released line: Update test mode: the published version is treated as new.
 T2         restart PASS        registered restart command line: -t "T420"
-T1         state  PASS        123 state before Check At Startup=0; Last Attempt=134386134970311739; Last Attempt Answered=1; Last Success=; Latest Version=; Latest Published=; Skipped Version=0.2.0 / after Check At Startup=0; Last Attempt=134386134970311739; Last Attempt Answered=1; Last Success=; Latest Version=; Latest Published=; Skipped Version=0.2.0
+T1         state  PASS        123 state before Check At Startup=0; Last Attempt=134386148114679098; Last Attempt Answered=1; Last Success=; Latest Version=; Latest Published=; Skipped Version=0.2.0 / after Check At Startup=0; Last Attempt=134386148114679098; Last Attempt Answered=1; Last Success=; Latest Version=; Latest Published=; Skipped Version=0.2.0
 T3         arm    PASS        test mode, level 2: arm 0.2.0 source 2 test 1 launches 0
 T3         complete PASS        killed, started again with --updatetest: now|"C:\Users\pavel\AppData\Local\Tandem Commander\Updates\tandemcommander-0.2.0-x64-setup.exe" /SP- /SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /CURRENTUSER /LOG="C:\Users\pavel\AppData\Local\Tandem Commander\Updates\setup-0.2.0.log"; arm 0.2.0 source 2 test 1 launches 1
 T3         launched PASS        a launched test arm at the next test start counts as done: now|"C:\Users\pavel\AppData\Local\Tandem Commander\Updates\tandemcommander-0.2.0-x64-setup.exe" /SP- /SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /CURRENTUSER /LOG="C:\Users\pavel\AppData\Local\Tandem Commander\Updates\setup-0.2.0.log"; then arm 0.2.0 source 2 test 1 launches 0
 T4         normal PASS        a test arm at a start without the switch: nothing started, no arm, no files
-T5         exit   PASS        test mode, level 2, normal exit after 1,28 s: exit|"C:\Users\pavel\AppData\Local\Tandem Commander\Updates\tandemcommander-0.2.0-x64-setup.exe" /SP- /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /NORESTARTAPPLICATIONS /CURRENTUSER /LOG="C:\Users\pavel\AppData\Local\Tandem Commander\Updates\setup-0.2.0.log"
+T5         exit   PASS        test mode, level 2, normal exit after 1,23 s: exit|"C:\Users\pavel\AppData\Local\Tandem Commander\Updates\tandemcommander-0.2.0-x64-setup.exe" /SP- /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /NORESTARTAPPLICATIONS /CURRENTUSER /LOG="C:\Users\pavel\AppData\Local\Tandem Commander\Updates\setup-0.2.0.log"
 --- group Rv
 M1         start  PASS        armed, an installer of the product runs, the program starts: nothing started; arm 0.2.0 source 2 test 0 launches 0
-M1         exit   PASS        the same, normal exit after 1,2 s: nothing started
+M1         exit   PASS        the same, normal exit after 1,25 s: nothing started
 M1         after  PASS        the installer ended, next start: now|"C:\Users\pavel\AppData\Local\Tandem Commander\Updates\tandemcommander-0.2.0-x64-setup.exe" /SP- /SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /CURRENTUSER /LOG="C:\Users\pavel\AppData\Local\Tandem Commander\Updates\setup-0.2.0.log"
 M1         now    PASS        Install Now while an installer runs: nothing started; message: [Static id=2477] An update of Tandem Commander is already being installed. Try again when it has finished. | [Button id=1] OK; no arm
 S2         notify PASS        "notify me only" chosen during the download: notice classic, no arm
 S2         off    PASS        the check turned off during the download (level 2): notice none, no arm, no files
 RF         again  PASS        a foreign-signed installer was refused (Download Refused = 0.2.0); the next check: notice classic, asset requests 0
 PC         alone  PASS        a portable copy started while the installed copy has an arm: arm 0.2.0 source 2 test 0 launches 0, tandemcommander-0.2.0-x64-setup.exe, nothing started
-PC         exit   PASS        its exit after 1,19 s: nothing started, arm 0.2.0 source 2 test 0 launches 0
+PC         exit   PASS        its exit after 1,2 s: nothing started, arm 0.2.0 source 2 test 0 launches 0
 IN         failed PASS        Install Now, the installer ended with 5: message [Static id=2477] The update to version 0.2.0 was not installed. Setup was cancelled or could not finish (code 5). | [Button id=1] OK; no arm
 IN         again  PASS        after the message the offer comes back (UX test 2): notice offer
 IN         exit   PASS        then a normal exit (1,25 s): now|"C:\Users\pavel\AppData\Local\Tandem Commander\Updates\tandemcommander-0.2.0-x64-setup.exe" /SP- /SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /CURRENTUSER /LOG="C:\Users\pavel\AppData\Local\Tandem Commander\Updates\setup-0.2.0.log"
@@ -79,6 +77,12 @@ U2         remind PASS        Remind Me Later on the classic form during the dow
 U2         skip   PASS        Skip This Version (level 2) during the download: notice none, no arm, exit (1,25 s): nothing started
 U3         default PASS        automatic form: default button id 2 (2 = OK)
 U5         damaged PASS        Install Now without the file: message [Static id=2477] The downloaded installer of version 0.2.0 is missing or has changed and was deleted. Use Download to get the installer in your web browser. | [Button id=1] OK; then notice classic; no arm
+--- group R3
+A          level1 PASS        Install Now that did not install, level 1: next start notice offer, Remind Me Later, exit (1,2 s): 1 lines; arm 0.2.0 source 3 test 0 launches 1
+A          level0 PASS        Install Now that did not install, level 0: next start notice classic, Remind Me Later, exit (1,18 s): 1 lines; arm 0.2.0 source 3 test 0 launches 1
+B          manual PASS        a check the user asked for on a skipped version: first classic, after the download offer, tandemcommander-0.2.0-x64-setup.exe
+C          click  PASS        a press on Install Now of the automatic form shown at start-up: now|"C:\Users\pavel\AppData\Local\Tandem Commander\Updates\tandemcommander-0.2.0-x64-setup.exe" /SP- /SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /CURRENTUSER /LOG="C:\Users\pavel\AppData\Local\Tandem Commander\Updates\setup-0.2.0.log"
+C          tab    PASS        automatic form, buttons in tab order: 2,1,6250,6249
 --- group G
 G1         default PASS        no stored level: selected 1 of 3, enabled True, label &When a new version is found:
 G1         store  PASS        after choosing the third item and OK: Update Level = 2
@@ -86,4 +90,4 @@ G2         disable PASS        reopened: selected 2; after clearing the check bo
 G3         drop   PASS        level lowered on the page: Update Level 1, no arm
 G3         exit   PASS        exit after lowering: nothing started
 Registry: restored; identical=True; SHA-256 before 6BE47F3139614B80B4238667F2F7FF900B02639CB5A4F24835A556378BCB56E5 / after 6BE47F3139614B80B4238667F2F7FF900B02639CB5A4F24835A556378BCB56E5
-TOTAL: 77 PASS, 0 FAIL, 0 NOT DRIVEN; registry restored: True
+TOTAL: 80 PASS, 0 FAIL, 0 NOT DRIVEN; registry restored: True

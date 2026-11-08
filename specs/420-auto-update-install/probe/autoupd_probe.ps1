@@ -356,26 +356,23 @@ $Groups['S'] = {
     $ok = $got -and $r.Count -eq 1 -and $r[0] -like 'now|*/SILENT*/CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /CURRENTUSER*' -and $a.Launches -eq 1
     T 'S1' 'start1' $ok ('the exit never started the installer -> next start: installer after {0} s: {1}; {2}' -f $t, (Esc $r[0]), (ArmStr $a))
     Kill-Wait $id
-    # review 2 S1: that installer did not install it (here: the program was killed, the seam started nothing)
-    # - the next start offers it and starts nothing; the exits try again until 3 launches
-    for ($n = 2; $n -le 3; $n++) {
-        NoCheck
-        $id = Start-420; $h = Wait-Notice $id 20; Start-Sleep -Seconds 1; $f = Form ([P420]::Notice([uint32]$id))
-        $before = (Runs).Count
-        $s = Quit $id; $r = Runs; $a = Arm
-        T 'S1' ('offer' + $n) ($f -eq 'automatic' -and $before -eq ($n - 1) -and $r.Count -eq $n -and $r[$n - 1] -like 'exit|*' -and $a.Launches -eq $n) ('start after {0} launch(es): notice {1}, nothing started at the start ({2} lines); normal exit ({3} s): {4}; {5}' -f ($n - 1), $f, $before, $s, (Esc $r[$n - 1]), (ArmStr $a))
-    }
+    # review 2 S1 / round 3 M1: that installer did not install it (here: the program was killed, the seam
+    # started nothing) - the next start OFFERS it, starts nothing, and nothing installs it on its own
+    # (not the exit, not the automatic level) until the user clicks
     NoCheck
-    $id = Start-420; Start-Sleep -Seconds 6
-    $a = Arm
-    T 'S1' 'giveup' ((Runs).Count -eq 3 -and $null -ne $a -and $a.Launches -eq 3 -and (UpdFiles) -contains $InstallerName) ('fourth start after 3 launches: {0} launches logged, {1}, {2}' -f (Runs).Count, (ArmStr $a), (FilesStr))
-    $s = Quit $id
-    T 'S1' 'giveexit' ((Runs).Count -eq 3) ('its exit ({0} s): {1} launches logged' -f $s, (Runs).Count)
-    # review S1: the next check at the automatic level does not start a new count - the update is only offered
+    $id = Start-420; $h = Wait-Notice $id 20; Start-Sleep -Seconds 1; $f = Form ([P420]::Notice([uint32]$id))
+    $before = (Runs).Count
+    $s = Quit $id; $a = Arm
+    T 'S1' 'offer' ($f -eq 'offer' -and $before -eq 1 -and (Runs).Count -eq 1 -and $null -ne $a -and $a.Source -eq 3 -and $a.Launches -eq 1) ('start after a launch that did not install it: notice {0}, nothing started ({1} line), normal exit ({2} s): {3} lines; {4}' -f $f, $before, $s, (Runs).Count, (ArmStr $a))
     Uc-Del 'Last Attempt'
-    $id = Start-420; $h = Wait-Notice $id 40; Start-Sleep -Seconds 2; $h = [P420]::Notice([uint32]$id); $f = Form $h; $a = Arm
+    $id = Start-420; $h = Wait-Notice $id 40; Start-Sleep -Seconds 2; $f = Form ([P420]::Notice([uint32]$id)); $a = Arm
     $s = Quit $id
-    T 'S1' 'nocycle' ($f -eq 'offer' -and $null -ne $a -and $a.Launches -eq 3 -and (Runs).Count -eq 3) ('a new check after the launches were used up: notice {0}, {1}, after the exit ({2} s) {3} launches logged' -f $f, (ArmStr $a), $s, (Runs).Count)
+    T 'S1' 'nocycle' ($f -eq 'offer' -and $null -ne $a -and $a.Source -eq 3 -and $a.Launches -eq 1 -and (Runs).Count -eq 1) ('a new check at the automatic level: notice {0} (not automatic), {1}, after the exit ({2} s) {3} lines' -f $f, (ArmStr $a), $s, (Runs).Count)
+    Uc-Del 'Last Attempt'
+    $id = Start-420; $h = Wait-Form $id 'offer' 40
+    Press $h 6296; [void](Gone $h 3); $a = Arm
+    $s = Quit $id; $r = Runs
+    T 'S1' 'click' ($null -ne $a -and $a.Source -eq 1 -and $r.Count -eq 2 -and $r[1] -like 'exit|*') ('Install When I Close on the offered update: {0}; exit ({1} s): {2}' -f (ArmStr $a), $s, (Esc $r[$r.Count - 1]))
 
     Reset-State 2; Set-Env
     $id = Start-420; [void](Wait-Form $id 'automatic'); Kill-Wait $id
@@ -610,6 +607,47 @@ $Groups['Ux'] = {
     if ($box.Count) { Close-Win $box[0]; Start-Sleep -Milliseconds 800 }
     $f = Form ([P420]::Notice([uint32]$id))
     T 'U5' 'damaged' ($boxText -like '*missing or has changed*' -and $f -eq 'classic' -and (Runs).Count -eq 0 -and $null -eq (Arm)) ('Install Now without the file: message {0}; then notice {1}; {2}' -f (Esc $boxText), $f, (ArmStr (Arm)))
+    [void](Quit $id)
+}
+
+# R3: the findings of the third verification (fix-log, Round 3)
+$Groups['R3'] = {
+    foreach ($lvl in @(1, 0)) {
+        # M1: Install Now, the installer closed the program and did not install (here: killed) - the
+        # next start offers it; Remind Me Later / closing; the exit installs nothing
+        Reset-State 1; Set-Env
+        $id = Start-420; $h = Wait-Form $id 'offer'; Press $h 1; [void](Wait-Run 1 10); Kill-Wait $id
+        Uc-Set 'Update Level' $lvl; NoCheck
+        $id = Start-420; $h = Wait-Notice $id 20; Start-Sleep -Seconds 1; $h = [P420]::Notice([uint32]$id); $f = Form $h
+        Press $h 2; [void](Gone $h 3)
+        $s = Quit $id; $a = Arm
+        $want = if ($lvl -eq 1) { 'offer' } else { 'classic' }
+        T 'A' ('level' + $lvl) ($f -eq $want -and (Runs).Count -eq 1 -and $null -ne $a -and $a.Source -eq 3) ('Install Now that did not install, level {0}: next start notice {1}, Remind Me Later, exit ({2} s): {3} lines; {4}' -f $lvl, $f, $s, (Runs).Count, (ArmStr $a))
+    }
+
+    # M2: Help > Check for New Version on a version skipped earlier - the downloaded form replaces the classic one, the file stays
+    Reset-State 1; Set-Env 'rel-medium'; NoCheck; Uc-Set 'Skipped Version' '0.2.0' 'String'
+    $id = Start-420; Start-Sleep -Seconds 1
+    Post-Cmd (Get-Main $id) 2217
+    $h = Wait-Notice $id 15; $f1 = Form $h
+    $h2 = Wait-Form $id 'offer' 40; $f2 = Form $h2
+    T 'B' 'manual' ($f1 -eq 'classic' -and $f2 -eq 'offer' -and (UpdFiles) -contains $InstallerName) ('a check the user asked for on a skipped version: first {0}, after the download {1}, {2}' -f $f1, $f2, (FilesStr))
+    [void](Quit $id)
+
+    # S1: the first click on the automatic form shown at start-up (not activated) is not swallowed
+    Reset-State 2; Set-Env
+    $id = Start-420; $h = Wait-Form $id 'automatic'
+    $btn = Ctl $h 1
+    [void][Drv098f]::PostMessageW($btn, 0x0201, [IntPtr]1, $Z)   # WM_LBUTTONDOWN
+    Start-Sleep -Milliseconds 600
+    [void][Drv098f]::PostMessageW($btn, 0x0202, $Z, $Z)          # WM_LBUTTONUP
+    [void](Wait-Run 1 10)
+    T 'C' 'click' ((Runs).Count -eq 1 -and (Runs)[0] -like 'now|*') ('a press on Install Now of the automatic form shown at start-up: ' + (RunsStr))
+    [void](Quit $id)
+    Reset-State 2; Set-Env
+    $id = Start-420; $h = Wait-Form $id 'automatic'
+    $order = @([Drv098f]::Kids($h) | Where-Object { [Drv098f]::Cls($_) -eq 'Button' -and [Drv098f]::IsWindowVisible($_) } | ForEach-Object { [Drv098f]::GetDlgCtrlID($_) })
+    T 'C' 'tab' ($order.Count -ge 3 -and $order[0] -eq 2) ('automatic form, buttons in tab order: ' + ($order -join ','))
     [void](Quit $id)
 }
 

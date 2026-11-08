@@ -459,13 +459,18 @@ inline BOOL SalUpdBuildInstallerArgs(CSalUpdLaunchKind kind, BOOL allUsers, BOOL
 
 #define SALUPD_ARM_USER 1      // armed by a click (Install When I Close, Install Now)
 #define SALUPD_ARM_AUTOMATIC 2 // armed by the level "install automatically"
+// Round 3 M1: an installer started for it did not install it (cancelled, elevation declined, the
+// program was closed by it and it failed) - the update is only OFFERED: nothing installs it on its
+// own (not the exit, not the automatic level) until the user clicks Install Now / Install When I
+// Close; its launch count and digest are kept
+#define SALUPD_ARM_OFFERED 3
 
 struct CSalUpdArm
 {
     BOOL Present;
     CSalUpdVersion Version;
     unsigned char Digest[SALUPD_DIGEST_BYTES];
-    DWORD Source; // SALUPD_ARM_USER / SALUPD_ARM_AUTOMATIC
+    DWORD Source; // SALUPD_ARM_USER / SALUPD_ARM_AUTOMATIC / SALUPD_ARM_OFFERED (never honoured)
     BOOL Test;    // armed in test mode
     DWORD Launches;
 };
@@ -528,6 +533,8 @@ inline CSalUpdStartupArm SalUpdStartupArmDecision(const CSalUpdArm& arm, BOOL ho
         return susaNone; // a copy not installed by the installer leaves the installed copy's arm alone (review)
     if (arm.Test && !testMode)
         return susaDropAll; // a test never installs in a normal session
+    if (arm.Source == SALUPD_ARM_OFFERED) // round 3: only offered - the check offers it again
+        return (!arm.Test && SalUpdVersionCompare(running, arm.Version) >= 0) ? susaDone : susaNone;
     if (!honoured)
         return susaDropState;
     if (!arm.Test && SalUpdVersionCompare(running, arm.Version) >= 0)
@@ -545,7 +552,10 @@ inline CSalUpdStartupArm SalUpdStartupArmDecision(const CSalUpdArm& arm, BOOL ho
 // of the same version whose launches are used up is not promised for the exit any more (offered only)
 inline BOOL SalUpdAutomaticArmUsable(BOOL hasArm, const CSalUpdArm& arm, const CSalUpdVersion& version)
 {
-    return !hasArm || SalUpdVersionCompare(arm.Version, version) != 0 || arm.Launches < SALUPD_MAX_LAUNCHES;
+    if (!hasArm || SalUpdVersionCompare(arm.Version, version) != 0)
+        return TRUE;
+    // round 3 M1: an update that is only offered is not armed by the automatic level again
+    return arm.Source != SALUPD_ARM_OFFERED && arm.Launches < SALUPD_MAX_LAUNCHES;
 }
 
 // data-model.md, "Exit decision". 'normalExit': not an installer's close, not a critical
