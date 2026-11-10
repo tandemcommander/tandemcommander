@@ -343,6 +343,23 @@ int GetActiveIconSet()
 {
     return SalIconSetFromStored(true, (unsigned long)(unsigned int)Configuration.ToolbarIconSet);
 }
+
+const char* CONFIG_PANELTABSTYLE_REG = "Panel Tab Style"; // feature 423
+
+// feature 423: the tab style from the opened configuration key, read quietly like the icon set;
+// missing or wrong type = Square; the stored number is kept as read (a style of a later version is
+// written back unchanged) and mapped where it is used (GetActiveTabStyle)
+void ReadPanelTabStyle(HKEY actKey)
+{
+    DWORD value = 0;
+    BOOL read = GetValueAux(NULL, actKey, CONFIG_PANELTABSTYLE_REG, REG_DWORD, &value, sizeof(value), TRUE);
+    Configuration.PanelTabStyle = read ? (int)value : SALTAB_STYLE_SQUARE;
+}
+
+int GetActiveTabStyle()
+{
+    return SalTabStyleFromStored(TRUE, (unsigned long)(unsigned int)Configuration.PanelTabStyle);
+}
 const char* CONFIG_CONVERSIONTABLE_REG = "Conversion Table";
 const char* CONFIG_TITLEBARSHOWPATH_REG = "Title bar show path";
 const char* CONFIG_TITLEBARMODE_REG = "Title bar mode";
@@ -2089,6 +2106,8 @@ void CMainWindow::SaveConfig(HWND parent)
                          &Configuration.ThemeMode, sizeof(DWORD)); // feature 028
                 SetValue(actKey, CONFIG_TOOLBARICONSET_REG, REG_DWORD,
                          &Configuration.ToolbarIconSet, sizeof(DWORD)); // feature 416
+                SetValue(actKey, CONFIG_PANELTABSTYLE_REG, REG_DWORD,
+                         &Configuration.PanelTabStyle, sizeof(DWORD)); // feature 423
                 SetValue(actKey, CONFIG_RECYCLEMASKS_REG, REG_SZ,
                          Configuration.RecycleMasks.GetMasksString(), -1);
                 SetValue(actKey, CONFIG_SAVEONEXIT_REG, REG_DWORD,
@@ -3732,6 +3751,7 @@ BOOL CMainWindow::LoadConfig(BOOL importingOldConfig, const CCommandLineParams* 
             if (Configuration.ThemeMode != THEME_MODE_DARK)
                 Configuration.ThemeMode = THEME_MODE_DEFAULT; // forward compatibility
             ReadToolbarIconSet(actKey); // feature 416
+            ReadPanelTabStyle(actKey);  // feature 423
             // a bit ugly: we provide MasksString, but the range is checked so it's fine
             GetValue(actKey, CONFIG_RECYCLEMASKS_REG, REG_SZ,
                      Configuration.RecycleMasks.GetWritableMasksString(), MAX_PATH);

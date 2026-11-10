@@ -8234,6 +8234,7 @@ void CCfgRefreshState::Capture()
     PanelZoom = Configuration.ShowPanelZoom;
     PanelTabs = Configuration.PanelTabs; // feature 078
     ToolbarIconSet = Configuration.ToolbarIconSet; // feature 416
+    PanelTabStyle = Configuration.PanelTabStyle;   // feature 423
     UseCustomPanelFont = ::UseCustomPanelFont;
     LogFont = ::LogFont;
 }
@@ -8308,6 +8309,13 @@ void CMainWindow::RefreshAfterConfiguration(const CCfgRefreshState& old, BOOL vi
         // feature 416: another icon set - the theme switch's pipeline rebuilds every icon site
         // (toolbar image lists, menus, the ".." symbol, drive bars, drive icons, tabs) at once
         ColorsChanged(TRUE, FALSE, TRUE);
+    }
+
+    if (SalTabStyleFromStored(TRUE, (unsigned int)old.PanelTabStyle) != GetActiveTabStyle())
+    {
+        // feature 423: another tab style - the strips read it at every paint; nothing moves
+        LeftPanel->UpdateTabStrip();
+        RightPanel->UpdateTabStrip();
     }
 
     if (old.PanelTabs != Configuration.PanelTabs) // feature 078: strips on/off, no restart

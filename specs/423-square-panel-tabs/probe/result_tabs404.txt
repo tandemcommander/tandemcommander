@@ -1,0 +1,37 @@
+tabs404_probe (feature 404) after423
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-10 19:15; registry key existed True; fixture C:\Users\pavel\AppData\Local\Temp\tc404; font height 15, avg char 6; DPI scale 2560
+
+LOOK-LIGHT NORMAL PASS        vs variantF_light_normal.png: exact 21594, edge-tolerated 1200 (max 58), failing 0 (max 0)
+LOOK-LIGHT INACTIVE PASS        vs variantF_light_inactive.png: exact 21594, edge-tolerated 1200 (max 58), failing 0 (max 0)
+LOOK-LIGHT HOVERTAB PASS        vs variantF_light_hovertab.png: exact 21871, edge-tolerated 923 (max 58), failing 0 (max 0); GetCursorPos failed
+LOOK-LIGHT HOVERCLOSE PASS        vs variantF_light_hoverclose.png: exact 21542, edge-tolerated 1252 (max 58), failing 0 (max 0); GetCursorPos failed
+LOOK-LIGHT HOVERPLUS PASS        vs variantF_light_hoverplus.png: exact 21549, edge-tolerated 1245 (max 45), failing 0 (max 0); GetCursorPos failed
+LOOK-LIGHT TABS   PASS        left [Downloads fonts tandemcommander src 2021_silon_bubble_sort_visualisation E:] active 2; right [start] active 0
+LOOK-DARK  NORMAL PASS        vs variantF_dark_normal.png: exact 22543, edge-tolerated 251 (max 46), failing 0 (max 0)
+LOOK-DARK  INACTIVE PASS        vs variantF_dark_inactive_413.png: exact 22645, edge-tolerated 149 (max 24), failing 0 (max 0)
+LOOK-DARK  HOVERTAB PASS        vs variantF_dark_hovertab.png: exact 22475, edge-tolerated 319 (max 46), failing 0 (max 0); GetCursorPos failed
+LOOK-DARK  HOVERCLOSE PASS        vs variantF_dark_hoverclose.png: exact 22488, edge-tolerated 306 (max 50), failing 0 (max 0); GetCursorPos failed
+LOOK-DARK  HOVERPLUS PASS        vs variantF_dark_hoverplus.png: exact 22486, edge-tolerated 308 (max 46), failing 0 (max 0); GetCursorPos failed
+LOOK-DARK  TABS   PASS        left [Downloads fonts tandemcommander src 2021_silon_bubble_sort_visualisation E:] active 2; right [start] active 0
+MOUSE      START  PASS        left [A B C D] active 0; right [start] active 0; strip 786x29, tab width 170
+MOUSE      MIDDRAG PASS        active-tab colour BFCDDB, strip DEDEDE; while A is held 1.2 tab widths to the right: at the cursor BFCDDB, at A's old place DEDEDE; after WM_CANCELMODE at A's place BFCDDB; left [A B C D] active 0; right [start] active 0
+MOUSE      DRAG   PASS        A dragged past the centre of C, released: left [B C A D] active 2; right [start] active 0
+MOUSE      CANCELMODE PASS        B dragged onto D, WM_CANCELMODE, released: left [B C A D] active 0; right [start] active 0
+MOUSE      CAPLOST PASS        B dragged onto D, WM_CAPTURECHANGED, released: left [B C A D] active 0; right [start] active 0
+MOUSE      NOTEAR PASS        B dragged past the centre of C, 72 px below the strip: left [C B A D] active 1; right [start] active 0
+MOUSE      XPRESS PASS        left button down on the X of B, not released: left [C B A D] active 1; right [start] active 0
+MOUSE      XRELEASE PASS        released over the same X: left [C A D] active 1; right [start] active 0
+MOUSE      XOFF   PASS        pressed on the X of D, moved off, released: left [C A D] active 1; right [start] active 0
+MENU       START  PASS        left [A B] active 1; right [R] active 0
+MENU       MOVE   PASS        Move to Other Panel on B: left [A] active 0; right [R B] active 1
+MENU       NOREOPEN PASS        Reopen Closed Tab after the move: left [A] active 0; right [R B] active 1
+MENU       MOVE-SINGLE PASS        Move to Other Panel with a single tab: left [A] active 0; right [R B] active 1
+MENU       NEWASOTHER PASS        New Tab as Other Panel (right shows B): left [A B] active 1; right [R B] active 1
+MENU       CTXMOVE PASS        menu window True; right-click on the inactive tab A, M: left [B] active 0; right [R B A] active 2
+MENU       CTXNEWAS PASS        menu window True; right-click on the empty strip at x 237, P: left [B A] active 1; right [R B A] active 2
+MENU       REFUSED NOT DRIVEN  a refused leave needs a plug-in that refuses (CHPPFR_CANNOTCLOSEPATH); no shipped plug-in does (feature 078 deviation) - verified by reading MoveTabToOtherPanel
+FALLBACK   MOVE-GONE PASS        menu window True; X deleted, Move to Other Panel on X - undone, X stays here: left [A X] active 0; right [R] active 0; windows: [#32770 'Error Changing Directory'] [Static id=2477] Path: "C:\Users\pavel\AppData\Local\Temp\tc404\fallback\X" Error: The path specified was not found. | [Button id=1] OK
+Registry: restored; identical=True; SHA-256 before F8CA10C20C87C9FBC8598B67294EE9DED5A99DBB189EE7A7EBF3C2EB9FD4B29F / after F8CA10C20C87C9FBC8598B67294EE9DED5A99DBB189EE7A7EBF3C2EB9FD4B29F
+
+Rows: PASS 29, FAIL 0, NOT DRIVEN 1. Left running: 0; fixture removed: True; registry restored+identical: True

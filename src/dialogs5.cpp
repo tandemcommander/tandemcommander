@@ -2982,6 +2982,12 @@ void CCfgPageAppearance::Transfer(CTransferInfo& ti)
     ti.RadioButton(IDC_ICONSET_CLASSIC, SAL_ICONSET_CLASSIC, iconSet);
     if (ti.Type == ttDataFromWindow && iconSet != GetActiveIconSet())
         Configuration.ToolbarIconSet = iconSet; // only a change: a stored set of a later version stays as it is
+    // feature 423: the panel tab style (applied by RefreshAfterConfiguration after OK), the same rule
+    int tabStyle = GetActiveTabStyle();
+    ti.RadioButton(IDC_TABSTYLE_SQUARE, SALTAB_STYLE_SQUARE, tabStyle);
+    ti.RadioButton(IDC_TABSTYLE_ROUNDED, SALTAB_STYLE_ROUNDED, tabStyle);
+    if (ti.Type == ttDataFromWindow && tabStyle != GetActiveTabStyle())
+        Configuration.PanelTabStyle = tabStyle;
     ti.EditLine(IDC_THUMBNAILSIZE, Configuration.ThumbnailSize);
     if (ti.Type == ttDataFromWindow)
         Configuration.ThumbnailSize = min(THUMBNAIL_SIZE_MAX, max(THUMBNAIL_SIZE_MIN, Configuration.ThumbnailSize));

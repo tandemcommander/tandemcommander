@@ -319,6 +319,10 @@
 #define IDC_ICONSET_CLASSIC             6293
 #define IDC_ICONSET_PREVIEW_FLUENT      6294
 #define IDC_ICONSET_PREVIEW_CLASSIC     6295
+// feature 423: Configuration > Appearance > Tab style
+#define IDC_TABSTYLE_GROUP              6302
+#define IDC_TABSTYLE_SQUARE             6303
+#define IDC_TABSTYLE_ROUNDED            6304
 #define IDC_NETWAREFASTDIRMOVE          622
 #define IDC_EDITNEW_SELALL              623
 #define IDC_ASYNCCOPYALG                624
@@ -773,7 +777,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        8200
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         6302
+#define _APS_NEXT_CONTROL_VALUE         6305
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

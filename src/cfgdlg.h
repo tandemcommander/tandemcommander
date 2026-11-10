@@ -333,6 +333,9 @@ struct CConfiguration
     // feature 416: the toolbar icon set as stored (SAL_ICONSET_FLUENT = default, SAL_ICONSET_CLASSIC;
     // another number - a later version's set - is kept and drawn as Fluent 2): use GetActiveIconSet()
     int ToolbarIconSet;
+    // feature 423: the panel tab style as stored (SALTAB_STYLE_SQUARE = default, SALTAB_STYLE_ROUNDED;
+    // another number - a later version's style - is kept and drawn as Square): use GetActiveTabStyle()
+    int PanelTabStyle;
 
     // the history arrays are destroyed in the ClearHistory() method
     char* SelectHistory[SELECT_HISTORY_SIZE];

@@ -460,10 +460,15 @@ void SalTabStripColorsGet(DWORD face, DWORD shadow, DWORD highlight, DWORD text,
         return;
     }
     out->StripBk = SalTabMix(face, shadow, dark ? 0.5 : 0.22);
-    out->DimText = SalTabMix(text, out->StripBk, dark ? 0.30 : 0.38);
+    out->DimText = SalTabMix(text, out->StripBk, dark ? SALTAB_DIMTEXT_DARK : SALTAB_DIMTEXT_LIGHT); // feature 423
     out->HoverBk = SalTabMix(out->StripBk, text, dark ? 0.10 : 0.07);
     out->HoverText = text;
     out->Separator = dark ? highlight : SalTabMix(shadow, out->StripBk, 0.30);
+}
+
+int SalTabStyleFromStored(BOOL read, unsigned long value)
+{
+    return (read && value == SALTAB_STYLE_ROUNDED) ? SALTAB_STYLE_ROUNDED : SALTAB_STYLE_SQUARE;
 }
 
 void SalTabCloseColors(DWORD bk, DWORD fg, BOOL dark, BOOL highContrast, DWORD* cross, DWORD* circle)

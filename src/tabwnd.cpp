@@ -33,9 +33,9 @@
 #define TABSTRIP_CLOSEPAD 8  // the close glyph box ends this far before the tab's right edge
 #define TABSTRIP_TITLEGAP 6  // the title ends this far before the close glyph
 #define TABSTRIP_ICONGAP 6   // between the icon and the title
-#define TABSTRIP_LEFT 8      // the first tab starts here (room for the active tab's left foot)
+#define TABSTRIP_LEFT 8      // the first tab starts here (room for the rounded active tab's left foot; kept for square tabs, 423)
 #define TABSTRIP_TOP 3       // the content band runs from here to the bottom
-#define TABSTRIP_RADIUS 6.0f // the active tab's top corners and feet
+#define TABSTRIP_RADIUS 6.0f // the rounded active tab's top corners and feet (SALTAB_STYLE_ROUNDED, 423)
 #define TABSTRIP_ANIM_MS 150 // the neighbour slide / glide of the live drag
 
 #define TABSTRIP_TT_PLUS 1
@@ -922,6 +922,17 @@ void CTabWindow::PaintTabBack(HDC dc, int index, BOOL hot)
         return;
     float sc = TabStripScale();
     BOOL active = (index == FilesWindow->Tabs.ActiveIndex);
+    if (GetActiveTabStyle() == SALTAB_STYLE_SQUARE)
+    {
+        // feature 423: the square tab - the active tab and the hover are the tab's own box, from
+        // the top of the content band down into the directory line, without corners or feet
+        if (active || hot)
+        {
+            RECT box = {r.left, TextTop(), r.right + 1, Height};
+            TabFillSolid(dc, &box, active ? TabPaint.CapBk : TabPaint.Strip.HoverBk);
+        }
+        return;
+    }
     float H = (float)Height;
     char el[700];
     if (active)

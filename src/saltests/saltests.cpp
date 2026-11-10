@@ -2351,7 +2351,7 @@ static void TestTabStrip404()
     CHECK(c.StripBk == RGB(222, 222, 222));   // variantF_light_normal (0, 0)
     CHECK(c.Separator == RGB(179, 179, 179)); // (131, 15)
     CHECK(c.HoverBk == RGB(206, 206, 206));   // variantF_light_hovertab (540, 6)
-    CHECK(c.DimText == RGB(84, 84, 84));
+    CHECK(c.DimText == RGB(44, 44, 44)); // feature 423: was 84,84,84 (the mockup's 0.38), TestTabStrip423
     CHECK(c.HoverText == RGB(0, 0, 0));
     SalTabStripColorsGet(RGB(45, 45, 45), RGB(26, 26, 26), RGB(70, 70, 70), RGB(240, 240, 240), TRUE, FALSE,
                          RGB(0, 120, 215), RGB(255, 255, 255), &c);
@@ -2482,6 +2482,49 @@ static void TestTabStrip405()
 }
 
 // feature 413: the drag reaches the first place; the active tab's fill stands out
+// feature 423: the tab style (Square by default, Rounded = 404's look) and the Light theme's
+// darker inactive titles
+static void TestTabStrip423()
+{
+    // the stored value: only a read 1 is Rounded; missing, wrong type and unknown numbers are Square
+    CHECK(SalTabStyleFromStored(FALSE, 0) == SALTAB_STYLE_SQUARE);
+    CHECK(SalTabStyleFromStored(FALSE, 1) == SALTAB_STYLE_SQUARE); // not read: the buffer means nothing
+    CHECK(SalTabStyleFromStored(TRUE, 0) == SALTAB_STYLE_SQUARE);
+    CHECK(SalTabStyleFromStored(TRUE, 1) == SALTAB_STYLE_ROUNDED);
+    CHECK(SalTabStyleFromStored(TRUE, 2) == SALTAB_STYLE_SQUARE);
+    CHECK(SalTabStyleFromStored(TRUE, 7) == SALTAB_STYLE_SQUARE);
+    CHECK(SalTabStyleFromStored(TRUE, 0xFFFFFFFFUL) == SALTAB_STYLE_SQUARE);
+    CHECK(SALTAB_STYLE_SQUARE == 0 && SALTAB_STYLE_ROUNDED == 1); // the stored numbers (contract)
+
+    // Light: the default system colours (face F0F0F0, shadow A0A0A0, text 000000)
+    CSalTabStripColors c;
+    SalTabStripColorsGet(RGB(240, 240, 240), RGB(160, 160, 160), RGB(255, 255, 255), RGB(0, 0, 0), FALSE, FALSE,
+                         RGB(0, 120, 215), RGB(255, 255, 255), &c);
+    CHECK(c.StripBk == RGB(222, 222, 222)); // the strip itself unchanged
+    CHECK(c.DimText == RGB(44, 44, 44));    // 0 + 222 * 0.20 = 44.4
+    CHECK(SalTabContrastRatio(c.DimText, c.StripBk) >= 7.0);  // WCAG AAA (10.38:1)
+    CHECK(SalTabContrastRatio(c.DimText, c.StripBk) < SalTabContrastRatio(c.HoverText, c.StripBk)); // lighter than the active / hovered title
+    CHECK(c.DimText != c.HoverText);
+    // negative control: 404's mix did not reach 7:1 (5.63:1)
+    CHECK(SalTabContrastRatio(SalTabMix(RGB(0, 0, 0), c.StripBk, 0.38), c.StripBk) < 7.0);
+    // a custom Light scheme keeps the relation: the dim title is between the text and the strip
+    SalTabStripColorsGet(RGB(236, 233, 216), RGB(172, 168, 153), RGB(255, 255, 255), RGB(0, 0, 64), FALSE, FALSE,
+                         RGB(49, 106, 197), RGB(255, 255, 255), &c);
+    CHECK(SalTabContrastRatio(c.DimText, c.StripBk) >= 7.0);
+    CHECK(SalTabContrastRatio(c.DimText, c.StripBk) < SalTabContrastRatio(c.HoverText, c.StripBk));
+
+    // Dark and High Contrast unchanged by 423
+    SalTabStripColorsGet(RGB(45, 45, 45), RGB(26, 26, 26), RGB(70, 70, 70), RGB(240, 240, 240), TRUE, FALSE,
+                         RGB(0, 120, 215), RGB(255, 255, 255), &c);
+    CHECK(c.DimText == RGB(179, 179, 179));
+    SalTabStripColorsGet(RGB(0, 0, 0), RGB(128, 128, 128), RGB(255, 255, 255), RGB(255, 255, 0), TRUE, TRUE,
+                         RGB(0, 255, 255), RGB(0, 0, 0), &c);
+    CHECK(c.DimText == RGB(255, 255, 0));
+    SalTabStripColorsGet(RGB(255, 255, 255), RGB(128, 128, 128), RGB(255, 255, 255), RGB(0, 0, 0), FALSE, TRUE,
+                         RGB(0, 0, 255), RGB(255, 255, 255), &c);
+    CHECK(c.DimText == RGB(0, 0, 0)); // High Contrast White: the text itself
+}
+
 static void TestTabStrip413()
 {
     // the caller (CTabWindow::UpdateDrag) clamps the left to 0 .. (count - 1) * width: both ends
@@ -28823,6 +28866,7 @@ int main(int argc, char** argv)
     TestTabStrip404();
     TestTabStrip405();
     TestTabStrip413();
+    TestTabStrip423();
     TestBugReport079();
     TestCloseApp080();
     TestSevenZipList084();

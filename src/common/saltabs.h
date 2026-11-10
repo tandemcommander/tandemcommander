@@ -165,10 +165,26 @@ struct CSalTabStripColors
 // the strip colours from the system colours of the theme (face, shadow, highlight
 // = COLOR_BTNHIGHLIGHT, text = COLOR_BTNTEXT); 'hcHighlight' / 'hcHighlightText'
 // (COLOR_HIGHLIGHT / COLOR_HIGHLIGHTTEXT) are used only under High Contrast, where
-// nothing is mixed
+// nothing is mixed. DimText is the text mixed toward the strip by SALTAB_DIMTEXT_LIGHT
+// (Light) / SALTAB_DIMTEXT_DARK (Dark)
 void SalTabStripColorsGet(DWORD face, DWORD shadow, DWORD highlight, DWORD text, BOOL dark,
                           BOOL highContrast, DWORD hcHighlight, DWORD hcHighlightText,
                           CSalTabStripColors* out);
+
+// feature 423: the Light theme's inactive titles were 545454 on DEDEDE (0.38, 5.63:1, washed
+// out next to the black active title); 0.20 gives 2C2C2C (10.38:1), still a step lighter than
+// the active / hovered title. Dark keeps 404's 0.30
+#define SALTAB_DIMTEXT_LIGHT 0.20
+#define SALTAB_DIMTEXT_DARK 0.30
+
+// feature 423: the panel tab style (Configuration > Appearance > Tab style), stored as
+// "Panel Tab Style" (REG_DWORD) in the configuration key
+#define SALTAB_STYLE_SQUARE 0  // the default: the active tab and the hover are plain rectangles
+#define SALTAB_STYLE_ROUNDED 1 // the look of feature 404: rounded top corners, outward feet, a hover pill
+
+// the style for a stored value: 'read' FALSE (missing or of another type) or a number this
+// version does not know -> Square (the number itself is kept by the caller and written back)
+int SalTabStyleFromStored(BOOL read, unsigned long value);
 
 // the close glyph over background 'bk' with foreground 'fg': the cross when not
 // hovered (fg 25 % toward bk) and the hover circle (bk 14 % / Dark 20 % toward fg);

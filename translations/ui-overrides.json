@@ -336,7 +336,9 @@
       "IDS_UPDATE_HINT_DLI": "Tlačítko Stáhnout && nainstalovat stáhne instalační program, zkontroluje jej a nainstaluje aktualizaci; Tandem Commander se pak znovu spustí a nastavení zůstane zachováno. Tlačítko Stáhnout jej otevře ve webovém prohlížeči.",
       "IDS_UPDATE_HINT_PORTABLE": "Tato kopie programu Tandem Commander nebyla nainstalována instalačním programem, a proto se nemůže aktualizovat sama. Tlačítko Stáhnout otevře instalační program ve webovém prohlížeči; aktualizujte jeho spuštěním.",
       "IDS_UPDATE_DLI_PROGRESS": "Stahování a kontrola instalačního programu verze %s... %u %%",
-      "IDS_UPDATE_DLI_FAILED": "Instalační program verze %s se nepodařilo stáhnout nebo neprošel kontrolou.\\n\\nTlačítkem Stáhnout jej získáte ve webovém prohlížeči."
+      "IDS_UPDATE_DLI_FAILED": "Instalační program verze %s se nepodařilo stáhnout nebo neprošel kontrolou.\\n\\nTlačítkem Stáhnout jej získáte ve webovém prohlížeči.",
+      "IDC_TABSTYLE_GROUP": " St&yl karet ",
+      "IDC_TABSTYLE_SQUARE": "&Hranaté"
     },
     "slovak": {
       "IDS_MENU_TAB_MOVETOOTHER": "&Presunúť do druhého panelu",
@@ -386,7 +388,8 @@
       "IDS_UPDATE_HINT_DLI": "Tlačidlo Stiahnuť && nainštalovať stiahne inštalačný program, skontroluje ho a nainštaluje aktualizáciu; Tandem Commander sa potom znova spustí a vaše nastavenia zostanú zachované. Tlačidlo Stiahnuť ho otvorí vo webovom prehliadači.",
       "IDS_UPDATE_HINT_PORTABLE": "Táto kópia programu Tandem Commander nebola nainštalovaná inštalačným programom, preto sa nemôže aktualizovať sama. Tlačidlo Stiahnuť otvorí inštalačný program vo webovom prehliadači; aktualizujte jeho spustením.",
       "IDS_UPDATE_DLI_PROGRESS": "Sťahuje sa a kontroluje inštalačný program verzie %s... %u %%",
-      "IDS_UPDATE_DLI_FAILED": "Inštalačný program verzie %s sa nepodarilo stiahnuť alebo neprešiel kontrolou.\\n\\nTlačidlom Stiahnuť ho získate vo webovom prehliadači."
+      "IDS_UPDATE_DLI_FAILED": "Inštalačný program verzie %s sa nepodarilo stiahnuť alebo neprešiel kontrolou.\\n\\nTlačidlom Stiahnuť ho získate vo webovom prehliadači.",
+      "IDC_TABSTYLE_SQUARE": "&Hranaté"
     },
     "german": {
       "IDS_MENU_TAB_MOVETOOTHER": "In das andere &Fenster verschieben",
@@ -451,7 +454,8 @@
       "IDS_UPDATE_HINT_DLI": "„Download && installieren“ lädt das Installationsprogramm herunter, prüft es und installiert das Update; anschließend wird Tandem Commander neu gestartet, und Ihre Einstellungen bleiben erhalten. „Download“ öffnet es in Ihrem Webbrowser.",
       "IDS_UPDATE_HINT_PORTABLE": "Diese Kopie von Tandem Commander wurde nicht mit dem Installationsprogramm installiert und kann sich daher nicht selbst aktualisieren. „Download“ öffnet das Installationsprogramm in Ihrem Webbrowser; führen Sie es aus, um zu aktualisieren.",
       "IDS_UPDATE_DLI_PROGRESS": "Installationsprogramm der Version %s wird heruntergeladen und geprüft... %u %%",
-      "IDS_UPDATE_DLI_FAILED": "Das Installationsprogramm der Version %s konnte nicht heruntergeladen werden oder hat die Prüfung nicht bestanden.\\n\\nVerwenden Sie „Download“, um das Installationsprogramm in Ihrem Webbrowser herunterzuladen."
+      "IDS_UPDATE_DLI_FAILED": "Das Installationsprogramm der Version %s konnte nicht heruntergeladen werden oder hat die Prüfung nicht bestanden.\\n\\nVerwenden Sie „Download“, um das Installationsprogramm in Ihrem Webbrowser herunterzuladen.",
+      "IDC_TABSTYLE_SQUARE": "Ec&kig"
     },
     "french": {
       "IDS_MENU_TAB_MOVETOOTHER": "Dé&placer vers l'autre panneau",
@@ -504,7 +508,9 @@
       "IDS_UPDATE_BTN_DLINSTALL": "Télécharger && &installer",
       "IDS_UPDATE_BTN_CANCELDL": "&Annuler le téléchargement",
       "IDS_UPDATE_HINT_DLI": "« Télécharger && installer » télécharge le programme d’installation, le vérifie et installe la mise à jour ; Tandem Commander redémarre ensuite et vos paramètres sont conservés. « Télécharger » l’ouvre dans votre navigateur Web.",
-      "IDC_UPDN_LEVELLABEL": "Lorsqu’un&e nouvelle version est détectée :"
+      "IDC_UPDN_LEVELLABEL": "Lorsqu’un&e nouvelle version est détectée :",
+      "IDC_TABSTYLE_SQUARE": "Ca&rrés",
+      "#pixels": "pixels"
     },
     "dutch": {
       "IDS_MENU_TAB_MOVETOOTHER": "Naar ander paneel &verplaatsen",
@@ -592,7 +598,8 @@
       "IDS_UPDATE_BTN_CANCELDL": "Letöltés meg&szakítása",
       "IDS_UPDATE_HINT_DLI": "A „Letöltés && telepítés” letölti a telepítőt, ellenőrzi, majd telepíti a frissítést; ezután a Tandem Commander újraindul, a beállítások megmaradnak. A „Letöltés” a webböngészőben nyitja meg a telepítőt.",
       "IDS_UPDATE_DLI_FAILED": "A(z) %s verzió telepítője nem tölthető le, vagy nem felelt meg az ellenőrzésnek.\\n\\nA telepítőt a Letöltés gombbal töltheti le a webböngészőben.",
-      "IDS_UPDATE_DLI_PROGRESS": "A(z) %s verzió telepítőjének letöltése és ellenőrzése... %u %%"
+      "IDS_UPDATE_DLI_PROGRESS": "A(z) %s verzió telepítőjének letöltése és ellenőrzése... %u %%",
+      "IDC_TABSTYLE_GROUP": " Lapok &formája "
     },
     "romanian": {
       "IDS_MENU_TAB_MOVETOOTHER": "&Mutare în celălalt panou",
@@ -760,6 +767,11 @@
     ],
     "_feature_422": [
       "IDS_UPDATE_BTN_INSTALLEXIT and IDS_UPDATE_INSTALL_LATER were removed with the install at exit (Install When I Close, the question after a failed Install Now) - their pins too."
+    ],
+    "_feature_423": [
+      "Configuration > Appearance > Tab style: tabs as the corpus names them (cs 'karty', hu 'lap', 078/312); the shape words are 'angular' where the literal 'square' reads as a square box (cs/sk 'Hranaté' - the maintainer's own word, de 'Eckig'); fr agrees with 'onglets' (masculine plural: 'Carrés').",
+      "hu 'Lapok formája' (the shape of the tabs): every letter of 'Lapstílus' is an accelerator of the page already (l, p, s, u, a); 'f' is free.",
+      "fr 'pixels' (key '#pixels', the only row with that English text in salamand): the Thumbnails group moved beside Panel Font and its label has 33 DLU; 'éléments d'images (pixels)' (107 DLU) no longer fits."
     ]
   },
   "zip": {

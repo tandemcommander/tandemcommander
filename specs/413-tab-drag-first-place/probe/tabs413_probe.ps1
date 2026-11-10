@@ -203,6 +203,7 @@ function Prep-Registry([int]$Theme, $LeftTabs, [int]$LeftActive, $RightTabs, [in
     Set-Config
     & reg.exe add $CfgReg /v 'Panel Tabs' /t REG_DWORD /d 1 /f | Out-Null
     & reg.exe add $CfgReg /v 'Theme Mode' /t REG_DWORD /d $Theme /f | Out-Null
+    & reg.exe add $CfgReg /v 'Panel Tab Style' /t REG_DWORD /d 1 /f | Out-Null # feature 423: these rows test the rounded look (Square is the default since 423)
     foreach ($side in @(@('Left Panel', $LeftTabs, $LeftActive), @('Right Panel', $RightTabs, $RightActive))) {
         $p = $side[0]; $tabs = @($side[1]); $act = $side[2]
         & cmd.exe /c "reg delete `"$RegKey\Settings\$p\Tabs`" /f >nul 2>&1"
