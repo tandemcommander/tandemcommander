@@ -1,6 +1,6 @@
 tabs423_probe (feature 423) after
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-11-10 19:36; registry key existed True; fixture C:\Users\pavel\AppData\Local\Temp\tc423; font height 15, avg char 6; before captures E:\Projects\tandemcommander\specs\423-square-panel-tabs\probe\captures_before
+Date    : 2026-11-10 19:52; registry key existed True; fixture C:\Users\pavel\AppData\Local\Temp\tc423; font height 15, avg char 6; before captures E:\Projects\tandemcommander\specs\423-square-panel-tabs\probe\captures_before
 
 DEFAULT-LIGHT SQUARE-LEFT PASS        want square: fill 99B4D1, strip DEDEDE; corners 99B4D1 99B4D1 99B4D1 99B4D1; outside (left foot, right foot, above) DEDEDE DEDEDE DEDEDE; box x 179..348, y 80..105
 DEFAULT-LIGHT SQUARE-RIGHT PASS        want square: fill BFCDDB, strip DEDEDE; corners BFCDDB BFCDDB BFCDDB BFCDDB; outside (left foot, right foot, above) DEDEDE DEDEDE DEDEDE; box x 981..1150, y 80..105
@@ -23,8 +23,9 @@ ROUNDED-DARK ROUND-LEFT PASS        want round: fill 264F78, strip 242424; corne
 ROUNDED-DARK ROUND-RIGHT PASS        want round: fill 454545, strip 242424; corners 242424 242424 454545 454545; outside (left foot, right foot, above) 454545 454545 242424; box x 981..1150, y 80..105
 ROUNDED-DARK SAME-AS-BEFORE-LEFT PASS        the active tab's left / right corner boxes (15 x 27 px) differ from the capture before 423 in 0 / 0 px; tab found at 179,80 (expected 179,80), before at 179,80 (capture 1650x1078, before 1694x1110)
 ROUNDED-DARK SAME-AS-BEFORE-RIGHT PASS        the active tab's left / right corner boxes (15 x 27 px) differ from the capture before 423 in 0 / 0 px; tab found at 981,80 (expected 981,80), before at 1002,80 (capture 1650x1078, before 1694x1110)
-HOVER-SQUARE BOX    PASS        want the whole box CECECE: hovered tab x 349..518: inside CECECE, strip DEDEDE; corners CECECE CECECE CECECE CECECE; above DEDEDE
-HOVER-ROUNDED PILL   PASS        want the inset pill: inside the pill CECECE; hovered tab x 349..518: inside DEDEDE, strip DEDEDE; corners DEDEDE DEDEDE 99B4D1 DEDEDE; above DEDEDE
+HOVER-SQUARE BOX    PASS        want CECECE from the top to 3 px above the bottom: hovered tab x 349..518: inside CECECE, strip DEDEDE; top corners CECECE CECECE; lowest row CECECE CECECE; under it DEDEDE DEDEDE DEDEDE; above DEDEDE; the active tab next to it: fill 99B4D1, strip DEDEDE; corners 99B4D1 99B4D1 99B4D1 99B4D1; outside (left foot, right foot, above) DEDEDE DEDEDE DEDEDE; box x 179..348, y 80..105
+HOVER-SQUARE-INACTIVE BOX    PASS        want CECECE from the top to 3 px above the bottom: hovered tab x 1151..1320: inside CECECE, strip DEDEDE; top corners CECECE CECECE; lowest row CECECE CECECE; under it DEDEDE DEDEDE DEDEDE; above DEDEDE; the active tab next to it: fill BFCDDB, strip DEDEDE; corners BFCDDB BFCDDB BFCDDB BFCDDB; outside (left foot, right foot, above) DEDEDE DEDEDE DEDEDE; box x 981..1150, y 80..105
+HOVER-ROUNDED PILL   PASS        want the inset pill: inside the pill CECECE; hovered tab x 349..518: inside CECECE, strip DEDEDE; corners DEDEDE DEDEDE 99B4D1 DEDEDE; above DEDEDE
 PAGE       DEFAULT-CHECKED PASS        29 tree items walked; Square 1, Rounded 0
 LAYOUT     INSIDE-PAGE PASS        25 controls on the 449x628 page; outside: 
 LAYOUT     NO-OVERLAP PASS        overlapping controls: none
@@ -40,26 +41,26 @@ PAGE       ROUNDED-SHOWN PASS        reopened: Square 0, Rounded 1
 PAGE       SQUARE-OK-LEFT PASS        want square: fill 99B4D1, strip DEDEDE; corners 99B4D1 99B4D1 99B4D1 99B4D1; outside (left foot, right foot, above) DEDEDE DEDEDE DEDEDE; box x 179..348, y 80..105
 PAGE       SQUARE-OK-RIGHT PASS        want square: fill BFCDDB, strip DEDEDE; corners BFCDDB BFCDDB BFCDDB BFCDDB; outside (left foot, right foot, above) DEDEDE DEDEDE DEDEDE; box x 981..1150, y 80..105
 PAGE       SQUARE-STORED PASS        after Square + OK and Save Configuration: REG_DWORD 0x0; windows: no window
-FIT        english PASS        1151 'Panel Font' 51/427 px; 1153 'Thumbnails' 53/212 px; 1154 'Size:' 23/60 px; 1155 'pixels' 27/93 px; 6291 'Icon style' 47/427 px; 6292 'Fluent 2' 39/88 px; 6293 'Classic' 32/88 px; 6302 'Tab style' 44/193 px; 6303 'Square' 34/76 px; 6304 'Rounded' 43/79 px
+FIT        english PASS        1151 'Panel Font' 51/427 px; 1153 'Thumbnails' 53/212 px; 1154 'Size:' 23/45 px; 1155 'pixels' 27/108 px; 6291 'Icon style' 47/427 px; 6292 'Fluent 2' 39/88 px; 6293 'Classic' 32/88 px; 6302 'Tab style' 44/193 px; 6303 'Square' 34/76 px; 6304 'Rounded' 43/79 px
 FIT        english-FONTFIELD PASS        612 widest '10 pt. Microsoft Sans Serif (custom font)' 205/328 px
-FIT        czech  PASS        1151 'P¡smo panelu' 62/427 px; 1153 'Miniatury' 44/212 px; 1154 'Velikost:' 40/60 px; 1155 'bod…' 24/93 px; 6291 'Styl ikon' 40/427 px; 6292 'Fluent 2' 39/88 px; 6293 'Klasick ' 37/88 px; 6302 'Styl karet' 46/193 px; 6303 'Hranat‚' 39/76 px; 6304 'Zaoblen‚' 44/79 px
+FIT        czech  PASS        1151 'P¡smo panelu' 62/427 px; 1153 'Miniatury' 44/212 px; 1154 'Velikost:' 40/45 px; 1155 'bod…' 24/108 px; 6291 'Styl ikon' 40/427 px; 6292 'Fluent 2' 39/88 px; 6293 'Klasick ' 37/88 px; 6302 'Styl karet' 46/193 px; 6303 'Hranat‚' 39/76 px; 6304 'Zaoblen‚' 44/79 px
 FIT        czech-FONTFIELD PASS        612 widest '10 pt. Microsoft Sans Serif (vlastn¡ p¡smo)' 210/328 px
-FIT        german PASS        1151 'Fensterschrift' 67/427 px; 1153 'Miniaturansicht' 72/212 px; 1154 'Gr”áe:' 33/60 px; 1155 'Pixel' 22/93 px; 6291 'Symbolstil' 47/427 px; 6292 'Fluent 2' 39/88 px; 6293 'Classic' 32/88 px; 6302 'Registerkartenstil' 84/193 px; 6303 'Eckig' 24/76 px; 6304 'Abgerundet' 57/79 px
+FIT        german PASS        1151 'Fensterschrift' 67/427 px; 1153 'Miniaturansicht' 72/212 px; 1154 'Gr”áe:' 33/45 px; 1155 'Pixel' 22/108 px; 6291 'Symbolstil' 47/427 px; 6292 'Fluent 2' 39/88 px; 6293 'Classic' 32/88 px; 6302 'Registerkartenstil' 84/193 px; 6303 'Eckig' 24/76 px; 6304 'Abgerundet' 57/79 px
 FIT        german-FONTFIELD PASS        612 widest '10 pt. Microsoft Sans Serif (Benutzerdef. Schrift)' 245/328 px
-FIT        french PASS        1151 'Panneau des fontes' 96/427 px; 1153 'Vignettes' 45/212 px; 1154 'Taille:' 28/60 px; 1155 'pixels' 27/93 px; 6291 'Style d'ic“nes' 65/427 px; 6292 'Fluent 2' 39/88 px; 6293 'Classique' 45/88 px; 6302 'Style des onglets' 82/193 px; 6303 'Carr‚s' 32/76 px; 6304 'Arrondis' 40/79 px
+FIT        french PASS        1151 'Panneau des fontes' 96/427 px; 1153 'Vignettes' 45/212 px; 1154 'Taille:' 28/45 px; 1155 'pixels' 27/108 px; 6291 'Style d'ic“nes' 65/427 px; 6292 'Fluent 2' 39/88 px; 6293 'Classique' 45/88 px; 6302 'Style des onglets' 82/193 px; 6303 'Carr‚s' 32/76 px; 6304 'Arrondis' 40/79 px
 FIT        french-FONTFIELD PASS        612 widest '10 pt. Microsoft Sans Serif (Fonte personnelle)' 237/328 px
-FIT        dutch  PASS        1151 'Font in paneel' 68/427 px; 1153 'Miniaturen' 50/212 px; 1154 'Grootte:' 41/60 px; 1155 'pixels' 27/93 px; 6291 'Pictogramstijl' 63/427 px; 6292 'Fluent 2' 39/88 px; 6293 'Klassiek' 37/88 px; 6302 'Tabbladstijl' 54/193 px; 6303 'Vierkant' 39/76 px; 6304 'Afgerond' 45/79 px
+FIT        dutch  PASS        1151 'Font in paneel' 68/427 px; 1153 'Miniaturen' 50/212 px; 1154 'Grootte:' 41/45 px; 1155 'pixels' 27/108 px; 6291 'Pictogramstijl' 63/427 px; 6292 'Fluent 2' 39/88 px; 6293 'Klassiek' 37/88 px; 6302 'Tabbladstijl' 54/193 px; 6303 'Vierkant' 39/76 px; 6304 'Afgerond' 45/79 px
 FIT        dutch-FONTFIELD PASS        612 widest '10 pt. Microsoft Sans Serif (aangepast font)' 222/328 px
-FIT        hungarian PASS        1151 'Panel betût¡pus' 74/427 px; 1153 'B‚lyegk‚pek' 60/212 px; 1154 'M‚ret:' 32/60 px; 1155 'pixel' 22/93 px; 6291 'Ikonst¡lus' 45/427 px; 6292 'Fluent 2' 39/88 px; 6293 'Klasszikus' 47/88 px; 6302 'Lapok form ja' 68/193 px; 6303 'N‚gysz”gletes' 70/76 px; 6304 'Lekerek¡tett' 57/79 px
+FIT        hungarian PASS        1151 'Panel betût¡pus' 74/427 px; 1153 'B‚lyegk‚pek' 60/212 px; 1154 'M‚ret:' 32/45 px; 1155 'pixel' 22/108 px; 6291 'Ikonst¡lus' 45/427 px; 6292 'Fluent 2' 39/88 px; 6293 'Klasszikus' 47/88 px; 6302 'Lapok form ja' 68/193 px; 6303 'N‚gysz”gletes' 70/76 px; 6304 'Lekerek¡tett' 57/79 px
 FIT        hungarian-FONTFIELD PASS        612 widest '10 pt. Microsoft Sans Serif (egy‚ni betût¡pus)' 230/328 px
-FIT        romanian PASS        1151 'Font Panou' 55/427 px; 1153 'Miniaturi' 40/212 px; 1154 'Marime:' 38/60 px; 1155 'pixeli' 24/93 px; 6291 'Stilul pictogramelor' 90/427 px; 6292 'Fluent 2' 39/88 px; 6293 'Classic' 32/88 px; 6302 'Stilul filelor' 51/193 px; 6303 'PÇtrat' 30/76 px; 6304 'Rotunjit' 38/79 px
+FIT        romanian PASS        1151 'Font Panou' 55/427 px; 1153 'Miniaturi' 40/212 px; 1154 'Marime:' 38/45 px; 1155 'pixeli' 24/108 px; 6291 'Stilul pictogramelor' 90/427 px; 6292 'Fluent 2' 39/88 px; 6293 'Classic' 32/88 px; 6302 'Stilul filelor' 51/193 px; 6303 'PÇtrat' 30/76 px; 6304 'Rotunjit' 38/79 px
 FIT        romanian-FONTFIELD PASS        612 widest '10 pt. Microsoft Sans Serif (font personalizat)' 231/328 px
-FIT        slovak PASS        1151 'P¡smo panelu' 62/427 px; 1153 'Miniat£ry' 44/212 px; 1154 'Ve–kosœ:' 41/60 px; 1155 'bodov' 30/93 px; 6291 'ætìl ikon' 40/427 px; 6292 'Fluent 2' 39/88 px; 6293 'Klasick ' 37/88 px; 6302 'ætìl kariet' 48/193 px; 6303 'Hranat‚' 39/76 px; 6304 'Zaoblen‚' 44/79 px
+FIT        slovak PASS        1151 'P¡smo panelu' 62/427 px; 1153 'Miniat£ry' 44/212 px; 1154 'Ve–kosœ:' 41/45 px; 1155 'bodov' 30/108 px; 6291 'ætìl ikon' 40/427 px; 6292 'Fluent 2' 39/88 px; 6293 'Klasick ' 37/88 px; 6302 'ætìl kariet' 48/193 px; 6303 'Hranat‚' 39/76 px; 6304 'Zaoblen‚' 44/79 px
 FIT        slovak-FONTFIELD PASS        612 widest '10 pt. Microsoft Sans Serif (vlastn‚ p¡smo)' 213/328 px
-FIT        spanish PASS        1151 'Fuente para el panel' 99/427 px; 1153 'Miniaturas' 49/212 px; 1154 'Tamano:' 42/60 px; 1155 'p¡xeles' 33/93 px; 6291 'Estilo de iconos' 73/427 px; 6292 'Fluent 2' 39/88 px; 6293 'Cl sico' 33/88 px; 6302 'Estilo de las pestanas' 103/193 px; 6303 'Cuadrado' 47/76 px; 6304 'Redondeado' 61/79 px
+FIT        spanish PASS        1151 'Fuente para el panel' 99/427 px; 1153 'Miniaturas' 49/212 px; 1154 'Tamano:' 42/45 px; 1155 'p¡xeles' 33/108 px; 6291 'Estilo de iconos' 73/427 px; 6292 'Fluent 2' 39/88 px; 6293 'Cl sico' 33/88 px; 6302 'Estilo de las pestanas' 103/193 px; 6303 'Cuadrado' 47/76 px; 6304 'Redondeado' 61/79 px
 FIT        spanish-FONTFIELD PASS        612 widest '10 pt. Microsoft Sans Serif (fuente personalizada)' 252/328 px
 MOUSE      REAL   NOT DRIVEN  a real mouse hover over a square tab needs an input desktop (release checklist)
 DPI        SCALES NOT DRIVEN  the hidden desktop runs at one system DPI; the square box is whole pixels at every scale
 Registry: restored; identical=True; SHA-256 before 1A2CB15397961BF8AFB206653D426EC094011302F0092D2D588F350FB6D1B596 / after 1A2CB15397961BF8AFB206653D426EC094011302F0092D2D588F350FB6D1B596
 
-Rows: PASS 56, FAIL 0, NOT DRIVEN 2. Left running: 0; fixture removed: True; registry restored+identical: True
+Rows: PASS 57, FAIL 0, NOT DRIVEN 2. Left running: 0; fixture removed: True; registry restored+identical: True

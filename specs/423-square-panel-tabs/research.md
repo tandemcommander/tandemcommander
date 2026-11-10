@@ -8,9 +8,11 @@
 - Rationale: `PaintTabBack` is the only place that draws a tab's background (active, hover, the
   dragged tab: `Paint` calls it for each); text, icon, close glyph and + are drawn by
   `PaintTabFront` / `PaintPlus` independently of the shape. A GDI fill is exact (no AA edge).
-- The square hover covers the whole tab (top of the content band to the strip's bottom), the same
-  box as the active tab: a flat strip shows the tab's own box on hover (the pill's inset only made
-  sense as a rounded shape). The mockup shows no hover; the item asks for a rectangle.
+- The square hover covers the tab's full width from the top of the content band to 3 px above the
+  strip's bottom (where the pill ends): a flat strip shows the tab's own box on hover, and only the
+  active tab joins the directory line (review 2: a full-height hover in the inactive panel was 15 / 13
+  from the active tab's colour and read as a second active tab). The mockup shows no hover; the item
+  asks for a rectangle.
 - Alternatives: a square pill with the pill's insets (looks like a button, not a tab); a nanosvg
   rectangle path (AA of axis-aligned integer edges gives the same pixels, slower).
 

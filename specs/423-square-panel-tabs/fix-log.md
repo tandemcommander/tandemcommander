@@ -25,8 +25,8 @@ the contract - the contract is authoritative.
 
 ## Decisions
 
-- Square hover = the tab's whole box (top of the content band to the strip's bottom) in HoverBk
-  (research R1).
+- Square hover = the tab's box from the top of the content band to 3 px above the strip's bottom, in
+  HoverBk (research R1; full height until review 2).
 - Light DimText mix 0.38 -> 0.20 (2C2C2C, 10.38:1) (research R6).
 - Page room: Icon style up, Tab style below it with Thumbnails beside, the page keeps 299 x 231 du (research R5, as changed by review 1).
 
@@ -143,3 +143,38 @@ After the fixes: `build.cmd full` BUILD SUCCEEDED; merge 0 gaps (geometry only),
 byte-exact, 12 rows per language differ from `main` (5 Icon style, 4 Thumbnails, 3 new); saltests
 287,255 / 0; encoding guard 0; `tabs423_probe` **56 PASS / 0 FAIL / 2 NOT DRIVEN**
 (`probe/result_after.txt`).
+
+### Review 2 (refute-first agent, commit 211833b6) - no MUST
+
+It re-ran saltests (287,255 / 0), the encoding guard (0) and the probe from a copy (56 / 0 / 2, the same as
+`result_after.txt`), and confirmed the review 1 fixes: S1 (IDE_PANELFONT back to 224 DLU, FONTFIELD rows
+pass), S2 (SAME-AS-BEFORE 0 / 0 px with a 1650x1078 window against the 1694x1110 capture), N1 (tab order;
+the Square radio starts its own group, the Thumbnails box ends it - Rounded cannot uncheck an Icon style
+radio). DIALOG 595 has the template's row order in all 8 languages, no duplicate accelerator on the page,
+only the 12 layout rows differ from `main`. The settings import never writes the value. In the four High
+Contrast themes the highlight and caption colours always differ.
+
+- **S1 (fixed)** in the inactive panel a square hovered tab read as a second active tab: the full-height
+  hover (into the directory line) was CECECE next to the active tab's BFCDDB (Light, distance 15) and
+  383838 next to 454545 (Dark, 13; its title F0F0F0 even brighter than the active one), below 413's
+  24 - in Rounded the pill's shape separates them. The probe hovered only in the active panel. Fix: the
+  square hover ends 3 px above the strip's bottom (`Height - Scaled(3)`, where the pill ends), so only
+  the active tab joins the directory line. New probe row HOVER-SQUARE-INACTIVE (and HOVER-SQUARE changed):
+  top corners and the lowest row (YB - 3) CECECE, the 3 rows under it the strip, the active tab next to it
+  square - both PASS. Its own reproduction with the review 2 build (full height) showed the hover colour
+  down to the bottom row, which the new rows reject.
+- N1 accepted: the Tab style group box has no WS_GROUP, like the Icon style box (a group box is never
+  checked or focused); kept consistent with 416's group.
+- N2 (fixed) the "Size:" label of Thumbnails 40 -> 30 DLU (the field closer to it; the widest label, es
+  "Tamaño:" 42 / 45 px, still fits), "pixels" 62 -> 72 DLU.
+- N3 answered: the live page (449 x 628 px) is taller than its template because the Configuration dialog
+  is resizable and its stored height was larger; the minimum size comes from the 231-DLU template
+  (`CTreePropHolderDlg`, `MinWindowSize`), which is the constraint of research R5.
+- N4 / N5: the closing steps (closing report with the changelog entry, FEATURE-HISTORY) follow; the
+  NOT DRIVEN rows are release-checklist lines.
+
+After the fixes: `build.cmd full` BUILD SUCCEEDED; merge 0 gaps, `slt --verify` byte-exact, 12 rows per
+language differ from `main`; saltests 287,255 / 0; encoding guard 0; `tabs423_probe` **57 PASS / 0 FAIL /
+2 NOT DRIVEN** (`probe/result_after.txt`). The change is the hover's height in the Square branch only (the
+Rounded paths, already compared pixel for pixel with the build before 423, are untouched), so no third
+review was run.

@@ -924,11 +924,14 @@ void CTabWindow::PaintTabBack(HDC dc, int index, BOOL hot)
     BOOL active = (index == FilesWindow->Tabs.ActiveIndex);
     if (GetActiveTabStyle() == SALTAB_STYLE_SQUARE)
     {
-        // feature 423: the square tab - the active tab and the hover are the tab's own box, from
-        // the top of the content band down into the directory line, without corners or feet
+        // feature 423: the square tab - the active tab is the tab's own box from the top of the
+        // content band down into the directory line, without corners or feet; the hover is the same
+        // box ending where the rounded pill ends (3 px above the strip's bottom), so that only the
+        // active tab joins the directory line (review 2: in the inactive panel a full-height hover
+        // was 15 / 13 from the active tab's colour and read as a second active tab)
         if (active || hot)
         {
-            RECT box = {r.left, TextTop(), r.right + 1, Height};
+            RECT box = {r.left, TextTop(), r.right + 1, active ? Height : Height - Scaled(3)};
             TabFillSolid(dc, &box, active ? TabPaint.CapBk : TabPaint.Strip.HoverBk);
         }
         return;

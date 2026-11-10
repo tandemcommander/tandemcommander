@@ -21,8 +21,10 @@
       ROUNDED-<theme>     value 1: ROUND in both panels; the corner boxes (x0-7..x0+7 and x1-7..x1+7,
                           rows yT..yB) equal the capture of the build before 423
                           (captures_before\theme_<theme>_main.png, -BeforeDir)
-      HOVER-<style>       WM_MOUSEMOVE over the third tab (inactive): Square -> its whole box from yT to
-                          yB is the hover colour (CECECE on DEDEDE); Rounded -> its box corner is not
+      HOVER-<style>       WM_MOUSEMOVE over the third tab (inactive): Square -> its box from yT to yB - 3
+                          is the hover colour (CECECE on DEDEDE) and the 3 rows under it the strip (only
+                          the active tab joins the directory line; review 2), in the active panel and in
+                          the inactive one (SQUARE-INACTIVE); Rounded -> the inset pill
       PAGE                Configuration > Appearance: Square checked by default; Rounded + OK -> ROUND
                           without a restart, stored 1 (Save Configuration); Rounded -> Square + OK ->
                           SQUARE, stored 0; Rounded + Cancel -> nothing changes
@@ -510,7 +512,8 @@ function Run-Rounded {
 }
 
 function Run-Hover {
-    foreach ($st in @(@('SQUARE', $null), @('ROUNDED', 1))) {
+    # the third tab hovered, in the active (left) and - review 2 - the inactive (right) panel
+    foreach ($st in @(@('SQUARE', $null, 0), @('SQUARE-INACTIVE', $null, 1), @('ROUNDED', 1, 0))) {
         $n = 'HOVER-' + $st[0]
         if (-not (Want $n)) { continue }
         if (-not (Prep-Registry 0 $st[1])) { Row $n 'SETUP' 'NOT DRIVEN' 'no stored configuration'; continue }
@@ -518,7 +521,7 @@ function Run-Hover {
         try {
             $id = Start-Run
             Settle $id
-            $hs = (Strips $id)[0]
+            $hs = (Strips $id)[$st[2]]
             $g = Geo $hs 3
             [Tc423]::Send($hs, $WM_MOUSEMOVE, 0, [int]($g.Left + 2 * $g.TabW + $g.TabW / 2), $g.MidY)
             Start-Sleep -Milliseconds 400
@@ -526,14 +529,22 @@ function Run-Hover {
             $bmp = Grab-Main $id ('hover_' + $st[0].ToLower())
             $b = Box $id $hs 2
             $bk = P $bmp ($b.StripX + 3) ($b.StripY + 1)
-            $hov = P $bmp ($b.X0 + 6) ($b.YB - 1)
-            $corners = @((P $bmp $b.X0 $b.YT), (P $bmp $b.X1 $b.YT), (P $bmp $b.X0 $b.YB), (P $bmp $b.X1 $b.YB))
-            $above = P $bmp ($b.X0 + 6) ($b.YT - 1)
-            $facts = ("hovered tab x {0}..{1}: inside {2}, strip {3}; corners {4}; above {5}" -f $b.X0, $b.X1, (Hex $hov), (Hex $bk), (($corners | ForEach-Object { Hex $_ }) -join ' '), (Hex $above))
-            if ($st[0] -eq 'SQUARE') {
-                $ok = ($hov -eq 0xCECECE) -and (@($corners | Where-Object { $_ -ne $hov }).Count -eq 0) -and ($above -eq $bk)
-                Row $n 'BOX' (V $ok) ('want the whole box CECECE: ' + $facts)
+            $hov = P $bmp ($b.X0 + 6) ($b.StripY + 6)
+            if ($st[0] -like 'SQUARE*') {
+                # the square hover: the tab's box from the content band's top to 3 px above the strip's
+                # bottom - its top corners and its lowest row (YB - 3) are the hover colour, the three rows
+                # under it the strip, so it never joins the directory line as the active tab does
+                $top = @((P $bmp $b.X0 $b.YT), (P $bmp $b.X1 $b.YT))
+                $low = @((P $bmp $b.X0 ($b.YB - 3)), (P $bmp $b.X1 ($b.YB - 3)))
+                $gap = @((P $bmp ($b.X0 + 6) ($b.YB - 2)), (P $bmp ($b.X0 + 6) $b.YB), (P $bmp $b.X1 $b.YB))
+                $above = P $bmp ($b.X0 + 6) ($b.YT - 1)
+                $act = Shape $bmp (Box $id $hs 1)
+                $ok = ($hov -eq 0xCECECE) -and (@($top + $low | Where-Object { $_ -ne $hov }).Count -eq 0) -and (@($gap | Where-Object { $_ -ne $bk }).Count -eq 0) -and ($above -eq $bk) -and $act.Square
+                Row $n 'BOX' (V $ok) ("want CECECE from the top to 3 px above the bottom: hovered tab x {0}..{1}: inside {2}, strip {3}; top corners {4}; lowest row {5}; under it {6}; above {7}; the active tab next to it: {8}" -f $b.X0, $b.X1, (Hex $hov), (Hex $bk), (($top | ForEach-Object { Hex $_ }) -join ' '), (($low | ForEach-Object { Hex $_ }) -join ' '), (($gap | ForEach-Object { Hex $_ }) -join ' '), (Hex $above), $act.Facts)
             } else {
+                $corners = @((P $bmp $b.X0 $b.YT), (P $bmp $b.X1 $b.YT), (P $bmp $b.X0 $b.YB), (P $bmp $b.X1 $b.YB))
+                $above = P $bmp ($b.X0 + 6) ($b.YT - 1)
+                $facts = ("hovered tab x {0}..{1}: inside {2}, strip {3}; corners {4}; above {5}" -f $b.X0, $b.X1, (Hex $hov), (Hex $bk), (($corners | ForEach-Object { Hex $_ }) -join ' '), (Hex $above))
                 # the pill (404): x from left + 3, y 4 .. H - 3 of the strip; its inside sampled at
                 # (left + 6, strip top + 6); the box's right corners stay the strip (the left ones may be
                 # the active tab's right foot)
