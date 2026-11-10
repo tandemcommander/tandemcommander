@@ -5,6 +5,14 @@
 **Status**: Draft  
 **Input**: User description: "Backlog item square-panel-tabs-as-the-new-default-rounded-tabs-kept-as-an - implement exactly what it describes; in the same run, improve the legibility of the tab strip in the Light theme (maintainer, 2026-11-10)." From backlog item square-panel-tabs-as-the-new-default-rounded-tabs-kept-as-an.
 
+## Clarifications
+
+### Session 2026-11-10
+
+- Q: What are the two choices called on the page? → A: "Square" (default) and "Rounded", in a group "Tab style" (autonomous run: item - its title and *Expected* name them so; the maintainer's "rovné / flat" and "kulaté").
+- Q: Do the round hover circles of the close glyph (X) and of the + button become square too? → A: No - they are glyph buttons, not tab shapes; only the active tab and the tab hover highlight change shape (autonomous run: conservative - the item says the X and + stay as they are).
+- Q: Does the darker Light-theme title apply to both tab styles? → A: Yes - it is a colour of the strip, independent of the shape (autonomous run: item - the maintainer asked for the legibility of the tabs in the Light theme, not of one style).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Square tabs by default (Priority: P1)
@@ -107,8 +115,9 @@ are unchanged.
   panels' strips at once when the page is confirmed with OK, and after a settings import - without
   a restart. A value the user did not change on the page MUST NOT be rewritten (a later version's
   value survives).
-- **FR-006**: The tabs' positions, sizes, icons, titles, separators, close glyph and + glyph MUST
-  stay where they are in both styles (switching the style moves nothing).
+- **FR-006**: The tabs' positions, sizes, icons, titles, separators, close glyph and + glyph
+  (with their round hover circles) MUST stay as they are in both styles (switching the style
+  moves nothing).
 - **FR-007**: In the Light theme (not Dark, not High Contrast) the inactive tab titles and the +
   glyph MUST reach at least 7:1 contrast against the strip background with the default system
   colours, and MUST remain lighter than the active / hovered title; in the Dark theme and under
