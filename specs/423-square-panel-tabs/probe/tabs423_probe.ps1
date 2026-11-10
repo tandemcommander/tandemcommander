@@ -170,17 +170,36 @@ public static class Tc423
         for (int y = y0; y < y1; y++) for (int x = x0; x < x1; x++) { int p = Pixel(b, x, y); if (p < 0) continue; double c = Contrast(p, bk); if (c > r) { r = c; best = p; } }
         return best;
     }
-    // pixels of the rectangle (inclusive) that differ between two captures; -1 when a rectangle leaves an image
-    public static int DiffBox(Bitmap a, Bitmap b, int x0, int y0, int x1, int y1)
+    // pixels that differ between the w x h box at (ax, ay) of 'a' and the one at (bx, by) of 'b';
+    // -1 when a box leaves its image
+    public static int DiffBoxAt(Bitmap a, int ax, int ay, Bitmap b, int bx, int by, int w, int h)
     {
         int n = 0;
-        for (int y = y0; y <= y1; y++) for (int x = x0; x <= x1; x++)
+        for (int y = 0; y < h; y++) for (int x = 0; x < w; x++)
         {
-            int p = Pixel(a, x, y), q = Pixel(b, x, y);
+            int p = Pixel(a, ax + x, ay + y), q = Pixel(b, bx + x, by + y);
             if (p < 0 || q < 0) return -1;
             if (p != q) n++;
         }
         return n;
+    }
+    // review 1 (S2): the active tab in a capture of another window size - the topmost row of
+    // x0..x1 holding a run of at least 'minRun' pixels of 'fill' (the tab's top; the directory line
+    // below has the same colour, the tab comes first), then the first pixel of 'fill' on the row 8 below
+    // (past the rounded corner) = the tab's left column. {left, top} or {-1, -1}
+    public static int[] FindTab(Bitmap b, int fill, int x0, int x1, int minRun)
+    {
+        for (int y = 0; y < b.Height - 8; y++)
+        {
+            int run = 0, best = 0;
+            for (int x = x0; x < x1 && x < b.Width; x++) { if (Pixel(b, x, y) == fill) { run++; if (run > best) best = run; } else run = 0; }
+            if (best >= minRun)
+            {
+                for (int x = x0; x < x1 && x < b.Width; x++) if (Pixel(b, x, y + 8) == fill) return new int[] { x, y };
+                return new int[] { -1, -1 };
+            }
+        }
+        return new int[] { -1, -1 };
     }
 }
 '@
@@ -467,9 +486,18 @@ function Run-Rounded {
                 $i = 0
                 foreach ($h in (Strips $id)) {
                     $b = Box $id $h 1
-                    $dl = [Tc423]::DiffBox($bmp, $ob, $b.X0 - 7, $b.YT - 1, $b.X0 + 7, $b.YB)
-                    $dr = [Tc423]::DiffBox($bmp, $ob, $b.X1 - 7, $b.YT - 1, $b.X1 + 7, $b.YB)
-                    Row $n ('SAME-AS-BEFORE-' + @('LEFT', 'RIGHT')[$i]) (V ($dl -eq 0 -and $dr -eq 0)) ("the active tab's left / right corner boxes (15 x {0} px) differ from the capture before 423 in {1} / {2} px (capture {3}x{4}, before {5}x{6})" -f ($b.YB - $b.YT + 2), $dl, $dr, $bmp.Width, $bmp.Height, $ob.Width, $ob.Height)
+                    $fill = (Shape $bmp $b).Fill
+                    # each capture's own tab position (review 1, S2: the window size is the one stored in the
+                    # registry key and may differ from the before capture's); the left / right panel = the
+                    # left / right half of each capture
+                    $cur = [Tc423]::FindTab($bmp, $fill, [int]($i * $bmp.Width / 2), [int](($i + 1) * $bmp.Width / 2), 20)
+                    $old = [Tc423]::FindTab($ob, $fill, [int]($i * $ob.Width / 2), [int](($i + 1) * $ob.Width / 2), 20)
+                    $w = $b.X1 - $b.X0
+                    $hh = $b.YB - $b.YT + 2
+                    $dl = [Tc423]::DiffBoxAt($bmp, $cur[0] - 7, $cur[1] - 1, $ob, $old[0] - 7, $old[1] - 1, 15, $hh)
+                    $dr = [Tc423]::DiffBoxAt($bmp, $cur[0] + $w - 7, $cur[1] - 1, $ob, $old[0] + $w - 7, $old[1] - 1, 15, $hh)
+                    $found = ($cur[0] -eq $b.X0) -and ($cur[1] -eq $b.YT) -and ($old[0] -ge 0)
+                    Row $n ('SAME-AS-BEFORE-' + @('LEFT', 'RIGHT')[$i]) (V ($found -and $dl -eq 0 -and $dr -eq 0)) ("the active tab's left / right corner boxes (15 x {0} px) differ from the capture before 423 in {1} / {2} px; tab found at {3},{4} (expected {5},{6}), before at {7},{8} (capture {9}x{10}, before {11}x{12})" -f $hh, $dl, $dr, $cur[0], $cur[1], $b.X0, $b.YT, $old[0], $old[1], $bmp.Width, $bmp.Height, $ob.Width, $ob.Height)
                     $i++
                 }
                 $ob.Dispose()
@@ -610,7 +638,9 @@ function Layout-Rows($A) {
     $radios = @($plain | Where-Object { $_.Id -eq $IDC_TABSTYLE_SQUARE -or $_.Id -eq $IDC_TABSTYLE_ROUNDED })
     $inTab = ($radios.Count -eq 2) -and (@($radios | Where-Object { -not (Inside $_.R $gTab.R) }).Count -eq 0)
     Row $n 'GROUPS' (V ($loose.Count -eq 0 -and $order -and $inTab)) ("controls crossing a group box edge: {0}; Icon style y {1}..{2}, Tab style y {3}..{4}; both radios inside Tab style: {5}" -f $(if ($loose.Count) { $loose -join ', ' } else { 'none' }), $gIcon.R[1], $gIcon.R[3], $gTab.R[1], $gTab.R[3], $inTab)
-    $script:LivePage = [pscustomobject]@{ GroupPx = ($gTab.R[2] - $gTab.R[0]); RadioPx = ($radios[0].R[2] - $radios[0].R[0]) }
+    # the dialog base unit from two controls whose DLU widths are fixed: Icon style (295) and Fluent 2 (70)
+    $fl = @($plain | Where-Object { $_.Id -eq 6292 })[0]
+    $script:LivePage = [pscustomobject]@{ GroupPx = ($gIcon.R[2] - $gIcon.R[0]); RadioPx = ($fl.R[2] - $fl.R[0]) }
 }
 
 # static: the texts of the moved and new controls of every enabled language fit their widths
@@ -623,7 +653,7 @@ function Run-Fit {
         $flags = [Windows.Forms.TextFormatFlags]::SingleLine -bor [Windows.Forms.TextFormatFlags]::NoPadding
         $dpi = $g.DpiX
         $baseX = 0
-        if ($script:LivePage) { $baseX = ($script:LivePage.GroupPx * 4.0 / 295 + $script:LivePage.RadioPx * 4.0 / 90) / 2 }
+        if ($script:LivePage) { $baseX = ($script:LivePage.GroupPx * 4.0 / 295 + $script:LivePage.RadioPx * 4.0 / 70) / 2 }
         else { $abc = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'; $baseX = ([Windows.Forms.TextRenderer]::MeasureText($g, $abc, $font, (New-Object Drawing.Size(2000, 100)), $flags).Width / 26 + 1) / 2 }
         $check = [int](13 * $dpi / 96) + [int](4 * $dpi / 96)
         $tpl = Join-Path (Split-Path (Split-Path $Exe)) 'translator\templates\salamand.slt'
@@ -658,6 +688,25 @@ function Run-Fit {
                 $facts += ("{0} '{1}' {2}/{3} px{4}" -f $ctl, $text.Trim(), $tw, $room, $(if ($fits) { '' } else { ' CLIPPED' }))
             }
             Row $n $lang (V $ok) ($facts -join '; ')
+            # review 1 (S1): the Panel Font field (612) shows IDS_FONTDESCRIPTION "%d pt. %s (%s)" with
+            # IDS_FONTDESCRIPTION_DEF / _CST in the panel font at the field's height (Segoe UI 8 pt here);
+            # both forms with a long face name must fit the field (2 px border + 2 px margin each side)
+            $l612 = @($sect | Where-Object { $_ -like '612,*' })[0]
+            $fmt = @($lines | Where-Object { $_ -like '10280,*' })[0]; $def = @($lines | Where-Object { $_ -like '10281,*' })[0]; $cst = @($lines | Where-Object { $_ -like '10282,*' })[0]
+            if (-not $l612 -or -not $fmt -or -not $def -or -not $cst) { Row $n ($lang + '-FONTFIELD') 'FAIL' 'a row (612, 10280-10282) is missing'; continue }
+            $w612 = [int]([regex]::Match($l612, '^\d+,-?\d+,-?\d+,(\d+),').Groups[1].Value)
+            $px612 = [int][Math]::Round($w612 * $baseX / 4) - 8
+            $q = { param($r) [regex]::Match($r, '^\d+,\d+,"(.*)"$').Groups[1].Value }
+            $f = (& $q $fmt) -replace '%d', '{0}' -replace '%s', '{1}'
+            $i = $f.IndexOf('{1}'); $f = $f.Substring(0, $i) + '{1}' + $f.Substring($i + 3).Replace('{1}', '{2}')
+            $seg = New-Object Drawing.Font('Segoe UI', 8)
+            $worstF = 0; $worstT = ''
+            foreach ($t in @(($f -f 9, 'Segoe UI', (& $q $def)), ($f -f 10, 'Microsoft Sans Serif', (& $q $cst)))) {
+                $tw = [Windows.Forms.TextRenderer]::MeasureText($g, $t, $seg, (New-Object Drawing.Size(4000, 100)), $flags).Width
+                if ($tw -gt $worstF) { $worstF = $tw; $worstT = $t }
+            }
+            $seg.Dispose()
+            Row $n ($lang + '-FONTFIELD') (V ($worstF -le $px612)) ("612 widest '{0}' {1}/{2} px" -f $worstT, $worstF, $px612)
         }
         $g.Dispose(); $bmp.Dispose()
     } catch { Row $n 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }

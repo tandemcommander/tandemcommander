@@ -2481,7 +2481,6 @@ static void TestTabStrip405()
     CHECK(SalTabArmDragAfterSwitch(0x8000, 0) == FALSE);
 }
 
-// feature 413: the drag reaches the first place; the active tab's fill stands out
 // feature 423: the tab style (Square by default, Rounded = 404's look) and the Light theme's
 // darker inactive titles
 static void TestTabStrip423()
@@ -2525,6 +2524,7 @@ static void TestTabStrip423()
     CHECK(c.DimText == RGB(0, 0, 0)); // High Contrast White: the text itself
 }
 
+// feature 413: the drag reaches the first place; the active tab's fill stands out
 static void TestTabStrip413()
 {
     // the caller (CTabWindow::UpdateDrag) clamps the left to 0 .. (count - 1) * width: both ends

@@ -771,7 +771,7 @@
     "_feature_423": [
       "Configuration > Appearance > Tab style: tabs as the corpus names them (cs 'karty', hu 'lap', 078/312); the shape words are 'angular' where the literal 'square' reads as a square box (cs/sk 'Hranaté' - the maintainer's own word, de 'Eckig'); fr agrees with 'onglets' (masculine plural: 'Carrés').",
       "hu 'Lapok formája' (the shape of the tabs): every letter of 'Lapstílus' is an accelerator of the page already (l, p, s, u, a); 'f' is free.",
-      "fr 'pixels' (key '#pixels', the only row with that English text in salamand): the Thumbnails group moved beside Panel Font and its label has 33 DLU; 'éléments d'images (pixels)' (107 DLU) no longer fits."
+      "fr 'pixels' (key '#pixels', the only row with that English text in salamand): the Thumbnails group moved beside Tab style and its label has 62 DLU; 'éléments d'images (pixels)' (107 DLU) no longer fits."
     ]
   },
   "zip": {

@@ -62,7 +62,7 @@ src/cfgdlg.h, src/dialogs4.cpp  # Configuration.PanelTabStyle + default
 src/mainwnd2.cpp, src/consts.h  # CONFIG_PANELTABSTYLE_REG, ReadPanelTabStyle, GetActiveTabStyle, save
 src/mainwnd.h, src/mainwnd3.cpp # CCfgRefreshState: repaint both strips on a style change
 src/dialogs5.cpp                # CCfgPageAppearance::Transfer: the two radio buttons
-src/lang/lang.rc, lang.rh       # the Tab style group; Thumbnails beside Panel Font
+src/lang/lang.rc, lang.rh       # the Tab style group below Icon style, Thumbnails beside it
 translations/*/salamand.slt     # the two-stage refresh
 ```
 

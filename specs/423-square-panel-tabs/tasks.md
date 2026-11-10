@@ -26,7 +26,7 @@
 **Independent test**: the probe's PAGE rows (Rounded + OK repaints, stored 1; Square + OK back to 0) and ROUNDED rows.
 
 - [X] T008 [US2] `src/lang/lang.rh`: `IDC_TABSTYLE_GROUP`, `IDC_TABSTYLE_SQUARE`, `IDC_TABSTYLE_ROUNDED` (free ids)
-- [X] T009 [US2] `src/lang/lang.rc` `IDD_CFGPAGE_APPEARANCE`: Thumbnails beside Panel Font (font edit narrowed), Information Line and Icon style moved up, the *Tab style* group (two radios side by side) directly below Icon style, all inside 299 x 231 du; unique accelerators
+- [X] T009 [US2] `src/lang/lang.rc` `IDD_CFGPAGE_APPEARANCE`: Icon style up, Tab style below it with Thumbnails beside (review 1: Panel Font keeps its width), Information Line and Icon style moved up, the *Tab style* group (two radios side by side) directly below Icon style, all inside 299 x 231 du; unique accelerators
 - [X] T010 [US2] `CCfgPageAppearance::Transfer` (`src/dialogs5.cpp`): the two radio buttons; written only on a change (416's rule)
 - [X] T011 [US2] `CCfgRefreshState` (`src/mainwnd.h`, `src/mainwnd3.cpp`): capture `PanelTabStyle`; on a change of the mapped style repaint both panels' strips (`UpdateTabStrip`)
 

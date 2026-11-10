@@ -40,10 +40,12 @@
 - Measured: every Configuration page is 299 x 231 du and the holder dialog is sized to the largest
   page (`CTreePropDialog`, `src/common/sheets.cpp`, `maxPageRect`): a taller Appearance page would
   make the whole dialog taller. The *Icon style* group ends at y 229.
-- Decision: move the *Thumbnails* group (30 du tall, one "Size: [n] pixels" row) beside the *Panel
-  Font* group (its read-only font edit narrowed from 224 to 125 du), which frees 36 du; *Content of
-  Information Line* and *Icon style* move up, and the *Tab style* group (radios side by side) goes
-  directly below *Icon style*, all within 231 du.
+- Decision (after review 1, S1): the *Thumbnails* group (one "Size: [n] pixels" row) moves out of its
+  own row into the bottom row, beside the *Tab style* group; *Icon style* moves up into the freed row
+  and *Tab style* sits directly below it (radios side by side, 139 du), *Thumbnails* to its right
+  (152 du, labels 40 / 62 du). *Panel Font* and *Content of Information Line* keep their full width -
+  the first try put Thumbnails beside Panel Font and narrowed the font field from 224 to 106 du, which
+  cut "%d pt. %s (default font)" in 7 of 8 languages (review 1).
 - Alternatives: a taller page (grows the whole dialog for all 31 pages); *Tab style* beside *Icon
   style* (not "below" as the maintainer asked); the *Tabs* page (the maintainer asked for
   Appearance).

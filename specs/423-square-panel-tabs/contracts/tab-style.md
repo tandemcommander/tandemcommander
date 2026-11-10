@@ -30,4 +30,5 @@ Light theme: `DimText` (inactive titles, the + glyph) = `SalTabMix(text, StripBk
 *Configuration > Appearance*: group *Tab style* directly below *Icon style*, two auto radio
 buttons side by side: *Square* (`IDC_TABSTYLE_SQUARE`) and *Rounded* (`IDC_TABSTYLE_ROUNDED`),
 group box `IDC_TABSTYLE_GROUP`. OK applies it to both strips without a restart; Cancel changes
-nothing. The *Thumbnails* group sits beside *Panel Font* so the page keeps its 299 x 231 du.
+nothing. *Icon style* moves up into the old *Thumbnails* row; the bottom row holds *Tab style* (left)
+and *Thumbnails* (right), so the page keeps its 299 x 231 du; *Panel Font* is unchanged.
