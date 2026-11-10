@@ -6,8 +6,8 @@ Outcome: closed
 
 - **Square panel tabs by default.** The active tab is a plain box from the top of the strip's content
   band down into the directory line (no rounded corners, no feet - the maintainer's mockup
-  `evidence/flat_tabs.png`); the hover is the same box ending 3 px above the directory line, so only the
-  active tab joins it. Tab positions, icons, titles, separators, the close glyph and the + are unchanged.
+  `evidence/flat_tabs.png`); the hover is the rounded style's pill box with square corners (the same insets
+  as Rounded), so only the active tab joins the directory line. Tab positions, icons, titles, separators, the close glyph and the + are unchanged.
 - **Configuration > Appearance > Tab style** (directly below *Icon style*): *Square* (default) /
   *Rounded* (the look of feature 404, pixel-identical). Applied to both panels on OK without a restart.
   Stored as "Panel Tab Style" (REG_DWORD 0 / 1; missing, REG_SZ or an unknown number = Square, the number

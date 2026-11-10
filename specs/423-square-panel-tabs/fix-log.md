@@ -25,8 +25,8 @@ the contract - the contract is authoritative.
 
 ## Decisions
 
-- Square hover = the tab's box from the top of the content band to 3 px above the strip's bottom, in
-  HoverBk (research R1; full height until review 2).
+- Square hover = the rounded pill's box with square corners, in HoverBk (research R1; full height until
+  review 2, full width until the maintainer's follow-up of 2026-11-10).
 - Light DimText mix 0.38 -> 0.20 (2C2C2C, 10.38:1) (research R6).
 - Page room: Icon style up, Tab style below it with Thumbnails beside, the page keeps 299 x 231 du (research R5, as changed by review 1).
 
@@ -178,3 +178,12 @@ language differ from `main`; saltests 287,255 / 0; encoding guard 0; `tabs423_pr
 2 NOT DRIVEN** (`probe/result_after.txt`). The change is the hover's height in the Square branch only (the
 Rounded paths, already compared pixel for pixel with the build before 423, are untouched), so no third
 review was run.
+
+## Follow-up (the maintainer, 2026-11-10, after the closing)
+
+The square hover ran over the tab's full width (and from the content band's top), while the rounded pill
+is inset 3 px left, 2 px right, 4 px top and 3 px bottom; the maintainer asked to keep those insets. Now
+the square hover is exactly the pill's box `{r.left + 3, 4, r.right - 2, H - 3}` (scaled) without the
+corners. Probe rows HOVER-SQUARE / HOVER-SQUARE-INACTIVE check its four corners (CECECE) and one pixel
+outside each edge (strip): `tabs423_probe` 57 PASS / 0 FAIL / 2 NOT DRIVEN; saltests 287,255 / 0;
+`build.cmd` BUILD SUCCEEDED. No UI text changed (no translation refresh).

@@ -21,10 +21,11 @@
       ROUNDED-<theme>     value 1: ROUND in both panels; the corner boxes (x0-7..x0+7 and x1-7..x1+7,
                           rows yT..yB) equal the capture of the build before 423
                           (captures_before\theme_<theme>_main.png, -BeforeDir)
-      HOVER-<style>       WM_MOUSEMOVE over the third tab (inactive): Square -> its box from yT to yB - 3
-                          is the hover colour (CECECE on DEDEDE) and the 3 rows under it the strip (only
-                          the active tab joins the directory line; review 2), in the active panel and in
-                          the inactive one (SQUARE-INACTIVE); Rounded -> the inset pill
+      HOVER-<style>       WM_MOUSEMOVE over the third tab (inactive): Square -> the rounded pill's box
+                          (inset 3 / 2 / 4 / 3) with square corners in the hover colour (CECECE on
+                          DEDEDE), the strip one pixel outside each edge (only the active tab joins the
+                          directory line; review 2), in the active panel and in the inactive one
+                          (SQUARE-INACTIVE); Rounded -> the inset pill with rounded corners
       PAGE                Configuration > Appearance: Square checked by default; Rounded + OK -> ROUND
                           without a restart, stored 1 (Save Configuration); Rounded -> Square + OK ->
                           SQUARE, stored 0; Rounded + Cancel -> nothing changes
@@ -531,16 +532,16 @@ function Run-Hover {
             $bk = P $bmp ($b.StripX + 3) ($b.StripY + 1)
             $hov = P $bmp ($b.X0 + 6) ($b.StripY + 6)
             if ($st[0] -like 'SQUARE*') {
-                # the square hover: the tab's box from the content band's top to 3 px above the strip's
-                # bottom - its top corners and its lowest row (YB - 3) are the hover colour, the three rows
-                # under it the strip, so it never joins the directory line as the active tab does
-                $top = @((P $bmp $b.X0 $b.YT), (P $bmp $b.X1 $b.YT))
-                $low = @((P $bmp $b.X0 ($b.YB - 3)), (P $bmp $b.X1 ($b.YB - 3)))
-                $gap = @((P $bmp ($b.X0 + 6) ($b.YB - 2)), (P $bmp ($b.X0 + 6) $b.YB), (P $bmp $b.X1 $b.YB))
-                $above = P $bmp ($b.X0 + 6) ($b.YT - 1)
+                # the square hover = the rounded pill's box without its corners (the maintainer,
+                # 2026-11-10): columns X0 + 3 .. X1 - 3, rows strip top + 4 .. YB - 3 (at 100 %) - its four
+                # corners are the hover colour; one pixel outside each edge is the strip, so it never
+                # joins the directory line as the active tab does (review 2) and keeps Rounded's insets
+                $yTop = $b.StripY + 4
+                $corn = @((P $bmp ($b.X0 + 3) $yTop), (P $bmp ($b.X1 - 3) $yTop), (P $bmp ($b.X0 + 3) ($b.YB - 3)), (P $bmp ($b.X1 - 3) ($b.YB - 3)))
+                $out = @((P $bmp ($b.X0 + 2) ($b.StripY + 14)), (P $bmp ($b.X1 - 2) ($b.StripY + 14)), (P $bmp ($b.X0 + 8) ($yTop - 1)), (P $bmp ($b.X0 + 8) ($b.YB - 2)), (P $bmp ($b.X0 + 8) $b.YB))
                 $act = Shape $bmp (Box $id $hs 1)
-                $ok = ($hov -eq 0xCECECE) -and (@($top + $low | Where-Object { $_ -ne $hov }).Count -eq 0) -and (@($gap | Where-Object { $_ -ne $bk }).Count -eq 0) -and ($above -eq $bk) -and $act.Square
-                Row $n 'BOX' (V $ok) ("want CECECE from the top to 3 px above the bottom: hovered tab x {0}..{1}: inside {2}, strip {3}; top corners {4}; lowest row {5}; under it {6}; above {7}; the active tab next to it: {8}" -f $b.X0, $b.X1, (Hex $hov), (Hex $bk), (($top | ForEach-Object { Hex $_ }) -join ' '), (($low | ForEach-Object { Hex $_ }) -join ' '), (($gap | ForEach-Object { Hex $_ }) -join ' '), (Hex $above), $act.Facts)
+                $ok = ($hov -eq 0xCECECE) -and (@($corn | Where-Object { $_ -ne $hov }).Count -eq 0) -and (@($out | Where-Object { $_ -ne $bk }).Count -eq 0) -and $act.Square
+                Row $n 'BOX' (V $ok) ("want the pill's box in CECECE with square corners (x {0}..{1}, y {2}..{3}): inside {4}, strip {5}; corners {6}; outside (left, right, above, below, bottom row) {7}; the active tab next to it: {8}" -f ($b.X0 + 3), ($b.X1 - 3), $yTop, ($b.YB - 3), (Hex $hov), (Hex $bk), (($corn | ForEach-Object { Hex $_ }) -join ' '), (($out | ForEach-Object { Hex $_ }) -join ' '), $act.Facts)
             } else {
                 $corners = @((P $bmp $b.X0 $b.YT), (P $bmp $b.X1 $b.YT), (P $bmp $b.X0 $b.YB), (P $bmp $b.X1 $b.YB))
                 $above = P $bmp ($b.X0 + 6) ($b.YT - 1)

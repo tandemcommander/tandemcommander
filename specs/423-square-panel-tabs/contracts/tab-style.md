@@ -16,7 +16,7 @@ strip height:
 | Shape | Square | Rounded (404, unchanged) |
 |---|---|---|
 | active tab | the rectangle `x r.left .. r.right`, `y T .. H - 1`, colour `CapBk`; nothing outside it | nanosvg path with top corners and outward feet of radius 6 x scale |
-| hover (inactive tab, dragged tab) | the same columns, `y T .. H - 4` (3 px of strip under it: only the active tab joins the directory line; review 2), colour `HoverBk` | the pill: inset 3 / 4 / 5 / 7 x scale, radius 5 x scale |
+| hover (inactive tab, dragged tab) | the rounded pill's box without its corners: `x r.left + 3 .. r.right - 3`, `y 4 .. H - 4` (scaled insets 3 / 2 / 4 / 3 - Rounded's; it never joins the directory line, review 2; the maintainer asked for Rounded's insets, 2026-11-10), colour `HoverBk` | the pill: inset 3 / 4 / 5 / 7 x scale, radius 5 x scale |
 | separators, icon, title, close glyph (with its round hover circle), + (with its circle), list button | unchanged | unchanged |
 | tab positions (`TABSTRIP_LEFT`, widths) | unchanged | unchanged |
 

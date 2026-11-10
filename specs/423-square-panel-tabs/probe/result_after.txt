@@ -1,6 +1,6 @@
 tabs423_probe (feature 423) after
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-11-10 19:52; registry key existed True; fixture C:\Users\pavel\AppData\Local\Temp\tc423; font height 15, avg char 6; before captures E:\Projects\tandemcommander\specs\423-square-panel-tabs\probe\captures_before
+Date    : 2026-11-10 20:15; registry key existed True; fixture C:\Users\pavel\AppData\Local\Temp\tc423; font height 15, avg char 6; before captures E:\Projects\tandemcommander\specs\423-square-panel-tabs\probe\captures_before
 
 DEFAULT-LIGHT SQUARE-LEFT PASS        want square: fill 99B4D1, strip DEDEDE; corners 99B4D1 99B4D1 99B4D1 99B4D1; outside (left foot, right foot, above) DEDEDE DEDEDE DEDEDE; box x 179..348, y 80..105
 DEFAULT-LIGHT SQUARE-RIGHT PASS        want square: fill BFCDDB, strip DEDEDE; corners BFCDDB BFCDDB BFCDDB BFCDDB; outside (left foot, right foot, above) DEDEDE DEDEDE DEDEDE; box x 981..1150, y 80..105
@@ -23,8 +23,8 @@ ROUNDED-DARK ROUND-LEFT PASS        want round: fill 264F78, strip 242424; corne
 ROUNDED-DARK ROUND-RIGHT PASS        want round: fill 454545, strip 242424; corners 242424 242424 454545 454545; outside (left foot, right foot, above) 454545 454545 242424; box x 981..1150, y 80..105
 ROUNDED-DARK SAME-AS-BEFORE-LEFT PASS        the active tab's left / right corner boxes (15 x 27 px) differ from the capture before 423 in 0 / 0 px; tab found at 179,80 (expected 179,80), before at 179,80 (capture 1650x1078, before 1694x1110)
 ROUNDED-DARK SAME-AS-BEFORE-RIGHT PASS        the active tab's left / right corner boxes (15 x 27 px) differ from the capture before 423 in 0 / 0 px; tab found at 981,80 (expected 981,80), before at 1002,80 (capture 1650x1078, before 1694x1110)
-HOVER-SQUARE BOX    PASS        want CECECE from the top to 3 px above the bottom: hovered tab x 349..518: inside CECECE, strip DEDEDE; top corners CECECE CECECE; lowest row CECECE CECECE; under it DEDEDE DEDEDE DEDEDE; above DEDEDE; the active tab next to it: fill 99B4D1, strip DEDEDE; corners 99B4D1 99B4D1 99B4D1 99B4D1; outside (left foot, right foot, above) DEDEDE DEDEDE DEDEDE; box x 179..348, y 80..105
-HOVER-SQUARE-INACTIVE BOX    PASS        want CECECE from the top to 3 px above the bottom: hovered tab x 1151..1320: inside CECECE, strip DEDEDE; top corners CECECE CECECE; lowest row CECECE CECECE; under it DEDEDE DEDEDE DEDEDE; above DEDEDE; the active tab next to it: fill BFCDDB, strip DEDEDE; corners BFCDDB BFCDDB BFCDDB BFCDDB; outside (left foot, right foot, above) DEDEDE DEDEDE DEDEDE; box x 981..1150, y 80..105
+HOVER-SQUARE BOX    PASS        want the pill's box in CECECE with square corners (x 352..515, y 81..102): inside CECECE, strip DEDEDE; corners CECECE CECECE CECECE CECECE; outside (left, right, above, below, bottom row) DEDEDE DEDEDE DEDEDE DEDEDE DEDEDE; the active tab next to it: fill 99B4D1, strip DEDEDE; corners 99B4D1 99B4D1 99B4D1 99B4D1; outside (left foot, right foot, above) DEDEDE DEDEDE DEDEDE; box x 179..348, y 80..105
+HOVER-SQUARE-INACTIVE BOX    PASS        want the pill's box in CECECE with square corners (x 1154..1317, y 81..102): inside CECECE, strip DEDEDE; corners CECECE CECECE CECECE CECECE; outside (left, right, above, below, bottom row) DEDEDE DEDEDE DEDEDE DEDEDE DEDEDE; the active tab next to it: fill BFCDDB, strip DEDEDE; corners BFCDDB BFCDDB BFCDDB BFCDDB; outside (left foot, right foot, above) DEDEDE DEDEDE DEDEDE; box x 981..1150, y 80..105
 HOVER-ROUNDED PILL   PASS        want the inset pill: inside the pill CECECE; hovered tab x 349..518: inside CECECE, strip DEDEDE; corners DEDEDE DEDEDE 99B4D1 DEDEDE; above DEDEDE
 PAGE       DEFAULT-CHECKED PASS        29 tree items walked; Square 1, Rounded 0
 LAYOUT     INSIDE-PAGE PASS        25 controls on the 449x628 page; outside: 
@@ -61,6 +61,6 @@ FIT        spanish PASS        1151 'Fuente para el panel' 99/427 px; 1153 'Mini
 FIT        spanish-FONTFIELD PASS        612 widest '10 pt. Microsoft Sans Serif (fuente personalizada)' 252/328 px
 MOUSE      REAL   NOT DRIVEN  a real mouse hover over a square tab needs an input desktop (release checklist)
 DPI        SCALES NOT DRIVEN  the hidden desktop runs at one system DPI; the square box is whole pixels at every scale
-Registry: restored; identical=True; SHA-256 before 1A2CB15397961BF8AFB206653D426EC094011302F0092D2D588F350FB6D1B596 / after 1A2CB15397961BF8AFB206653D426EC094011302F0092D2D588F350FB6D1B596
+Registry: restored; identical=True; SHA-256 before 32C36086FEB1BA230FBE2CD2A42BD5F8A1EA1EF82521352371140F0964C330F1 / after 32C36086FEB1BA230FBE2CD2A42BD5F8A1EA1EF82521352371140F0964C330F1
 
 Rows: PASS 57, FAIL 0, NOT DRIVEN 2. Left running: 0; fixture removed: True; registry restored+identical: True

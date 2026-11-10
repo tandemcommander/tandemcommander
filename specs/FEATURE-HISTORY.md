@@ -7026,8 +7026,8 @@ a few early ones are out of sequence).
   feet into the directory line, a rounded hover pill) and the Light theme's inactive titles were washed
   out (545454 on DEDEDE, 5.63:1) - now **square tabs are the default** (the maintainer's mockup
   `specs/423-square-panel-tabs/evidence/flat_tabs.png`): the active tab is a plain box from the content
-  band's top into the directory line, the hover a box ending 3 px above it (only the active tab joins the
-  line); **Configuration > Appearance > Tab style** (directly below Icon style) switches to **Rounded**,
+  band's top into the directory line, the hover the rounded pill's box with square corners (only the
+  active tab joins the line); **Configuration > Appearance > Tab style** (directly below Icon style) switches to **Rounded**,
   pixel-identical to 404, applied on OK without a restart. Stored as "Panel Tab Style" (REG_DWORD 0 =
   Square, 1 = Rounded; missing / REG_SZ / unknown = Square, the number kept and written back, the page
   writes it only on a change - 416's rule); one paint branch in `CTabWindow::PaintTabBack`
