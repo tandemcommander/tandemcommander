@@ -187,3 +187,13 @@ the square hover is exactly the pill's box `{r.left + 3, 4, r.right - 2, H - 3}`
 corners. Probe rows HOVER-SQUARE / HOVER-SQUARE-INACTIVE check its four corners (CECECE) and one pixel
 outside each edge (strip): `tabs423_probe` 57 PASS / 0 FAIL / 2 NOT DRIVEN; saltests 287,255 / 0;
 `build.cmd` BUILD SUCCEEDED. No UI text changed (no translation refresh).
+
+Second and third follow-up (the maintainer, 2026-11-10): the gap under the hover looked larger than the
+one above it - the square hover ends 1 px lower (`H - Scaled(2)`, 2 px of strip under it), and on the
+maintainer's request the rounded pill too (`h = H - 6 * sc`, was `H - 7 * sc`). `build.cmd` BUILD
+SUCCEEDED; the maintainer looked at it on the real screen ("vypadá to super"). **Not re-run:** the
+probes (`tabs423_probe` HOVER rows now expect the lowest hover row at YB - 2; `tabs404_probe`
+LOOK-*-HOVERTAB compares with 404's evidence, whose pill is 1 px shorter) - the installed Tandem
+Commander was running and the probes refuse to share its registry key; the maintainer asked to commit
+without them. Owed: run both probes once the program is closed (and refresh 404's hover evidence if its
+rows fail on the pill's new bottom row).

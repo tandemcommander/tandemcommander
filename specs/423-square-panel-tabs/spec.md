@@ -108,7 +108,8 @@ are unchanged.
   tab's width from the tab's top row to the strip's bottom row (no arcs, no feet), and the hover
   highlight of an inactive tab (also the dragged tab) MUST be a filled rectangle.
 - **FR-003**: With **Rounded**, the strip MUST be painted exactly as before this feature (apart
-  from FR-007's Light title colour).
+  from FR-007's Light title colour and the hover pill, 1 px taller at the bottom since the
+  maintainer's follow-up of 2026-11-10).
 - **FR-004**: **Square** MUST be the default: a configuration without the value, with a value of a
   wrong type or with a value this version does not know MUST give square tabs.
 - **FR-005**: The choice MUST be stored with the configuration, read at start, and applied to both

@@ -933,11 +933,10 @@ void CTabWindow::PaintTabBack(HDC dc, int index, BOOL hot)
         }
         else if (hot)
         {
-            // the hover: exactly the rounded style's pill box below (inset 3 left, 2 right, 4 top,
-            // 3 bottom, scaled), only without the corners - it never joins the directory line, so it
-            // cannot read as a second active tab (review 2), and its insets match Rounded (the
-            // maintainer, 2026-11-10)
-            RECT box = {r.left + Scaled(3), Scaled(4), r.right - Scaled(2), Height - Scaled(3)};
+            // the hover: the rounded style's pill box below (inset 3 left, 2 right, 4 top, 2 bottom,
+            // scaled) without the corners (the maintainer, 2026-11-10) - it never joins the directory
+            // line, so it cannot read as a second active tab (review 2)
+            RECT box = {r.left + Scaled(3), Scaled(4), r.right - Scaled(2), Height - Scaled(2)};
             TabFillSolid(dc, &box, TabPaint.Strip.HoverBk);
         }
         return;
@@ -963,11 +962,13 @@ void CTabWindow::PaintTabBack(HDC dc, int index, BOOL hot)
     }
     else if (hot)
     {
-        // the hover pill
+        // the hover pill (feature 423: 1 px taller at the bottom - it ends 2 px above the strip's
+        // bottom instead of 3, as the square hover, so the gap under it looks as large as the one
+        // above it; the maintainer, 2026-11-10)
         float x = r.left + 3 * sc;
         float y = 4 * sc;
         float w = (float)(r.right - r.left) - 5 * sc;
-        float h = H - 7 * sc;
+        float h = H - 6 * sc;
         float rad = 5 * sc;
         _snprintf_s(el, _TRUNCATE,
                     "<path d=\"M%.3f %.3fL%.3f %.3fA%.3f %.3f 0 0 1 %.3f %.3fL%.3f %.3fA%.3f %.3f 0 0 1 %.3f %.3f"
