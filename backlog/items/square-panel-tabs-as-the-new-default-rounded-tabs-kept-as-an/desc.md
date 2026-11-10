@@ -1,16 +1,16 @@
 ---
 title: Square panel tabs as the new default; rounded tabs kept as an Appearance option
 type: improvement
-status: open
+status: in-progress
 severity: 3
 area: panels-ui
 source: manual
 who: agent
 created: 2026-11-10
 updated: 2026-11-10
-verified: -
+verified: 2026-11-10 75efd1ac
 effort: M
-feature: -
+feature: 423
 related: []
 depends-on: []
 reason: -
@@ -98,3 +98,5 @@ header under `src/common/` with `saltests` checks, like
 
 - 2026-11-10 — created (source manual)
 - 2026-11-10 — moved to Next position 1
+- 2026-11-10 — verified at 75efd1ac: still present at 75efd1ac: tabs413_probe THEME capture shows the rounded active tab with feet, no tab-style setting; Light inactive titles 545454 on DEDEDE = 5.63:1
+- 2026-11-10 — run started, feature 423
