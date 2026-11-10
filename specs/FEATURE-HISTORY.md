@@ -44,7 +44,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287, 387, 388 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
-| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373, 374, 375, 376, 404, 405, 407, 413, 416, 417, 418, 420, 421, 422 |
+| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373, 374, 375, 376, 404, 405, 407, 413, 416, 417, 418, 420, 421, 422, 423 |
 
 ## Feature notes
 
@@ -7022,3 +7022,30 @@ a few early ones are out of sequence).
   From backlog item `update-install-right-away-never-at-exit`. saltests -> 287,236 checks; probe
   `install422_probe.ps1` (derived from 421's) **61 PASS / 0 FAIL**; two refute-first reviews (MUST in
   1, none in 2).
+- 423-square-panel-tabs: **panel tabs had only the rounded look of 404** (rounded top corners, outward
+  feet into the directory line, a rounded hover pill) and the Light theme's inactive titles were washed
+  out (545454 on DEDEDE, 5.63:1) - now **square tabs are the default** (the maintainer's mockup
+  `specs/423-square-panel-tabs/evidence/flat_tabs.png`): the active tab is a plain box from the content
+  band's top into the directory line, the hover a box ending 3 px above it (only the active tab joins the
+  line); **Configuration > Appearance > Tab style** (directly below Icon style) switches to **Rounded**,
+  pixel-identical to 404, applied on OK without a restart. Stored as "Panel Tab Style" (REG_DWORD 0 =
+  Square, 1 = Rounded; missing / REG_SZ / unknown = Square, the number kept and written back, the page
+  writes it only on a change - 416's rule); one paint branch in `CTabWindow::PaintTabBack`
+  (`TabFillSolid`), positions unchanged (`TABSTRIP_LEFT` kept). Light inactive titles and the + mix the
+  text 20 % toward the strip (2C2C2C, 10.38:1; `SALTAB_DIMTEXT_LIGHT`), Dark / High Contrast unchanged.
+  Pure rules in `saltabs.*` (`SalTabStyleFromStored`), `TestTabStrip423`. **Traps:** the Configuration
+  dialog is sized to its largest page (`CTreePropDialog`, all 299 x 231 DLU) and the Appearance page was
+  full - the first layout narrowed the Panel Font field to make room and cut "%d pt. %s (default font)"
+  in 7 of 8 languages (review 1); now Icon style moved up into the Thumbnails row and the bottom row
+  holds Tab style + Thumbnails (on the way the Thumbnails labels, 19 / 22 DLU and clipped in 7 languages,
+  got room); a full-height square hover in the inactive panel was 15 / 13 from the active tab's colour
+  and read as a second active tab (review 2); the `tabs404_probe` LOOK rows had silently gone red since
+  416 (the E:\ tab's Fluent drive icon vs the mockup) - 404 / 413 probes now set Rounded, 404 also the
+  Classic set; a "same as before" pixel row must locate each capture's tab itself (the probes' window
+  size is the stored one, which changed during the run). Translations: 3 new texts, pins for the corpus's
+  tab words (cs 'karty', hu 'lap') and natural shape words (cs/sk 'Hranaté', de 'Eckig', fr 'Carrés'),
+  fr '#pixels'. Owed to a person: the look with a real mouse, the page by keyboard, 125-200 % (release
+  checklist). No `## [Unreleased]` in `CHANGELOG.md`: the entry is in the closing report. From backlog
+  item `square-panel-tabs-as-the-new-default-rounded-tabs-kept-as-an`. saltests -> 287,255 checks; probe
+  `tabs423_probe` **57 PASS / 0 FAIL / 2 NOT DRIVEN**; `tabs404` 29 / 0 / 1, `tabs413` 22 / 0 / 1,
+  `tabs405` 7 / 0 / 1; two refute-first reviews (no MUST; SHOULDs fixed in both).

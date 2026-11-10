@@ -17,7 +17,6 @@ Last triaged: 2026-11-10
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Square panel tabs as the new default; rounded tabs kept as an Appearance option](items/square-panel-tabs-as-the-new-default-rounded-tabs-kept-as-an/desc.md) | improvement | 3 | panels-ui | 423 |
 
 ## Next
 

@@ -7,7 +7,7 @@ area: build-release
 source: manual
 who: person
 created: 2026-11-06
-updated: 2026-11-08
+updated: 2026-11-10
 verified: -
 effort: M
 feature: -
@@ -82,6 +82,9 @@ Before the release, every line below is ticked (`BL step <slug> <n> --done`). Or
 - [ ] The lock-out trap on the real desktop: let the automatic install start, decline the UAC prompt (or cancel the installer after it closed the program), start Tandem Commander again - nothing starts on its own, also at the next start and after the next daily check (only the offer); a failed Install Now shows OK only, no question about installing at close (feature 422)
 - [ ] Automatic level: Help > Check for New Version and the About box's Check now show the window with Install Now and never install on their own; choosing the automatic level in the window keeps it open (feature 422)
 - [ ] Automatic level while you type in the command line or have a Find window open: nothing starts until the line is empty / Find is closed (feature 422)
+- [ ] Panel tabs on a real screen, Default and Dark theme, default configuration: the active tab is a plain rectangle that runs into the directory line (no rounded corners, no feet), as the maintainer's mockup `specs/423-square-panel-tabs/evidence/flat_tabs.png`; a real mouse over an inactive tab shows a rectangle that stops just above the directory line, in the active and the inactive panel; the feature 404 line about the rounded active tab is now checked with Tab style = Rounded (feature 423)
+- [ ] Configuration > Appearance > Tab style with a real mouse and keyboard: Rounded + OK switches both panels to the rounded look at once, Square + OK back; Tab moves Font -> Information Line -> Icon style -> Tab style -> Thumbnails, arrow keys move only between Square and Rounded; the page reads well in Czech and German (feature 423)
+- [ ] Panel tabs at 125 %, 150 % and 200 % display scale in both styles: the square active tab has straight edges and joins the directory line, the hover rectangle ends above it, nothing moves when the style is switched (feature 423)
 
 ## Log
 
@@ -105,3 +108,4 @@ Before the release, every line below is ticked (`BL step <slug> <n> --done`). Or
 - 2026-11-08 — edited Steps
 - 2026-11-08 — feature 421: 5 checks added
 - 2026-11-08 — feature 422: 4 checks added
+- 2026-11-10 — feature 423 added 3 checks
