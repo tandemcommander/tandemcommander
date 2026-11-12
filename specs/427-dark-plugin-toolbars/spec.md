@@ -118,8 +118,9 @@ Batch Rename against its background (contrast at least 4.5:1).
 
 ### Measurable Outcomes
 
-- **SC-001**: In Dark, the glyph pixels darker than the toolbar background drop by at least 90 % in
-  PictView's and in File Comparator's toolbar.
+- **SC-001**: In Dark, the neutral glyph pixels (outlines, shading) darker than the toolbar
+  background drop by at least 90 % in PictView's and in File Comparator's toolbar; saturated colours
+  the Dark palette keeps (as for the core's own Classic glyphs) are counted apart.
 - **SC-002**: In Dark, File Comparator's light-grey pixels outside the text views drop from 70,781 to
   under 1 % of that.
 - **SC-003**: In Default, the toolbars and File Comparator's chrome are pixel-identical before and
