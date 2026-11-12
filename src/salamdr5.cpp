@@ -609,9 +609,16 @@ RETRY:
         case ERROR_PATH_NOT_FOUND:
         case ERROR_BAD_PATHNAME:
         {
-            char text[MAX_PATH + 100];
-            _snprintf_s(text, _TRUNCATE, LoadStrU8(IDS_DIRNAMEINVALID), path); // path may exceed the buffer (long paths, feature 010)
-            SalMessageBox(parent, text, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+            // feature 425 (review 2, NOTE 4): the whole path in the message (a heap buffer as long as it
+            // needs) - the MAX_PATH + 100 byte buffer cut a long path, even inside a character
+            const char* format = LoadStrU8(IDS_DIRNAMEINVALID);
+            size_t size = strlen(format) + strlen(path) + 1;
+            char* text = (char*)malloc(size);
+            if (text != NULL)
+                _snprintf_s(text, size, _TRUNCATE, format, path);
+            SalMessageBox(parent, text != NULL ? text : GetErrorText(lastError), LoadStr(IDS_ERRORTITLE),
+                          MB_OK | MB_ICONEXCLAMATION);
+            free(text);
             break;
         }
 

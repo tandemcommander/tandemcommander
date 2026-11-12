@@ -20,6 +20,7 @@
       ERR-MISSING   the Desktop folder does not exist (seam: a missing folder in the fixture): an error
                     message, the panel stays (never the existing parent)
       ERR-FILE      the Desktop path names a file: an error message, the panel stays
+      ERR-LONG      a missing Desktop path of ~450 bytes: the message holds the whole path (review 2, NOTE 4)
       FLD-CPL       inside fld:, Enter on Control Panel: the panel stays in fld:
       FLD-USER      inside fld:, Enter on the user's folder (root): the panel is on %USERPROFILE%
       FLD-DOCS      inside fld:, Enter on Documents (root, or under This PC): the Documents disk path
@@ -319,7 +320,8 @@ try {
     }
 
     # --- errors (seam TC_PROBE_DESKTOP_FILE) -------------------------------------------------------
-    foreach ($case in @(@('ERR-NONE', ''), @('ERR-MISSING', ($Root + '\gone\Desktop')), @('ERR-FILE', ($Root + '\gone\DesktopFile')))) {
+    $longMissing = $Root + '\gone\' + ('d' * 200) + '\' + ('e' * 200) + '\Desktop'   # ~450 bytes, never created
+    foreach ($case in @(@('ERR-NONE', ''), @('ERR-MISSING', ($Root + '\gone\Desktop')), @('ERR-FILE', ($Root + '\gone\DesktopFile')), @('ERR-LONG', $longMissing))) {
         $seam = $Root + '\desktop_' + $case[0] + '.txt'
         [IO.File]::WriteAllText($seam, $case[1], (New-Object Text.UTF8Encoding($false)))
         NewDir ($Root + '\gone')   # the parent exists: a shortened path would land there
@@ -334,6 +336,8 @@ try {
             $box = Take-Box $id 6
             $loc = Get-Loc $id
             $ok = $pos -ge 0 -and $null -ne $box -and (Norm $loc) -ceq $StartDir
+            # review 2 NOTE 4: the whole path in the message (the box wraps it: white space ignored)
+            if ($case[0] -eq 'ERR-LONG') { $flat = $box -replace '\s', ''; $want = ($longMissing + '"') -replace '\s', ''; $ok = $ok -and $flat.Contains($want) }
             Row $case[0] 'RUN' (V $ok) ("seam '{0}'; item position {1}; message {2}; panel '{3}'" -f (Esc $case[1]), $pos, $(if ($box) { $box } else { 'none' }), (Esc $loc))
             $fatal = Fatal-Win $id
             if ($fatal) { Row ('RUN-' + $case[0]) 'RUN' 'FAIL' $fatal }

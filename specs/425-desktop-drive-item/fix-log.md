@@ -139,9 +139,14 @@ reading and against the API; callers, hot keys, encoding, the page layout checke
   in fld: - it stays in fld:, the old behaviour; fail-safe.
 - NOTE 3 (accepted, not a regression): `SalGetFileAttributes` of an unreachable share inside fld: blocks
   the main thread without ESC, as the old bind and listing did.
-- NOTE 4 (existing code, display only): `SalCheckPath`'s message cuts a missing path longer than about
-  360 bytes (`char text[MAX_PATH + 100]`, `_TRUNCATE`); nothing acts on the cut text. Recorded, not
-  changed here (an existing message of every path change).
+- NOTE 4 (fixed, a finding of severity 2 met on the way - stop-rules rule 11): `SalCheckPath`'s
+  "The path or file name ... is invalid." message (`salamdr5.cpp`, the case of `ERROR_PATH_NOT_FOUND` and
+  its siblings) formatted into `char text[MAX_PATH + 100]` with `_TRUNCATE` - a missing path of more than
+  about 360 bytes was shown cut, even inside a character. Now a heap buffer as long as the message needs.
+  New probe row ERR-LONG (a missing Desktop path of ~450 bytes through the seam; the box wraps the path,
+  white space is ignored): before the fix FAIL (`probe/result_negative_long.txt`), after PASS. The
+  "checking path, ESC" wait window above it still trims at a whole character (display shortening, rule
+  097) and is left as it is.
 
-After the fixes: `build.cmd` BUILD SUCCEEDED, saltests 287,409 / 0, probe `result_after.txt`
-**17 PASS / 0 FAIL / 0 NOT DRIVEN** (registry identical, the probe's Recycle Bin item removed).
+After the fixes: `build.cmd full` BUILD SUCCEEDED (189 language modules), saltests 287,409 / 0, probe
+`result_after.txt` **18 PASS / 0 FAIL / 0 NOT DRIVEN** (registry identical, the probe's Recycle Bin item removed).
