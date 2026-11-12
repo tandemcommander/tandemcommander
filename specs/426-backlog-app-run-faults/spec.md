@@ -5,6 +5,13 @@
 **Status**: Draft
 **Input**: From backlog item backlog-app-and-loop-faults-during-a-run. Backlog item `backlog-app-and-loop-faults-during-a-run` ("In a run the backlog app refuses changes, the loop hangs, the phase falls back"): four faults of the backlog app (features 344, 371, 415) and the backlog loop (247) seen together during the run of feature 425 on 2026-11-12.
 
+## Clarifications
+
+### Session 2026-11-12
+
+- Q: When has a finished run "ended its last turn" for FR-005? → A: the newest object of the run's stream is a `result` and no new line has arrived for the grace period (30 s); a newer assistant message, a started command or task progress after the result means the turn goes on (autonomous run: conservative).
+- Q: Which server value bounds the page's phase from below in FR-011 - the phase only, or also its timeline? → A: the phase only (the stream's `phase` event carries no timeline); the page's timeline gets the server's phase appended when its own fold has not reached it (autonomous run: conservative).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Change the backlog from the app while a run is going on (Priority: P1)
@@ -133,7 +140,7 @@ page's phase is never earlier than the server's phase event. The stream test fai
 - **FR-004**: A refusal of the side worktree MUST show git's reason to the maintainer.
 - **FR-005**: The loop MUST end a run's process when the run is finished (its journal row is
   written since it began and the run lock is no longer the run's) and the process has ended its
-  last turn (a result event, no newer activity) but is still alive after a grace period; it
+  last turn (the newest stream object is a `result`, no new line for 30 s) but is still alive; it
   MUST then conclude the run as finished and release the app's edit lock.
 - **FR-006**: The loop MUST NOT end a process that holds its run lock, or whose turn has not
   ended.
@@ -147,7 +154,8 @@ page's phase is never earlier than the server's phase event. The stream test fai
 - **FR-010**: The trace stream's catch-up MUST send every event of the trace file (all pages,
   every event of a multi-event line) before following the live run.
 - **FR-011**: The live page's phase and timeline MUST never be earlier than the phase the server
-  reports for the same run (its `phase` stream event), and MUST never move back.
+  reports for the same run (its `phase` stream event), and MUST never move back; when the
+  server's phase is later than the fold's, the timeline shows the server's phase as reached.
 - **FR-012**: Tests MUST reproduce each of the four faults on the old code (negative controls)
   and pass on the new code.
 
