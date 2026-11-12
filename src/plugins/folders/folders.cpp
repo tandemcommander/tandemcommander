@@ -11,6 +11,8 @@
 #include "folders.rh2"
 #include "lang\lang.rh"
 
+#include "splloadstru8.h" // feature 425: the drive-menu text as UTF-8
+
 // ****************************************************************************
 
 HINSTANCE DLLInstance = NULL; // handle to the SPL - language-independent resources
@@ -150,14 +152,10 @@ void CPluginInterface::Connect(HWND parent, CSalamanderConnectAbstract* salamand
                                       IMAGE_BITMAP, 16, 16, LR_DEFAULTCOLOR);
     salamander->SetBitmapWithIcons(hBmp);
     DeleteObject(hBmp);
-    // feature 425 (review 2): the entry's text is translated with letters outside the code page of many
-    // systems (cs/sk "Složky Windows"): read it wide and hand it over as UTF-8, which the core keeps as is
-    // (plug-in metadata is UTF-8 by contract, 052); the code-page text only if that fails
-    char driveMenuText[3 * MAX_PATH];
-    const WCHAR* driveMenuTextW = SalamanderGeneral->LoadStrW(HLanguage, IDS_DRIVEMENUTEXT);
-    if (driveMenuTextW == NULL || SplWToU8(driveMenuTextW, driveMenuText, sizeof(driveMenuText)) == 0)
-        lstrcpynA(driveMenuText, LoadStr(IDS_DRIVEMENUTEXT), sizeof(driveMenuText));
-    salamander->SetChangeDriveMenuItem(driveMenuText, 0);
+    // feature 425 (reviews 2, 3): the entry's text is translated with letters outside the code page of
+    // many systems (cs/sk "Složky Windows"): handed over as UTF-8, which the core keeps as is (plug-in
+    // metadata is UTF-8 by contract, 052)
+    salamander->SetChangeDriveMenuItem(SplLoadStrU8(SalamanderGeneral, HLanguage, IDS_DRIVEMENUTEXT), 0);
     salamander->SetPluginIcon(0);
     salamander->SetPluginMenuAndToolbarIcon(0);
 }

@@ -20546,6 +20546,11 @@ static void TestDesktopDrive425()
     CHECK(SalShellFolderOpensAsDisk(true, true, false, true, dir, false));                      // Documents, a drive, the user's folder
     CHECK(!SalShellFolderOpensAsDisk(true, true, false, true, dir, true));                      // a deleted folder in the Recycle Bin
     CHECK(!SalShellFolderOpensAsDisk(true, true, true, true, dir, false));                      // a folder shortcut / network location (review 2)
+    CHECK(!SalShellFolderOpensAsDisk(true, true, true, true, dir | FILE_ATTRIBUTE_READONLY, false)); // a folder shortcut (its folder is read-only)
+    CHECK(SalShellFolderOpensAsDisk(true, true, true, true, dir | FILE_ATTRIBUTE_REPARSE_POINT, false)); // a junction / directory symlink (review 3)
+    CHECK(!SalShellFolderOpensAsDisk(true, true, true, true, dir | FILE_ATTRIBUTE_REPARSE_POINT, true)); // ... but not in the Recycle Bin
+    CHECK(!SalShellFolderOpensAsDisk(true, true, true, true, FILE_ATTRIBUTE_REPARSE_POINT, false));      // a file symlink: not a directory
+    CHECK(SAL_DESKTOP_ATTR_REPARSE_POINT == FILE_ATTRIBUTE_REPARSE_POINT);
     CHECK(!SalShellFolderOpensAsDisk(true, true, false, true, FILE_ATTRIBUTE_ARCHIVE, false));  // a zip archive / a .lnk to a folder
     CHECK(!SalShellFolderOpensAsDisk(true, true, false, true, INVALID_FILE_ATTRIBUTES, false)); // the path is gone or unreachable
     CHECK(!SalShellFolderOpensAsDisk(true, true, false, false, dir, false));                    // the shell gave no path

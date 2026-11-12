@@ -150,3 +150,28 @@ reading and against the API; callers, hot keys, encoding, the page layout checke
 
 After the fixes: `build.cmd full` BUILD SUCCEEDED (189 language modules), saltests 287,409 / 0, probe
 `result_after.txt` **18 PASS / 0 FAIL / 0 NOT DRIVEN** (registry identical, the probe's Recycle Bin item removed).
+
+### Review 3 (refute-first agent, on 0bba00d0) - no MUST, 1 SHOULD, 4 NOTE
+
+The reviewer re-ran the probe (18 PASS / 0 FAIL, registry identical, its Recycle Bin item removed) and
+saltests (287,409 / 0); the `salamdr5.cpp` message change checked: one `%s` in all translations of 10108,
+no state or return value changes; the negative control `result_negative_long.txt` fits the old code (the
+message cut at 359 bytes = `MAX_PATH + 100 - 1`).
+
+- **SHOULD 1 (fixed)**: `SFGAO_LINK` is set not only for folder shortcuts but for every junction and
+  directory symbolic link (measured with `mklink /J` and `/D` in `%TEMP%`) - review 2's fix kept them in
+  fld:, against FR-007 (safe, main's behaviour, but not what the spec asks). Now a link opens as a disk
+  path when its directory is a reparse point (the file system follows it), and a folder shortcut (a plain
+  directory with `target.lnk`, read-only, no reparse point) stays in fld: - in `SalShellFolderOpensAsDisk`,
+  with saltests cases (shortcut, read-only shortcut, junction, junction in the Recycle Bin, a file symlink).
+  The plug-in computes the path and its attributes for a link too. Not driven by the probe (fld: reaches
+  no fixture folder): a release-checklist line.
+- NOTE 1 (fixed, severity 2, rule 11): the sibling message of `SalCheckPath` ("You have canceled path
+  checking. Checked path: ...", `IDS_TERMINATEDBYUSER`) formatted the path into `char buf[MAX_PATH + 200]`
+  with `_TRUNCATE` - now the same heap buffer. Needs ESC during a slow check of a long path: not driven.
+- NOTE 2 (recorded, off language): `translations/chinesesimplified/salamand.slt` id 10108 has a broken
+  format (`"%s%` ...); zh-CN is off - enabling it is the maintainer's and needs its own refresh.
+- NOTE 3 (fixed): the plug-in now uses the shared `SplLoadStrU8` (feature 130) for its drive-menu text.
+- NOTE 4: probe coverage as recorded (ERR-LONG is ASCII; the link rule is a pure rule with saltests).
+
+After the fixes: `build.cmd full` BUILD SUCCEEDED (189 language modules), saltests 287,414 / 0.

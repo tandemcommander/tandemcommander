@@ -89,14 +89,18 @@ inline bool SalPathHasRecycleBinPart(const char* path)
 // ('havePath') and that path is an existing directory ('pathAttrs' = GetFileAttributes of it), and
 // it is not an item of the Recycle Bin ('inRecycleBin' = the current fld: folder is the Recycle Bin or
 // inside it, or the path has a recycle bin component - review 1, SHOULD 1: a deleted folder is a
-// file-system folder in C:\$Recycle.Bin\<SID>\$R...), and it is not a link ('isLink' = SFGAO_LINK -
-// review 2: a folder shortcut, e.g. a network location of This PC, is a real directory holding
-// target.lnk and desktop.ini; its path is that directory, not its target, which fld: follows).
-// Everything else stays in fld:, as before: virtual places (This PC, Control Panel, Network - no
-// SFGAO_FILESYSTEM or no path), the Recycle Bin's items, links, and shell folders whose path is a file
-// (a zip archive, a .lnk to a folder).
+// file-system folder in C:\$Recycle.Bin\<SID>\$R...), and it is not a folder shortcut: an item with
+// SFGAO_LINK ('isLink') opens as a disk path only when its directory is a reparse point (a junction or
+// a directory symbolic link - review 3: the file system follows them itself); a folder shortcut, e.g. a
+// network location of This PC, is a plain directory holding target.lnk and desktop.ini - its path is
+// that directory, not the target fld: follows (review 2). Everything else stays in fld:, as before:
+// virtual places (This PC, Control Panel, Network - no SFGAO_FILESYSTEM or no path), the Recycle Bin's
+// items, folder shortcuts, and shell folders whose path is a file (a zip archive, a .lnk to a folder).
+#define SAL_DESKTOP_ATTR_REPARSE_POINT 0x400UL // FILE_ATTRIBUTE_REPARSE_POINT
 inline bool SalShellFolderOpensAsDisk(bool isFolder, bool isFileSystem, bool isLink, bool havePath,
                                       unsigned long pathAttrs, bool inRecycleBin)
 {
-    return isFolder && isFileSystem && !isLink && havePath && !inRecycleBin && SalDesktopFolderUsable(pathAttrs);
+    if (!isFolder || !isFileSystem || !havePath || inRecycleBin || !SalDesktopFolderUsable(pathAttrs))
+        return false;
+    return !isLink || (pathAttrs & SAL_DESKTOP_ATTR_REPARSE_POINT) != 0;
 }

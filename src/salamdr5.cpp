@@ -546,9 +546,16 @@ RETRY:
                     while (PeekMessage(&msg, NULL, WM_KEYFIRST, WM_KEYLAST, PM_REMOVE))
                         ;
 
-                    char buf[MAX_PATH + 200];
-                    _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_TERMINATEDBYUSER), path); // path may exceed the buffer (long paths, feature 010)
-                    SalMessageBox(parent, buf, LoadStr(IDS_INFOTITLE), MB_OK | MB_ICONINFORMATION);
+                    // feature 425 (review 3, NOTE 1): the whole path in the message (a heap buffer as long
+                    // as it needs) - the MAX_PATH + 200 byte buffer cut a long path, even inside a character
+                    const char* format = LoadStrU8(IDS_TERMINATEDBYUSER);
+                    size_t size = strlen(format) + strlen(path) + 1;
+                    char* buf = (char*)malloc(size);
+                    if (buf != NULL)
+                        _snprintf_s(buf, size, _TRUNCATE, format, path);
+                    SalMessageBox(parent, buf != NULL ? buf : GetErrorText(ERROR_CANCELLED), LoadStr(IDS_INFOTITLE),
+                                  MB_OK | MB_ICONINFORMATION);
+                    free(buf);
                 }
             }
         }

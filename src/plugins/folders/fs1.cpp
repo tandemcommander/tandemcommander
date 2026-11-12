@@ -187,9 +187,11 @@ static char* GetDiskPathOfShellFolder(IShellFolder* folder, LPCITEMIDLIST folder
     *attrs = a & (SFGAO_FOLDER | SFGAO_FILESYSTEM | SFGAO_LINK);
     BOOL isFolder = (a & SFGAO_FOLDER) != 0;
     BOOL isFileSystem = (a & SFGAO_FILESYSTEM) != 0;
-    BOOL isLink = (a & SFGAO_LINK) != 0; // review 2: a folder shortcut (a network location) - its path is the shortcut's own folder
-    if (!isFolder || !isFileSystem || isLink)
-        return NULL; // virtual, or a link fld: follows to its target: nothing more to ask
+    // a link: a folder shortcut (stays - review 2) or a junction / directory symlink (opens - review 3);
+    // SalShellFolderOpensAsDisk tells them apart by the path's reparse-point attribute
+    BOOL isLink = (a & SFGAO_LINK) != 0;
+    if (!isFolder || !isFileSystem)
+        return NULL; // virtual: nothing more to ask
     char* pathU8 = NULL;
     BOOL havePath = FALSE;
     DWORD pathAttrs = SAL_DESKTOP_INVALID_ATTRS;
