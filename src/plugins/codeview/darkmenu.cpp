@@ -164,9 +164,11 @@ static void ReleaseMenu(HMENU menu)
     }
 }
 
-// feature 424: owner-drawn items keep the size measured at the DPI they were first shown at;
-// re-setting each item's type makes the menu measure them again (WM_MEASUREITEM) the next
-// time it is shown or the bar is drawn.
+// feature 424: owner-drawn items keep the size measured at the DPI they were first shown at.
+// Re-setting an item's bitmap (its own value back) makes Windows measure it again
+// (WM_MEASUREITEM) the next time the bar is drawn or the popup shown; re-setting the
+// unchanged type, its data, or toggling MFT_OWNERDRAW does NOT (measured by the 424 review 2,
+// specs/424-webview-dpi-awareness/probe/menutest).
 static void RemeasureMenu(HMENU menu)
 {
     int count = GetMenuItemCount(menu);
@@ -175,7 +177,7 @@ static void RemeasureMenu(HMENU menu)
         MENUITEMINFOA mii;
         memset(&mii, 0, sizeof(mii));
         mii.cbSize = sizeof(mii);
-        mii.fMask = MIIM_FTYPE | MIIM_SUBMENU;
+        mii.fMask = MIIM_FTYPE | MIIM_SUBMENU | MIIM_BITMAP;
         if (!GetMenuItemInfoA(menu, i, TRUE, &mii))
             continue;
         if ((mii.fType & MFT_OWNERDRAW) != 0)
@@ -183,8 +185,8 @@ static void RemeasureMenu(HMENU menu)
             MENUITEMINFOA set;
             memset(&set, 0, sizeof(set));
             set.cbSize = sizeof(set);
-            set.fMask = MIIM_FTYPE;
-            set.fType = mii.fType;
+            set.fMask = MIIM_BITMAP;
+            set.hbmpItem = mii.hbmpItem;
             SetMenuItemInfoA(menu, i, TRUE, &set);
         }
         if (mii.hSubMenu != NULL)

@@ -1,0 +1,50 @@
+mode 0
+initial show (item height 19)                bar measures 3, bar height 19
+control: height 40, DrawMenuBar only         bar measures +0, bar height 19
+control: + SetWindowPos (size change)        bar measures +0, bar height 19
+popup first show                             popup shown 1, popup measures +4
+control: popup second show, no remeasure     popup shown 1, popup measures +0
+RemeasureMenu + DrawMenuBar                  bar measures +3, bar height 19
++ SetWindowPos                               bar measures +0, bar height 19
+popup after RemeasureMenu                    popup shown 1, popup measures +4
+popup again (no remeasure)                   popup shown 1, popup measures +0
+mode 5
+initial show (item height 19)                bar measures 3, bar height 19
+control: height 40, DrawMenuBar only         bar measures +0, bar height 19
+control: + SetWindowPos (size change)        bar measures +0, bar height 19
+popup first show                             popup shown 1, popup measures +4
+control: popup second show, no remeasure     popup shown 1, popup measures +0
+RemeasureMenu + DrawMenuBar                  bar measures +0, bar height 19
++ SetWindowPos                               bar measures +0, bar height 19
+popup after RemeasureMenu                    popup shown 1, popup measures +0
+popup again (no remeasure)                   popup shown 1, popup measures +0
+mode 1
+initial show (item height 19)                bar measures 3, bar height 19
+control: height 40, DrawMenuBar only         bar measures +0, bar height 19
+control: + SetWindowPos (size change)        bar measures +0, bar height 19
+popup first show                             popup shown 1, popup measures +4
+control: popup second show, no remeasure     popup shown 1, popup measures +0
+RemeasureMenu + DrawMenuBar                  bar measures +0, bar height 19
++ SetWindowPos                               bar measures +0, bar height 19
+popup after RemeasureMenu                    popup shown 1, popup measures +0
+popup again (no remeasure)                   popup shown 1, popup measures +0
+mode 3
+initial show (item height 19)                bar measures 3, bar height 19
+control: height 40, DrawMenuBar only         bar measures +0, bar height 19
+control: + SetWindowPos (size change)        bar measures +0, bar height 19
+popup first show                             popup shown 1, popup measures +4
+control: popup second show, no remeasure     popup shown 1, popup measures +0
+RemeasureMenu + DrawMenuBar                  bar measures +0, bar height 19
++ SetWindowPos                               bar measures +0, bar height 19
+popup after RemeasureMenu                    popup shown 1, popup measures +0
+popup again (no remeasure)                   popup shown 1, popup measures +0
+mode 4
+initial show (item height 19)                bar measures 3, bar height 19
+control: height 40, DrawMenuBar only         bar measures +0, bar height 19
+control: + SetWindowPos (size change)        bar measures +0, bar height 19
+popup first show                             popup shown 1, popup measures +4
+control: popup second show, no remeasure     popup shown 1, popup measures +0
+RemeasureMenu + DrawMenuBar                  bar measures +3, bar height 19
++ SetWindowPos                               bar measures +0, bar height 19
+popup after RemeasureMenu                    popup shown 1, popup measures +4
+popup again (no remeasure)                   popup shown 1, popup measures +0

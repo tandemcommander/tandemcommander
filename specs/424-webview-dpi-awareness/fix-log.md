@@ -126,7 +126,7 @@ a limit).
   rare (two versions at once, or the old engine still alive right after an upgrade). **Done:** the
   wording is corrected in `webkeeper.cpp`, the contract, research R2, architecture 11 and the spec
   edge case (the controller fails, not the environment); the limit is named in the changelog text
-  and the reply draft. A fallback (retry in system mode) would bring back the very mismatch this
+  (in `closing-report.md`; `CHANGELOG.md` has no `## [Unreleased]`) and the reply draft. A fallback (retry in system mode) would bring back the very mismatch this
   feature removes; not done.
 - **S2 (fixed, severity 3):** the dark-theme owner-drawn menus used one font and
   `SM_CYMENU` / `SM_CXMENUCHECK` / `SM_CYMENUCHECK` of the start scaling. Now in both
@@ -134,8 +134,8 @@ a limit).
   under an SRW lock - every viewer has its own thread; a font is never deleted while the module
   runs, the table being full falls back to the first font), `GetSystemMetricsForDpi`,
   `DarkMenuMeasureItem/DrawItem(…, GetDpiForWindow(HWindow))`, and on `WM_DPICHANGED`
-  `DarkMenuRemeasure` (re-sets each owner-drawn item's type so the menu measures it again) +
-  `DrawMenuBar`. At 100 % the font is the one of before (same metrics). The probe got `-Dark`, a
+  `DarkMenuRemeasure` + `DrawMenuBar` (its first version re-set the type and did nothing -
+  review 2). At 100 % the font is the one of before (same metrics). The probe got `-Dark`, a
   menu-bar height in its GEO line and a `MENU` line (owner-drawn bar items via
   `GetMenuItemInfoW`; `GetMenuState` packs a popup's item count into the same bits, a first
   version read 1 of 4 / 3 of 4 in the default theme). The remeasure at another DPI is not driven
@@ -162,3 +162,30 @@ a limit).
 - Regression probes from copies under `%TEMP%\tc424reg`, on the build with S2: `pw314_probe` 16 / 0
   (as recorded), `cvtab262_probe` 16 / 0 (as recorded), `copy408_probe` 19 / 0 / 1 NOT DRIVEN (as
   recorded).
+
+### Review 2 (refute-first, independent agent) - no MUST
+
+- Re-ran `dpi424_probe` on both builds (after 7 / 0, before 3 / 4), saltests 287267 / 0, the guard 0.
+- **S1 (fixed, severity 3): `DarkMenuRemeasure` did nothing.** The reviewer's test host
+  (`probe/menutest/`, an owner-drawn bar of 3 popups x 4 items) counts `WM_MEASUREITEM`: after the
+  first show nothing re-measures (`DrawMenuBar`, `SetWindowPos`, a second popup show - the sizes are
+  cached), re-setting the unchanged `MIIM_FTYPE` (424's first version), toggling `MFT_OWNERDRAW` and
+  re-setting `MIIM_FTYPE | MIIM_DATA` give +0 / +0; re-setting `MIIM_BITMAP` gives bar +3, popup +4.
+  **Done:** `RemeasureMenu` (both `darkmenu.cpp`, identical) re-sets each owner-drawn item's own
+  `hbmpItem` (`MIIM_BITMAP`). `probe/menutest` now holds the product's function verbatim as mode 0
+  and the first version as mode 5 (`result.txt`): **mode 0 bar +3, popup +4; mode 5 +0 / +0**
+  (the negative control), modes 1 / 3 +0 / +0, 4 +3 / +4.
+- NOTE 1 (fixed): the changelog text is in `closing-report.md` (no `## [Unreleased]`), and it names
+  the old/new-version limit.
+- NOTE 2 (no change): dialogs opened from a viewer run per-monitor, also core code such as the dark
+  radio glyph (`themes.cpp`, `GetDeviceCaps(LOGPIXELSY)`). Possible small dark-theme mismatches only
+  on a monitor of another scaling. Cosmetic; the release-checklist line names Find / Go to line there.
+- NOTE 3-4: the font table, status font, thread scope, rectangle mapping, keeper and callers were
+  checked and found sound; no data path, no ABI change.
+
+### Checks after review 2
+
+- `.\build.cmd` -> `BUILD SUCCEEDED`; saltests `287267 checks, 0 failed`; guard `TOTAL: 0 finding(s)`.
+- `dpi424_probe` after: default **7 / 0**, Dark **7 / 0** (against the before baselines; GEO
+  identical; MENU 0 of 4 / 4 of 4).
+- `probe/menutest` (hidden desktop): as above.

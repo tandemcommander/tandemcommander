@@ -1,6 +1,6 @@
 dpi424_probe (feature 424) after
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-11-12 13:36; registry key existed True; baseline specs\424-webview-dpi-awareness\probe\result_probe_before.txt; theme default
+Date    : 2026-11-12 13:54; registry key existed True; baseline specs\424-webview-dpi-awareness\probe\result_probe_before.txt; theme default
 
 CV         AWARE  PASS        viewer 2, controller 2; browsers 1 '--embedded-browser-webview-dpi-awareness=2' awareness 2; main window 1, program 1
 GEO CV window (570,160)-(2159,1278) client 1573 x 1059 status 21 menubar 19
