@@ -97,6 +97,7 @@
 #include "salmaskgroup.h"     // feature 298
 #include "salsubst.h"         // feature 301
 #include "salmydocs.h"        // feature 386
+#include "saldesktop.h"       // feature 425
 #include "salftpupname.h"     // feature 303
 #include "salftpsrvpath.h"    // feature 385
 #include "salpaxheader.h"     // feature 306
@@ -20472,6 +20473,65 @@ static BOOL OldDocumentsPath386(const WCHAR* docsW, const WCHAR* desktopW, char*
     return ret;
 }
 
+// feature 425 (GitHub #31): the Desktop drive item and fld: folders opened as disk paths
+// (saldesktop.h, SalDesktopPathToU8 of salmydocs.h)
+static void TestDesktopDrive425()
+{
+    // the Desktop path: whole or refused, never another folder or a prefix
+    {
+        char buf[MAX_PATH];
+        CHECK(SalDesktopPathToU8(L"C:\\Users\\pavel\\Desktop", buf, MAX_PATH) == SAL_DOCS_OK && strcmp(buf, "C:\\Users\\pavel\\Desktop") == 0);
+        CHECK(SalDesktopPathToU8(L"D:\\OneDrive\\Plocha", buf, MAX_PATH) == SAL_DOCS_OK && strcmp(buf, "D:\\OneDrive\\Plocha") == 0);
+        strcpy(buf, "x");
+        CHECK(SalDesktopPathToU8(NULL, buf, MAX_PATH) == SAL_DOCS_NONE && buf[0] == 0);
+        strcpy(buf, "x");
+        CHECK(SalDesktopPathToU8(L"", buf, MAX_PATH) == SAL_DOCS_NONE && buf[0] == 0);
+        CHECK(SalDesktopPathToU8(L"C:\\D", NULL, MAX_PATH) == SAL_DOCS_TOO_LONG);
+        CHECK(SalDesktopPathToU8(L"C:\\D", buf, 0) == SAL_DOCS_TOO_LONG);
+        // the exact fit and one byte short ("C:\D" = 4 bytes + the terminator)
+        CHECK(SalDesktopPathToU8(L"C:\\D", buf, 5) == SAL_DOCS_OK && strcmp(buf, "C:\\D") == 0);
+        strcpy(buf, "x");
+        CHECK(SalDesktopPathToU8(L"C:\\D", buf, 4) == SAL_DOCS_TOO_LONG && buf[0] == 0);
+        // a lone surrogate converts as WTF-8
+        const WCHAR lone[] = {L'C', L':', L'\\', L'a', (WCHAR)0xD800, 0};
+        CHECK(SalDesktopPathToU8(lone, buf, MAX_PATH) == SAL_DOCS_OK && strlen(buf) == 4 + 3);
+    }
+    // a CJK Desktop path longer than MAX_PATH bytes: whole in a long-path buffer, refused in MAX_PATH
+    {
+        std::wstring w = L"C:\\Users\\pavel\\";
+        std::string u8 = "C:\\Users\\pavel\\";
+        for (int i = 1; i <= 100; i++)
+        {
+            WCHAR one[2] = {(WCHAR)(0x4E00 + i), 0};
+            w += one[0];
+            char c[8];
+            CHECK(SalWToU8(one, -1, c, sizeof(c)) == 4);
+            u8 += c;
+        }
+        std::vector<char> big(SAL_MAX_PATH_UTF8);
+        CHECK(SalDesktopPathToU8(w.c_str(), big.data(), SAL_MAX_PATH_UTF8) == SAL_DOCS_OK && u8 == big.data());
+        char shortBuf[MAX_PATH];
+        strcpy(shortBuf, "x");
+        CHECK(SalDesktopPathToU8(w.c_str(), shortBuf, MAX_PATH) == SAL_DOCS_TOO_LONG && shortBuf[0] == 0);
+    }
+    // only an existing directory is opened
+    CHECK(SalDesktopFolderUsable(FILE_ATTRIBUTE_DIRECTORY));
+    CHECK(SalDesktopFolderUsable(FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_READONLY | FILE_ATTRIBUTE_REPARSE_POINT));
+    CHECK(!SalDesktopFolderUsable(INVALID_FILE_ATTRIBUTES)); // missing (its value has the directory bit)
+    CHECK(!SalDesktopFolderUsable(FILE_ATTRIBUTE_ARCHIVE));  // a file of that name
+    CHECK(!SalDesktopFolderUsable(FILE_ATTRIBUTE_NORMAL));
+    CHECK(SAL_DESKTOP_INVALID_ATTRS == INVALID_FILE_ATTRIBUTES && SAL_DESKTOP_ATTR_DIRECTORY == FILE_ATTRIBUTE_DIRECTORY);
+    // fld: items: a file-system folder with a directory path opens as a disk path, all else stays
+    const unsigned long dir = FILE_ATTRIBUTE_DIRECTORY;
+    CHECK(SalShellFolderOpensAsDisk(true, true, true, dir));                      // Documents, a drive, the user's folder
+    CHECK(!SalShellFolderOpensAsDisk(true, true, true, FILE_ATTRIBUTE_ARCHIVE));  // a zip archive / a .lnk to a folder
+    CHECK(!SalShellFolderOpensAsDisk(true, true, true, INVALID_FILE_ATTRIBUTES)); // the path is gone or unreachable
+    CHECK(!SalShellFolderOpensAsDisk(true, true, false, dir));                    // the shell gave no path
+    CHECK(!SalShellFolderOpensAsDisk(true, false, true, dir));                    // a virtual folder (This PC, Control Panel)
+    CHECK(!SalShellFolderOpensAsDisk(false, true, true, dir));                    // not a folder of the shell
+    CHECK(!SalShellFolderOpensAsDisk(false, false, false, INVALID_FILE_ATTRIBUTES));
+}
+
 static void TestDocumentsPath386()
 {
     // the measured case: <TEMP>\tc386\ + 90 CJK letters (130 units, 310 bytes)
@@ -29043,6 +29103,7 @@ int main(int argc, char** argv)
     TestMaskGroupSplit298();
     TestSubstTarget301();
     TestDocumentsPath386();
+    TestDesktopDrive425();
     TestFtpCaseOnlyName303();
     TestPaxHeader306();
     TestListingName321();

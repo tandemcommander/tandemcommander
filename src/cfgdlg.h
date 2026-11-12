@@ -403,6 +403,7 @@ struct CConfiguration
 
     // Change drive
     int ChangeDriveShowMyDoc;    // display Documents items
+    int ChangeDriveShowDesktop;  // feature 425: display the Desktop item (the Desktop folder as a disk path)
     int ChangeDriveShowAnother;  // display the Another panel path item
     int ChangeDriveShowNet;      // display the Network item
     int ChangeDriveCloudStorage; // display items for cloud storage (Google Drive, etc.)

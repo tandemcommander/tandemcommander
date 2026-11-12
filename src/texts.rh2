@@ -2608,6 +2608,10 @@
 // deleting to Recycle Bin does not support invalid names (names ending with space or dot), displaying invalid part of name, hint: rename it or delete permanently
 #define IDS_RECYCLEBINERROR             14155
 
+// feature 425: Change Drive window and drive bar: the item that opens the Desktop folder (FOLDERID_Desktop)
+#define IDS_DESKTOPDRIVE                14163
+// feature 425: Change Drive window and drive bar: Windows reports no Desktop folder, or it does not exist
+#define IDS_DESKTOPNOTFOUND             14164
 // Change Drive window: text of Google Drive item
 #define IDS_GOOGLEDRIVE                 14165
 // Change Drive window: text of Dropbox item

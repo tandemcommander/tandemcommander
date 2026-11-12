@@ -141,6 +141,10 @@ CPluginFSInterface::ChangePath(int currentFSNameIndex, char* fsName, int fsNameI
 extern IShellFolder* ChangePathNewFolder;
 extern LPITEMIDLIST ChangePathNewPIDL;
 
+#ifdef _DEBUG
+void ProbeFldDump(const char* format, ...); // probe seam (feature 425, fs1.cpp)
+#endif // _DEBUG
+
 BOOL WINAPI
 CPluginFSInterface::ListCurrentPath(CSalamanderDirectoryAbstract* dir,
                                     CPluginDataInterfaceAbstract*& pluginData,
@@ -150,6 +154,10 @@ CPluginFSInterface::ListCurrentPath(CSalamanderDirectoryAbstract* dir,
 
     CFileData file;
     DWORD flags;
+#ifdef _DEBUG
+    int probeItems; // probe seam (feature 425): the items and folders listed (".." included)
+    int probeDirs;
+#endif // _DEBUG
 
     LPCITEMIDLIST currentPIDL = CurrentPIDL;
     IShellFolder* currentFolder = CurrentFolder;
@@ -180,8 +188,12 @@ CPluginFSInterface::ListCurrentPath(CSalamanderDirectoryAbstract* dir,
             goto ON_FATAL_ERROR;
     }
 
+#ifdef _DEBUG
+    probeItems = ILIsEmpty(currentPIDL) ? 0 : 1; // ".." counts
+    probeDirs = probeItems;
+#endif // _DEBUG
     LPENUMIDLIST enumIDList;
-    flags = SHCONTF_FOLDERS | SHCONTF_NONFOLDERS | SHCONTF_INCLUDEHIDDEN;
+    flags =SHCONTF_FOLDERS | SHCONTF_NONFOLDERS | SHCONTF_INCLUDEHIDDEN;
     if (SUCCEEDED(currentFolder->EnumObjects(NULL, flags, &enumIDList)))
     {
         int sortByExtDirsAsFiles;
@@ -245,6 +257,11 @@ CPluginFSInterface::ListCurrentPath(CSalamanderDirectoryAbstract* dir,
                     file.IsOffline = 0;
 
                     BOOL ret = isDir ? dir->AddDir(NULL, file, NULL) : dir->AddFile(NULL, file, NULL);
+#ifdef _DEBUG
+                    probeItems++;
+                    if (isDir)
+                        probeDirs++;
+#endif // _DEBUG
                     if (!ret)
                     {
                         free(file.Name);
@@ -275,6 +292,9 @@ CPluginFSInterface::ListCurrentPath(CSalamanderDirectoryAbstract* dir,
             goto ON_FATAL_ERROR;
 
         iconsType = pitFromPlugin;
+#ifdef _DEBUG
+        ProbeFldDump("LIST count=%d dirs=%d root=%d", probeItems, probeDirs, ILIsEmpty(CurrentPIDL) ? 1 : 0);
+#endif // _DEBUG
         pluginData = new CPluginDataInterface(CurrentFolder, CurrentPIDL);
         if (pluginData == NULL)
             goto ON_FATAL_ERROR;

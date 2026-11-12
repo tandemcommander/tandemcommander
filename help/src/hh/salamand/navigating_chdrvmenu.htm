@@ -20,7 +20,7 @@ panel. The Change Drive menu contains:</dt>
 <li>local drives (floppy disk drives, CD-ROM drives, hard disk drives, etc.),</li>
 <li>network drives,</li>
 <li>opened plugin file systems,</li>
-<li>the Documents item,</li>
+<li>the Documents item and the Desktop item,</li>
 <li>the cloud storage items and the Linux (WSL) distributions,</li>
 <li>the Network item,</li>
 <li>the list of plugin file systems,</li>
@@ -49,6 +49,21 @@ opened also in active panel at the same time.
 <p>Use this item to change the current directory to the Documents folder.
 Note that this item is optional - see <i>Documents</i> check box
 in <a href="configuration_chdrv.htm">Configuration/Change Drive Menu and Drive Bar</a>.
+</p>
+
+<h3>The Desktop Item</h3>
+<p>Use this item (hot key <b>'</b>) to change the current directory to your Desktop folder (for example
+<code>C:\Users\&lt;user&gt;\Desktop</code>, or the folder your Desktop is redirected to, such as a OneDrive
+folder). The panel shows it as an ordinary disk folder. If Windows reports no Desktop folder or the
+folder does not exist, a message says so and the panel stays where it was. Note that this item is
+optional - see <i>Desktop</i> check box
+in <a href="configuration_chdrv.htm">Configuration/Change Drive Menu and Drive Bar</a>.
+</p>
+<p>The <i>Shell Folders</i> item of the Folders plugin (hot key <b>`</b>) is something else: it opens the
+Windows shell namespace (<code>fld:</code>) - the items of the desktop together with This PC, Libraries,
+Network, Control Panel, Recycle Bin and the like. When you open a folder there that is a real folder on
+disk (Documents, a drive, a folder on the desktop), the panel switches to its disk path; only virtual
+places such as This PC or Control Panel stay in <code>fld:</code>.
 </p>
 
 <h3>The Linux Distributions (WSL)</h3>

@@ -84,6 +84,8 @@ enum CDriveTypeEnum
     // feature 374: appended at the end, so that the numbers above stay (the probe dumps of 246 / 289)
     drvtWSL,     // the item is a WSL distribution (\\wsl.localhost\<name>); Param = index into CDrivesList::WslDistros
     drvtWSLMenu, // the item is a selection from several WSL distributions (only in DriveBar, not added to Change Drive menu)
+    // feature 425: appended at the end as well (the numbers above stay)
+    drvtDesktop, // the item is the Desktop folder (FOLDERID_Desktop) - shown right after Documents
 };
 
 struct CDriveData

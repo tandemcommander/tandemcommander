@@ -2930,6 +2930,14 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
                     LoadSetIconOr(SAL_ICONSET_NAME_DOCUMENTS, ImageResDLL, 112, iconSize)); // feature 416
     }
 
+    // feature 425 (GitHub #31): adding the Desktop folder, right after Documents - a disk path, not the
+    // shell namespace's Desktop of the Folders plug-in (fld:); imageres 183 = the Explorer Desktop folder icon
+    if (Configuration.ChangeDriveShowDesktop)
+    {
+        AddToDrives(drv, IDS_DESKTOPDRIVE, '\'', drvtDesktop, getGrayIcons,
+                    LoadSetIconOr(SAL_ICONSET_NAME_DESKTOP, ImageResDLL, 183, iconSize));
+    }
+
     // Add cloud storages (Google Drive, etc.) if any are found
     CachedCloudStoragesMask = 0;
     if (Configuration.ChangeDriveCloudStorage)
@@ -3635,6 +3643,7 @@ BOOL IncludeDriveInDriveBar(CDriveTypeEnum dt)
     case drvtCDROM:
     case drvtRAMDisk:
     case drvtMyDocuments:
+    case drvtDesktop: // feature 425
     case drvtGoogleDrive:
     case drvtDropbox:
     case drvtOneDrive:
@@ -3682,7 +3691,8 @@ BOOL CDrivesList::FillDriveBar(CDriveBar* driveBar, BOOL bar2)
         TLBI_ITEM_INFO2 tii;
         tii.Mask = TLBI_MASK_STYLE | TLBI_MASK_IMAGEINDEX | TLBI_MASK_OVERLAY | TLBI_MASK_ID;
         tii.Style = item->DriveType == drvtOneDriveMenu || item->DriveType == drvtWSLMenu ? TLBI_STYLE_WHOLEDROPDOWN | TLBI_STYLE_DROPDOWN : TLBI_STYLE_NOPREFIX;
-        if (item->DriveType != drvtMyDocuments && item->DriveType != drvtNeighborhood && item->DriveType != drvtPluginCmd &&
+        if (item->DriveType != drvtMyDocuments && item->DriveType != drvtDesktop /* feature 425 */ &&
+            item->DriveType != drvtNeighborhood && item->DriveType != drvtPluginCmd &&
             item->DriveType != drvtGoogleDrive && item->DriveType != drvtDropbox && item->DriveType != drvtOneDrive &&
             item->DriveType != drvtOneDriveBus && item->DriveType != drvtOneDriveMenu &&
             item->DriveType != drvtWSL && item->DriveType != drvtWSLMenu) // feature 374: icon only, as the cloud storages
@@ -3835,6 +3845,9 @@ BOOL CDrivesList::GetDriveBarToolTip(int index, char* text)
 
     case drvtMyDocuments:
         strcpy(text, LoadStrU8(IDS_MYDOCUMENTS));
+        break;
+    case drvtDesktop: // feature 425
+        strcpy(text, LoadStrU8(IDS_DESKTOPDRIVE));
         break;
     case drvtGoogleDrive:
         strcpy(text, LoadStrU8(IDS_GOOGLEDRIVE));
@@ -4092,6 +4105,7 @@ BOOL CDrivesList::OnContextMenu(BOOL posByMouse, int itemIndex, int panel, const
     case drvtNeighborhood:
     case drvtOtherPanel:
     case drvtMyDocuments:
+    case drvtDesktop: // feature 425
     case drvtGoogleDrive:
     case drvtDropbox:
     case drvtOneDrive:
@@ -4100,7 +4114,7 @@ BOOL CDrivesList::OnContextMenu(BOOL posByMouse, int itemIndex, int panel, const
     case drvtWSL:     // feature 374
     case drvtWSLMenu: // feature 374
     {
-        // no context menu for Documents, Network, As Other Panel, Cloud Storages or WSL distributions
+        // no context menu for Documents, the Desktop, Network, As Other Panel, Cloud Storages or WSL distributions
         return FALSE;
     }
 

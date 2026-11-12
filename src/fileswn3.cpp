@@ -20,6 +20,8 @@
 #include "salheapstr.h"   // feature 098
 #include "saluncserver.h" // feature 284
 #include "salwsl.h"       // feature 374
+#include "salmydocs.h"    // feature 425
+#include "saldesktop.h"   // feature 425
 
 //
 // ****************************************************************************
@@ -2685,6 +2687,49 @@ BOOL CFilesWindow::ChangePathToWslDistro(HWND parent, const char* name)
     return ChangePathToDisk(parent, path);
 }
 
+// feature 425 (GitHub #31): opens the Desktop folder (FOLDERID_Desktop) as a disk path through the
+// ordinary disk path change; no path, a missing folder or a path that does not fit gives a message and
+// leaves the panel as it is - never an empty path, never the parent the path change would fall back to
+BOOL CFilesWindow::ChangePathToDesktop(HWND parent)
+{
+    CALL_STACK_MESSAGE1("CFilesWindow::ChangePathToDesktop()");
+    CSalMaxPathBuffer path;
+    if (path.Get() == NULL)
+    {
+        TRACE_E(LOW_MEMORY);
+        return FALSE;
+    }
+    int res = GetDesktopPathU8(path, path.Size());
+    if (res == SAL_DOCS_TOO_LONG)
+    {
+        SalMessageBox(parent, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_ERRORCHANGINGDIR), MB_OK | MB_ICONEXCLAMATION);
+        return FALSE;
+    }
+    if (res != SAL_DOCS_OK)
+    {
+        TRACE_E("CFilesWindow::ChangePathToDesktop(): the shell reports no Desktop path");
+        SalMessageBox(parent, LoadStrU8(IDS_DESKTOPNOTFOUND), LoadStr(IDS_ERRORCHANGINGDIR), MB_OK | MB_ICONEXCLAMATION);
+        return FALSE;
+    }
+    if (!SalDesktopFolderUsable(SalGetFileAttributes(path)))
+    {
+        TRACE_E("CFilesWindow::ChangePathToDesktop(): the Desktop folder is not an existing directory");
+        // "Path: "<path>"\nError: <text>" - every piece UTF-8, the buffer as long as the whole path
+        const char* format = LoadStrU8(IDS_PATHERRORFORMAT);
+        char* reason = DupStr(LoadStrU8(IDS_DESKTOPNOTFOUND));
+        size_t size = strlen(format) + strlen(path) + (reason != NULL ? strlen(reason) : 0) + 1;
+        char* text = (char*)malloc(size);
+        if (text != NULL && reason != NULL)
+            _snprintf_s(text, size, _TRUNCATE, format, path.Get(), reason);
+        SalMessageBox(parent, text != NULL && reason != NULL ? text : LoadStrU8(IDS_DESKTOPNOTFOUND),
+                      LoadStr(IDS_ERRORCHANGINGDIR), MB_OK | MB_ICONEXCLAMATION);
+        free(text);
+        free(reason);
+        return FALSE;
+    }
+    return ChangePathToDisk(parent, path);
+}
+
 BOOL CFilesWindow::ChangePathToDrvType(HWND parent, int driveType, const char* displayName)
 {
     char path[SAL_MAX_PATH_UTF8]; // feature 386: any Documents path whole (was cut to MAX_PATH bytes)
@@ -2761,6 +2806,13 @@ void CFilesWindow::ChangeDrive(char drive)
         case drvtWSLMenu: // feature 374: only on the drive bar
             TRACE_E("CFilesWindow::ChangeDrive(): unexpected drive type: drvtWSLMenu");
             break;
+
+        // feature 425: the Desktop folder as a disk path
+        case drvtDesktop:
+        {
+            ChangePathToDesktop(HWindow);
+            return;
+        }
 
         // feature 374: a WSL distribution - \\wsl.localhost\<name>
         case drvtWSL:

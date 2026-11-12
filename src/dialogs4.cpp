@@ -471,6 +471,7 @@ CConfiguration::CConfiguration()
 
     // Change drive
     ChangeDriveShowMyDoc = TRUE;
+    ChangeDriveShowDesktop = TRUE; // feature 425
     ChangeDriveShowAnother = TRUE;
     ChangeDriveShowNet = TRUE;
     ChangeDriveCloudStorage = TRUE;

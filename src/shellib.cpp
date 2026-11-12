@@ -2890,10 +2890,12 @@ STDMETHODIMP CTextDataObject::GetData(FORMATETC* formatEtc, STGMEDIUM* medium)
 // BOM and line ends) instead of the folder the shell reports. A file, not the variable itself: the
 // environment is copied through the code page at start (CEnvVariables, salamdr7.cpp), so a value
 // with letters outside it would arrive as '?'. Returns a heap copy (free()) or NULL.
-static WCHAR* ProbeDocumentsPathW()
+// Feature 425: the same for the Desktop drive item with TC_PROBE_DESKTOP_FILE (an empty file = the
+// shell reports no Desktop path; specs/425-desktop-drive-item/contracts/probe-seams.md).
+static WCHAR* ProbeDocumentsPathW(const WCHAR* variable = L"TC_PROBE_MYDOCS_FILE")
 {
     WCHAR file[MAX_PATH];
-    DWORD len = GetEnvironmentVariableW(L"TC_PROBE_MYDOCS_FILE", file, _countof(file));
+    DWORD len = GetEnvironmentVariableW(variable, file, _countof(file));
     if (len == 0 || len >= _countof(file))
         return NULL;
     HANDLE h = CreateFileW(file, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -2973,6 +2975,28 @@ BOOL GetMyDocumentsOrDesktopPath(char* path, int pathLen)
     if (res == SAL_DOCS_TOO_LONG)
         TRACE_E("GetMyDocumentsOrDesktopPath(): the path does not fit " << pathLen << " bytes - refused");
     return res == SAL_DOCS_OK;
+}
+
+// feature 425: the Desktop folder (FOLDERID_Desktop - a redirected or OneDrive desktop included) as
+// UTF-8 (WTF-8), any length, whole or refused (SalDesktopPathToU8); KF_FLAG_DONT_VERIFY keeps the
+// path of a missing folder, so that the caller can tell "missing" from "no path"
+int GetDesktopPathU8(char* path, int pathSize)
+{
+    WCHAR* probeW = NULL;
+#ifdef _DEBUG
+    probeW = ProbeDocumentsPathW(L"TC_PROBE_DESKTOP_FILE"); // probe seam (feature 425)
+#endif
+    PWSTR knownW = NULL;
+    if (probeW == NULL && FAILED(SHGetKnownFolderPath(FOLDERID_Desktop, KF_FLAG_DONT_VERIFY, NULL, &knownW)))
+        knownW = NULL;
+    int res = SalDesktopPathToU8(probeW != NULL ? probeW : knownW, path, pathSize);
+    if (knownW != NULL)
+        CoTaskMemFree(knownW);
+    if (probeW != NULL)
+        free(probeW);
+    if (res == SAL_DOCS_TOO_LONG)
+        TRACE_E("GetDesktopPathU8(): the path does not fit " << pathSize << " bytes - refused");
+    return res;
 }
 
 //

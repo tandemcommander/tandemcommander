@@ -12,7 +12,8 @@
 #include "folders.rh2"
 #include "lang\lang.rh"
 
-#include "../../common/salcpfit.h" // feature 248: column names in the code page, cut at a whole character
+#include "../../common/salcpfit.h"   // feature 248: column names in the code page, cut at a whole character
+#include "../../common/saldesktop.h" // feature 425: a file-system folder opens as a disk path
 
 // FS name assigned by Salamander after the plugin is loaded
 char AssignedFSName[MAX_PATH] = "";
@@ -112,12 +113,125 @@ CPluginInterfaceForFS::ExecuteChangeDriveMenuItem(int panel)
 IShellFolder* ChangePathNewFolder = NULL; // passing the path through globals
 LPITEMIDLIST ChangePathNewPIDL = NULL;
 
+#ifdef _DEBUG
+// probe seam, Debug builds only (feature 425, specs/425-desktop-drive-item/contracts/probe-seams.md):
+// with TC_PROBE_FLD_DUMP=<file> the plug-in appends one UTF-8 line per listing and per ExecuteOnFS
+BOOL ProbeFldFile(WCHAR* file, int size)
+{
+    DWORD len = GetEnvironmentVariableW(L"TC_PROBE_FLD_DUMP", file, size);
+    return len > 0 && len < (DWORD)size;
+}
+
+void ProbeFldDump(const char* format, ...)
+{
+    WCHAR file[MAX_PATH];
+    if (!ProbeFldFile(file, _countof(file)))
+        return;
+    char line[4 * MAX_PATH];
+    va_list args;
+    va_start(args, format);
+    _vsnprintf_s(line, _countof(line) - 2, _TRUNCATE, format, args);
+    va_end(args);
+    strcat_s(line, "\r\n");
+    HANDLE h = CreateFileW(file, FILE_APPEND_DATA, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_ALWAYS,
+                           FILE_ATTRIBUTE_NORMAL, NULL);
+    if (h != INVALID_HANDLE_VALUE)
+    {
+        DWORD written;
+        WriteFile(h, line, (DWORD)strlen(line), &written, NULL);
+        CloseHandle(h);
+    }
+}
+
+// TRUE = the seam is on; 'acts' = the item 'name' is the one named by <file>.pick (only it is acted
+// upon while the seam is on - a probe walking the list never opens or runs anything else)
+static BOOL ProbeFldPick(const char* name, BOOL* acts)
+{
+    *acts = TRUE;
+    WCHAR file[MAX_PATH];
+    if (!ProbeFldFile(file, _countof(file) - 6))
+        return FALSE;
+    wcscat_s(file, L".pick");
+    *acts = FALSE;
+    HANDLE h = CreateFileW(file, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
+                           FILE_ATTRIBUTE_NORMAL, NULL);
+    if (h != INVALID_HANDLE_VALUE)
+    {
+        char pick[3 * MAX_PATH];
+        DWORD read = 0;
+        if (ReadFile(h, pick, sizeof(pick) - 1, &read, NULL))
+        {
+            pick[read] = 0;
+            const char* p = pick;
+            if (read >= 3 && (BYTE)p[0] == 0xEF && (BYTE)p[1] == 0xBB && (BYTE)p[2] == 0xBF)
+                p += 3;
+            *acts = strcmp(p, name) == 0;
+        }
+        CloseHandle(h);
+    }
+    return TRUE;
+}
+#endif // _DEBUG
+
+// feature 425 (GitHub #31): the disk path of 'child' (an item of 'folder', whose absolute PIDL is
+// 'folderPIDL') when it opens as a disk path (SalShellFolderOpensAsDisk: a shell folder in the file
+// system whose path is an existing directory) - UTF-8 (WTF-8), whole, allocated with malloc; NULL =
+// it stays in fld: (a virtual place, a zip archive or a link with a file path, no path, a path that
+// does not fit). 'attrs' gets the item's SFGAO_FOLDER / SFGAO_FILESYSTEM bits.
+static char* GetDiskPathOfShellFolder(IShellFolder* folder, LPCITEMIDLIST folderPIDL, LPCITEMIDLIST child,
+                                      SFGAOF* attrs)
+{
+    SFGAOF a = SFGAO_FOLDER | SFGAO_FILESYSTEM;
+    if (folder == NULL || child == NULL || FAILED(folder->GetAttributesOf(1, &child, &a)))
+        a = 0;
+    *attrs = a & (SFGAO_FOLDER | SFGAO_FILESYSTEM);
+    BOOL isFolder = (a & SFGAO_FOLDER) != 0;
+    BOOL isFileSystem = (a & SFGAO_FILESYSTEM) != 0;
+    if (!isFolder || !isFileSystem)
+        return NULL; // virtual: nothing more to ask
+    char* pathU8 = NULL;
+    BOOL havePath = FALSE;
+    DWORD pathAttrs = SAL_DESKTOP_INVALID_ATTRS;
+    LPITEMIDLIST absPIDL = ILCombine(folderPIDL, child);
+    const int pathWSize = 32768; // any length the file system allows
+    WCHAR* pathW = absPIDL != NULL ? (WCHAR*)malloc(pathWSize * sizeof(WCHAR)) : NULL;
+    if (pathW != NULL && SHGetPathFromIDListEx(absPIDL, pathW, pathWSize, GPFIDL_DEFAULT) && pathW[0] != 0)
+    {
+        pathU8 = (char*)malloc(SAL_MAX_PATH_UTF8);
+        if (pathU8 != NULL && SplWToU8(pathW, pathU8, SAL_MAX_PATH_UTF8) > 0) // the whole path or nothing
+        {
+            havePath = TRUE;
+            pathAttrs = SalamanderGeneral->SalGetFileAttributes(pathU8);
+        }
+    }
+    if (pathW != NULL)
+        free(pathW);
+    if (absPIDL != NULL)
+        ILFree(absPIDL);
+    if (!SalShellFolderOpensAsDisk(isFolder != FALSE, isFileSystem != FALSE, havePath != FALSE, pathAttrs))
+    {
+        if (pathU8 != NULL)
+            free(pathU8);
+        return NULL;
+    }
+    return pathU8;
+}
+
 void WINAPI
 CPluginInterfaceForFS::ExecuteOnFS(int panel, CPluginFSInterfaceAbstract* pluginFS,
                                    const char* pluginFSName, int pluginFSNameIndex,
                                    CFileData& file, int isDir)
 {
     CPluginFSInterface* fs = (CPluginFSInterface*)pluginFS;
+#ifdef _DEBUG
+    // probe seam (feature 425): only the picked item is acted upon, a file is never run
+    BOOL probeActs;
+    if (ProbeFldPick(file.Name, &probeActs) && (!probeActs || !isDir))
+    {
+        ProbeFldDump("EXEC dir=%d name=%s attrs=0 path=- action=%s", isDir, file.Name, probeActs ? "file" : "skipped");
+        return;
+    }
+#endif // _DEBUG
     if (isDir) // subdirectory or up-dir
     {
         IShellFolder* newFolder;
@@ -125,6 +239,9 @@ CPluginInterfaceForFS::ExecuteOnFS(int panel, CPluginFSInterfaceAbstract* plugin
 
         if (isDir == 2) // parent directory
         {
+#ifdef _DEBUG
+            ProbeFldDump("EXEC dir=2 name=%s attrs=0 path=- action=up", file.Name);
+#endif // _DEBUG
             if (CutLastItemFromIL(fs->CurrentPIDL, &newFolder, &newPIDL))
             {
                 ChangePathNewFolder = newFolder; // passing the path through globals
@@ -144,6 +261,22 @@ CPluginInterfaceForFS::ExecuteOnFS(int panel, CPluginFSInterfaceAbstract* plugin
         }
         else // subdirectory
         {
+            // feature 425 (GitHub #31): a real folder (Documents, a drive, a folder on the desktop) opens
+            // as a disk path - the same as typing it - with every operation of a disk panel; virtual
+            // places, zip archives and items without a path stay in fld: as before. The panel's FS may be
+            // closed by the path change: nothing of 'fs' or 'file' is used after it.
+            SFGAOF attrs = 0;
+            char* diskPath = GetDiskPathOfShellFolder(fs->CurrentFolder, fs->CurrentPIDL, (LPCITEMIDLIST)file.PluginData, &attrs);
+#ifdef _DEBUG
+            ProbeFldDump("EXEC dir=1 name=%s attrs=%08X path=%s action=%s", file.Name, (unsigned)attrs,
+                         diskPath != NULL ? diskPath : "-", diskPath != NULL ? "disk" : "fld");
+#endif // _DEBUG
+            if (diskPath != NULL)
+            {
+                SalamanderGeneral->ChangePanelPathToDisk(panel, diskPath);
+                free(diskPath);
+                return;
+            }
             if (AddItemToIL(fs->CurrentPIDL, (LPCITEMIDLIST)file.PluginData, &newFolder, &newPIDL))
             {
                 ChangePathNewFolder = newFolder;

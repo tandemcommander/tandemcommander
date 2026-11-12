@@ -264,6 +264,7 @@ inline const char* SalIconSetFluentDriveName(unsigned int driveType, bool access
 
 #define SAL_ICONSET_NAME_UPDIR "UpDir"             // the ".." symbol of the file list
 #define SAL_ICONSET_NAME_DOCUMENTS "OpenDocuments" // Documents on the drive bar / Change Drive menu
+#define SAL_ICONSET_NAME_DESKTOP "OpenDesktop"     // Desktop on the drive bar / Change Drive menu (feature 425)
 #define SAL_ICONSET_NAME_NETWORK "OpenNetwork"     // Network on the drive bar / Change Drive menu
 
 // Which file draws an icon: the dark variant (Dark theme, parsed with shapes) verbatim, else

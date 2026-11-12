@@ -312,6 +312,8 @@ const char* CONFIG_CHD_SHOWCLOUDSTOR = "Change Drive Show Cloud Storages";
 const char* CONFIG_CHD_SHOWNET = "Change Drive Network";
 // feature 374
 const char* CONFIG_CHD_SHOWWSL = "Change Drive Show WSL";
+// feature 425
+const char* CONFIG_CHD_SHOWDESKTOP = "Change Drive Show Desktop";
 const char* CONFIG_CURRRENTTIPINDEX = "Current Tip Index";
 const char* CONFIG_SEARCHFILECONTENT = "Search File Content";
 const char* CONFIG_FINDOPTIONS_REG = "Find Options";
@@ -2195,6 +2197,8 @@ void CMainWindow::SaveConfig(HWND parent)
                          &Configuration.ChangeDriveShowNet, sizeof(DWORD));
                 SetValue(actKey, CONFIG_CHD_SHOWWSL, REG_DWORD,
                          &Configuration.ChangeDriveShowWSL, sizeof(DWORD));
+                SetValue(actKey, CONFIG_CHD_SHOWDESKTOP, REG_DWORD,
+                         &Configuration.ChangeDriveShowDesktop, sizeof(DWORD));
                 SetValue(actKey, CONFIG_SEARCHFILECONTENT, REG_DWORD,
                          &Configuration.SearchFileContent, sizeof(DWORD));
                 SetValue(actKey, CONFIG_LASTPLUGINVER, REG_DWORD,
@@ -3864,6 +3868,9 @@ BOOL CMainWindow::LoadConfig(BOOL importingOldConfig, const CCommandLineParams* 
             // feature 374: an absent value keeps the default (on)
             GetValue(actKey, CONFIG_CHD_SHOWWSL, REG_DWORD,
                      &Configuration.ChangeDriveShowWSL, sizeof(DWORD));
+            // feature 425: an absent value keeps the default (on)
+            GetValue(actKey, CONFIG_CHD_SHOWDESKTOP, REG_DWORD,
+                     &Configuration.ChangeDriveShowDesktop, sizeof(DWORD));
             GetValue(actKey, CONFIG_SEARCHFILECONTENT, REG_DWORD,
                      &Configuration.SearchFileContent, sizeof(DWORD));
             GetValue(actKey, CONFIG_LASTPLUGINVER, REG_DWORD,

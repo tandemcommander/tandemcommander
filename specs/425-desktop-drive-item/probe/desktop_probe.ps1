@@ -43,9 +43,7 @@ $Exe = (Resolve-Path -LiteralPath $Exe).Path
 $others = @(Get-Process tandemcommander -ErrorAction SilentlyContinue)
 if ($others.Count) { Write-Output 'REFUSED: tandemcommander.exe already runs'; exit 99 }
 
-$Lib = $env:TC_PROBE_LIB
-if (-not $Lib) { $Lib = Join-Path $PSScriptRoot '..\..\098-long-path-overruns\probe\fix_probe_lib.ps1' }
-. $Lib
+. (Join-Path $PSScriptRoot '..\..\098-long-path-overruns\probe\fix_probe_lib.ps1')
 
 $Root = $TempRoot + '\tcdesk'
 $StartDir = $Root + '\start'
@@ -412,7 +410,7 @@ try {
         Remove-Item Env:\TC_PROBE_FLD_DUMP -ErrorAction SilentlyContinue
     }
     $skipped = @(Fld-Lines $fdump | Where-Object { $_.StartsWith('EXEC ') -and $_.EndsWith('action=skipped') }).Count
-    $acted = @(Fld-Lines $fdump | Where-Object { $_.StartsWith('EXEC ') -and -not $_.EndsWith('action=skipped') } | ForEach-Object { $x = Fld-Exec $_; if ($x) { $x.Name + '=' + $x.Action } })
+    $acted = @(Fld-Lines $fdump | Where-Object { $_.StartsWith('EXEC ') -and -not $_.EndsWith('action=skipped') } | ForEach-Object { $x = Fld-Exec $_; if ($x) { (Esc $x.Name) + '=' + $x.Action } })
     Out ("fld: items skipped {0}; acted upon: {1}" -f $skipped, ($acted -join ', '))
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace); Row 'PROBE' 'ERROR' 'FAIL' $_.Exception.Message }

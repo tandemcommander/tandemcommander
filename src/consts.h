@@ -2550,6 +2550,10 @@ BOOL ContainsString(TIndirectArray<char>* usedNames, const char* name, int* inde
 // pripade zkraceni
 BOOL GetMyDocumentsOrDesktopPath(char* path, int pathLen);
 
+// feature 425: the Desktop folder (FOLDERID_Desktop) as UTF-8 into 'path' ('pathSize' bytes), whole
+// or refused; returns SAL_DOCS_OK, SAL_DOCS_NONE (no path) or SAL_DOCS_TOO_LONG (salmydocs.h)
+int GetDesktopPathU8(char* path, int pathSize);
+
 // To optimize performance, it is good practice for applications to detect whether they
 // are running in a Terminal Services client session. For example, when an application
 // is running on a remote session, it should eliminate unnecessary graphic effects, as

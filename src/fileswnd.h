@@ -1332,6 +1332,8 @@ public:
     BOOL ChangePathToDrvType(HWND parent, int driveType, const char* displayName = NULL);
     // feature 374: opens the WSL distribution 'name' (UTF-8): \\wsl.localhost\<name>
     BOOL ChangePathToWslDistro(HWND parent, const char* name);
+    // feature 425: opens the Desktop folder (FOLDERID_Desktop) as a disk path; a message when there is none
+    BOOL ChangePathToDesktop(HWND parent);
 
     // called after a new listing is obtained ... change notifications collected for the old
     // listing must be invalidated

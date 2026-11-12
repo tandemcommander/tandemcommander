@@ -52,3 +52,11 @@ inline int SalDocumentsOrDesktopToU8(const WCHAR* docsW, const WCHAR* desktopW, 
     }
     return SAL_DOCS_OK;
 }
+
+// feature 425: the Desktop drive item's path - the Desktop folder alone (no fallback to another
+// folder), by the same rule: the whole path into 'path' or refused (emptied), never a prefix.
+// Returns SAL_DOCS_NONE (the shell reports no path), SAL_DOCS_OK or SAL_DOCS_TOO_LONG.
+inline int SalDesktopPathToU8(const WCHAR* desktopW, char* path, int pathSize)
+{
+    return SalDocumentsOrDesktopToU8(NULL, desktopW, path, pathSize);
+}

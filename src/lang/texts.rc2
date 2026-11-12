@@ -564,6 +564,8 @@ STRINGTABLE
  IDS_EMPTYPLUGINSMENU2, "(There are no configurable plugins)"
 
  IDS_MYDOCUMENTS, "Documents"
+ IDS_DESKTOPDRIVE, "Desktop"
+ IDS_DESKTOPNOTFOUND, "The Desktop folder cannot be found."
  IDS_GOOGLEDRIVE, "Google Drive"
  IDS_DROPBOX, "Dropbox"
  IDS_ONEDRIVE, "OneDrive"

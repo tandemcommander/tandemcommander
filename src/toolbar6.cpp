@@ -181,6 +181,11 @@ void CDriveBar::Execute(DWORD id)
                 TRACE_E("CDriveBar::Execute(): unexpected drive type: drvtWSLMenu");
                 return;
 
+            // feature 425: the Desktop folder as a disk path
+            case drvtDesktop:
+                panel->ChangePathToDesktop(HWindow);
+                return;
+
             // jde o Network?
             case drvtNeighborhood:
             {
