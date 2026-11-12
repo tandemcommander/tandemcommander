@@ -17,7 +17,6 @@ Last triaged: 2026-11-12
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [In a run the backlog app refuses changes, the loop hangs, the phase falls back](items/backlog-app-and-loop-faults-during-a-run/desc.md) | bug | 5 | tooling | 426 |
 
 ## Next
 

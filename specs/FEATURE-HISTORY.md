@@ -25,7 +25,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Area | Features |
 |------|----------|
 | Build, signing, installer, winget, CI | 002, 050, 072, 077, 080, 091 |
-| Backlog and project tooling | 242, 243, 247, 265, 342, 344, 371, 411, 412, 414, 415, 419 |
+| Backlog and project tooling | 242, 243, 247, 265, 342, 344, 371, 411, 412, 414, 415, 419, 426 |
 | Releases and pre-release reviews | 056, 068, 243, 343 |
 | Translations (pipeline, policy, pins) | 038, 039, 055, 409; string additions in 084, 101, 106, 123, 420, 421 |
 | Rebrand, identity | 046 |
@@ -7125,3 +7125,22 @@ a few early ones are out of sequence).
   reviews: 1 (no MUST; Recycle Bin items, network Desktop, dead-key hot key fixed), 2 (no MUST; folder
   shortcuts, UTF-8 menu text, the cut message fixed), 3 (no MUST; junctions / symlinks open, the
   canceled-check message, `SplLoadStrU8`).
+- 426-backlog-app-run-faults: while the loop ran an item, every change from the backlog app was refused
+  ("git checkout in the side worktree failed" / "could not be brought to main" - 371 had never worked in
+  this repository), a finished run hung until a person ended it, `status` then offered to continue the
+  closed run, and the live run page fell back to "Specify" - now the side worktree lands every change
+  (`sync()` lists only the folders of `specs/` with `ls-tree -d`, is made clean before the checkout,
+  sparse pattern `/backlog/`), a refusal shows git's reason (`errorText`), the loop ends a finished run
+  whose claude lingers after its last `result` (`FINISH_GRACE` 30 s; finished = journal row + lock no
+  longer the run's), `status` names such a record finished, and the trace stream sends the whole trace
+  (the catch-up shared its read position with the sent position and stopped after the first 1 MB page;
+  the second event of a line was skipped) while the page never shows a phase earlier than the server's
+  (`laterPhase`). **Traps**: the old sync made a *folder* of `specs/FEATURE-HISTORY.md` (git then clears
+  its skip-worktree bit); `reset --hard` puts the file back by itself; a non-cone `backlog` pattern
+  matches every folder of that name; `sparse-checkout reapply` keeps a stored pattern (use `set`); a
+  pending `ScheduleWakeup` keeps `claude -p` alive after its final result and runs another turn
+  (measured 122 s for 60 s), `ScheduleWakeup` `stop: true` cancels it - the implement skill now does
+  that before its final message. From backlog item `backlog-app-and-loop-faults-during-a-run`. Tests:
+  side worktree 2 FAIL on the old code -> 9/9; stream 908 of 3025 events -> 3025; `FinishedRunTests` 3
+  of 5 FAIL -> 6/6; the 425 trace through the route 211 -> 1694 of 1694 events; `npm run check` 519 ->
+  530, Python 258 -> 264; refute-first review 1: no MUST, no SHOULD (NOTE 3 test added).

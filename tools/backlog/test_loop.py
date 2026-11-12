@@ -1866,6 +1866,30 @@ class FinishedRunTests(Base):
         self.assertIn("after_emitted", call)
         self.assertEqual(call["lingered"], 2)
 
+    def test_a_lingering_claude_of_a_dead_loop_is_ended_by_the_next_start(self):
+        # review NOTE 3: the loop died, its claude finished the run and lingers; the next start
+        # finds it alive (pending) and ends it the same way
+        self.write_plan([{"do": "close", "linger": 60}])
+        p = self.spawn_loop()
+        self.wait_for(lambda: any(r[1] == FTP and r[2] == "closed" for r in self.runs())
+                      and self.repo.lock() is None, what="the closed row and the released lock")
+        child = loop.load_json(self.repo.run_file)["child_pid"]
+        ident = loop.process_ident(child)
+        p.kill()  # only the loop (TerminateProcess / SIGKILL), its claude lives on
+        p.wait(timeout=30)
+        self.assertTrue(loop.alive(child, ident))
+        self.procs.append(type("P", (), {"pid": child, "poll": lambda s: None if loop.alive(child, ident) else 0,
+                                         "wait": lambda s, timeout=None: 0})())  # tearDown ends it if the test fails
+        began = time.time()
+        with self.grace(0.5):
+            code, out = self.run_loop("--until-idle")
+        self.assertEqual(code, 0, out)
+        self.assertLess(time.time() - began, 25, out)
+        self.assertIn("the run finished, but claude is still alive", out)
+        self.assertFalse(loop.alive(child, ident))
+        self.assertEqual(len(self.calls()), 1)
+        self.assertFalse(self.repo.run_file.exists())
+
     def test_status_after_a_hard_stop_of_a_finished_run(self):
         # the maintainer ends a finished run that lingers (the default grace is longer than this
         # test waits): status says finished, the next start records it without claude

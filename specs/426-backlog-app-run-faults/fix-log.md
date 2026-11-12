@@ -151,3 +151,35 @@ and folded `done` - the per-event update is what breaks it.
 - `python -m unittest` in `tools/backlog`: **263 tests OK** (baseline 258).
 - `python tools/test_bin_help.py`: OK. `python tools/check_encoding.py --strict`: `TOTAL: 0 finding(s)`.
 - The product is not touched (no build, saltests or probe applies; no UI string of the program).
+
+## Review
+
+Review 1 (refute-first, general-purpose agent): **no MUST, no SHOULD**. It reproduced all four
+faults on the old code in a scratch worktree (both side-worktree errors; 908 of 3025 stream
+events; 3 of 5 `FinishedRunTests` failing: 45.8 s, 46.7 s, "continues this run"), re-ran
+`npm run check` (530 passed) and the Python suite (263 OK), streamed the real 425 trace (1694/1694,
+`done`; a resume from the middle id gave exactly the rest), and upgraded an old broken side
+worktree (three failed old syncs, then three new rounds landed, the flags back to `S`, the
+primary tree clean). NOTEs:
+
+1. A resume after a cut between two events of one line can show that line's earlier events twice
+   (only the last event of a line carries the id; the client does not deduplicate). Allowed by
+   the contract; transcript only, the phase fold is forward-only. Accepted (not driven: needs a
+   connection cut mid-line).
+2. The finished-run kill ignores background tasks: by the skill's order the work is over once
+   the lock is released (released last); accepted by design (FR-005).
+3. No test for a lingering claude of a dead loop found by the next start (`pending()` → `watch()`):
+   **added** `test_a_lingering_claude_of_a_dead_loop_is_ended_by_the_next_start` (the loop process
+   killed alone, the next in-process start ends the orphan within the grace); `FinishedRunTests`
+   6/6.
+4. `status` counts any lock of the same item as the run's own (stricter than `holds()`), so with
+   a later manual run of the same item it says "continues" while the start records it finished:
+   the cautious side; accepted.
+5. Old review worktrees `C:/Users/pavel/AppData/Local/Temp/rev*` (features 325-414) are still
+   registered: not this feature's; named in the closing report for the maintainer.
+
+## Owed to a person
+
+One line added to `manual-checks-owed-before-the-next-release` (feature 426): an item created in
+the app during a real loop run lands on main; the loop concludes a run within about 30 s of its
+last message even with a scheduled wakeup; the live page shows the server's phase.
