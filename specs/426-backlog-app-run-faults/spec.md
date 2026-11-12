@@ -125,7 +125,7 @@ page's phase is never earlier than the server's phase event. The stream test fai
 - A trace page without events (only lines that give none): the catch-up goes on to the next page
   instead of stopping.
 - The client reconnects with `Last-Event-ID` in the middle of a multi-event line: the rest of
-  that line's events are not lost.
+  that line's events are not lost (the line may arrive twice; the phase fold is forward-only).
 
 ## Requirements *(mandatory)*
 
