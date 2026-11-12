@@ -274,6 +274,8 @@ Last triaged: 2026-11-10
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Desktop in the drive menu opens a virtual fld: view, not the Desktop folder](items/ikona-na-desktop-vede-kamsi-neznamo-kam/desc.md) | bug | 4 | other-plugins | github#31 | 2026-11-12 |
+| [Code Viewer and Markdown Viewer show the page shifted right and down](items/remove-indentation-for-text-viewers/desc.md) | bug | 5 | webview | github#29 | 2026-11-12 |
 
 ## Parked
 
