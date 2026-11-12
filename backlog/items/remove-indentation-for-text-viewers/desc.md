@@ -1,7 +1,7 @@
 ---
 title: Code Viewer and Markdown Viewer show the page shifted right and down
 type: bug
-status: new
+status: open
 severity: 5
 area: webview
 source: github#29
@@ -75,3 +75,4 @@ the page layout, but not by an offset like this one.
 
 - 2026-11-12 — created (source github#29)
 - 2026-11-12 — fields set from the issue text and labels
+- 2026-11-12 — moved to Next position 1
