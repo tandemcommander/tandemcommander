@@ -5,6 +5,16 @@
 **Status**: Draft
 **Input**: User description: "Backlog item ikona-na-desktop-vede-kamsi-neznamo-kam - implement exactly what it describes (GitHub issue #31: the drive menu's Desktop entry leads to a virtual fld: view instead of the Desktop folder)." From backlog item ikona-na-desktop-vede-kamsi-neznamo-kam.
 
+## Clarifications
+
+### Session 2026-11-12
+
+- Q: Which hot key does the Folders plug-in's entry get once `'` belongs to the core Desktop item? → A: `` ` `` (backtick) - the free punctuation key nearest the others; `;` `,` `.` `/` are taken (autonomous run: conservative)
+- Q: Do the plug-in's name and description in the Plugins manager change too? → A: No - only the drive-menu entry, which is the text that collides with Desktop; the description already says it browses folders "such as Desktop, Control Panel, Recycle Bin" (autonomous run: conservative)
+- Q: Is the Desktop item checked in Alt+F1 when the panel shows the Desktop folder? → A: No - it behaves as the Documents item: the menu checks the drive the path is on (autonomous run: conservative)
+- Q: What does Enter on a real folder inside `fld:` do when the folder cannot be opened (access denied, offline share)? → A: The program's ordinary change of a disk path decides and reports, exactly as when the user types that path (autonomous run: item - "the same as typing it")
+- Q: Does the settings import from Altap / Open Salamander carry the new switch? → A: No - a value they never had keeps its default (on) (autonomous run: rule 245 FR-016)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Desktop opens the Desktop folder (Priority: P1)
@@ -107,6 +117,7 @@ on Control Panel → the panel stays in `fld:`; This PC stays in `fld:`, then En
   and the bars stays as it is with the switch on.
 - **FR-006**: The Folders plug-in's drive-menu entry MUST read "Shell Folders" (translated), with a hot
   key that no core item uses (`'` belongs to Desktop).
+- **FR-006a**: The plug-in's name and description in the Plugins manager stay as they are.
 - **FR-007**: Inside `fld:`, Enter on an item that is a shell folder with a file-system path that is an
   existing directory MUST switch the panel to that disk path; every other item (virtual places, zip
   archives and links whose path is a file, items without a path) MUST behave as today.
