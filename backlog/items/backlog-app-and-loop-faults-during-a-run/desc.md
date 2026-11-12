@@ -1,16 +1,16 @@
 ---
 title: In a run the backlog app refuses changes, the loop hangs, the phase falls back
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: tooling
 source: manual
 who: agent
 created: 2026-11-12
 updated: 2026-11-12
-verified: -
+verified: 2026-11-12 f8fc5084
 effort: M
-feature: -
+feature: 426
 related: []
 depends-on: []
 reason: -
@@ -202,3 +202,5 @@ Everything at `49262ba9` (`main`, after the merge of 425) unless said otherwise.
 - 2026-11-12 — created (source manual)
 - 2026-11-12 — title shortened to 80 characters
 - 2026-11-12 — moved to Next position 1
+- 2026-11-12 — verified at f8fc5084: reproduced at f8fc5084: side worktree sync fails twice (server test), claude -p alive until a pending wakeup fires (measured), stream catch-up stops after 1 MB (replay of the 425 trace: 211 of 1694 events, phase specify)
+- 2026-11-12 — run started, feature 426
