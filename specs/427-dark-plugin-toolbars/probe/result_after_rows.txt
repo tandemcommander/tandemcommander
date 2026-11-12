@@ -67,22 +67,22 @@ DEFAULT    FC-TOOLBAR INFO        strip #F0F0F0; neutral glyph pixels darker tha
   view client 828,51-1632,1040 of 1650x1058
 DEFAULT    FC-LIGHT INFO        light neutral pixels (white or face grey) outside the text views: 115484
 DEFAULT    FC-GREY INFO        light-grey pixels outside the text views: 72316 (in the views 0; views: SFC File View Window Class, SFC File View Window Class)
-DARK       FC-LIST PASS        55 items; light neutral pixels in the dropped list: 2170 of 611550
+DARK       FC-LIST PASS        55 items; light neutral pixels in the dropped list: 3164 of 611550
 LIVE       SB-1->DEFAULT PASS        status bar after the switch: 4 parts, text length/icon 52/0 0/1 14/1 0/1, background #F0F0F0 (a window opened in DEFAULT: 4 parts, text length/icon 52/0 0/1 14/1 0/1, #F0F0F0)
 LIVE       FC-1->DEFAULT PASS        whole window after the switch: 0 px differ from a window opened in DEFAULT (outside the views' text; allowed 0)
-LIVE       PV-1->DEFAULT PASS        whole window after the switch: 0 px differ from a window opened in DEFAULT (the whole window with the image 1:1 and its scrollbars, the status bar apart; allowed 0)
+LIVE       PV-1->DEFAULT PASS        whole window after the switch: 0 px differ from a window opened in DEFAULT (the whole window: the image 1:1 with its scrollbars, the status bar; allowed 0)
 LIVE       SB-2->DARK PASS        status bar after the switch: 4 parts, text length/icon 52/0 0/1 14/1 0/1, background #2D2D2D (a window opened in DARK: 4 parts, text length/icon 52/0 0/1 14/1 0/1, #2D2D2D)
 LIVE       FC-2->DARK PASS        whole window after the switch: 0 px differ from a window opened in DARK (outside the views' text; allowed 0)
-LIVE       PV-2->DARK PASS        whole window after the switch: 0 px differ from a window opened in DARK (the whole window with the image 1:1 and its scrollbars, the status bar apart; allowed 0)
+LIVE       PV-2->DARK PASS        whole window after the switch: 0 px differ from a window opened in DARK (the whole window: the image 1:1 with its scrollbars, the status bar; allowed 0)
 LIVE-D     SB-1->DARK PASS        status bar after the switch: 4 parts, text length/icon 52/0 0/1 14/1 0/1, background #2D2D2D (a window opened in DARK: 4 parts, text length/icon 52/0 0/1 14/1 0/1, #2D2D2D)
 LIVE-D     FC-1->DARK PASS        whole window after the switch: 0 px differ from a window opened in DARK (outside the views' text; allowed 0)
-LIVE-D     PV-1->DARK PASS        whole window after the switch: 0 px differ from a window opened in DARK (the whole window with the image 1:1 and its scrollbars, the status bar apart; allowed 0)
+LIVE-D     PV-1->DARK PASS        whole window after the switch: 0 px differ from a window opened in DARK (the whole window: the image 1:1 with its scrollbars, the status bar; allowed 0)
 LIVE-D     SB-2->DEFAULT PASS        status bar after the switch: 4 parts, text length/icon 52/0 0/1 14/1 0/1, background #F0F0F0 (a window opened in DEFAULT: 4 parts, text length/icon 52/0 0/1 14/1 0/1, #F0F0F0)
 LIVE-D     FC-2->DEFAULT PASS        whole window after the switch: 0 px differ from a window opened in DEFAULT (outside the views' text; allowed 0)
-LIVE-D     PV-2->DEFAULT PASS        whole window after the switch: 0 px differ from a window opened in DEFAULT (the whole window with the image 1:1 and its scrollbars, the status bar apart; allowed 0)
+LIVE-D     PV-2->DEFAULT PASS        whole window after the switch: 0 px differ from a window opened in DEFAULT (the whole window: the image 1:1 with its scrollbars, the status bar; allowed 0)
 LIVE-D     SB-3->DARK PASS        status bar after the switch: 4 parts, text length/icon 52/0 0/1 14/1 0/1, background #2D2D2D (a window opened in DARK: 4 parts, text length/icon 52/0 0/1 14/1 0/1, #2D2D2D)
 LIVE-D     FC-3->DARK PASS        whole window after the switch: 0 px differ from a window opened in DARK (outside the views' text; allowed 0)
-LIVE-D     PV-3->DARK PASS        whole window after the switch: 0 px differ from a window opened in DARK (the whole window with the image 1:1 and its scrollbars, the status bar apart; allowed 0)
+LIVE-D     PV-3->DARK PASS        whole window after the switch: 0 px differ from a window opened in DARK (the whole window: the image 1:1 with its scrollbars, the status bar; allowed 0)
   before PV: 696 neutral, 52 saturated, 218 coloured below 1.6:1
   before FC: 1346 neutral, 54 saturated, 0 coloured below 1.6:1
   before FC-GREY DARK: 68099, FC-LIGHT DARK: 109871

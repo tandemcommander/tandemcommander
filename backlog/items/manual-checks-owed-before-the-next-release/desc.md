@@ -89,10 +89,13 @@ Before the release, every line below is ticked (`BL step <slug> <n> --done`). Or
 - [ ] The same two viewers with two monitors of different scaling: open each viewer while the main window is on the second monitor, then move an open viewer to the other monitor -> the window takes a size that fits the new scaling, the page fills the client, the Code Viewer's status bar text is not clipped, Find (Ctrl+F) and Go to line open readable on that monitor; in the Dark theme the menu bar and its pop-ups (and the Code Viewer's right-click menu) have the text size of that monitor (feature 424)
 - [ ] Both viewers at 125 % and 150 % from the start (scaling set before signing in): the viewer opens where it opened in 0.3.0 with the same size, *Save position* restores the last place, and the page fills the client; a position saved by 0.3.0 on a second monitor of another scaling opens on that monitor, at most once larger or smaller, and is then kept (feature 424)
 - [ ] Alt+F1 on a real screen, Fluent 2 and Classic icon set, Default and Dark theme: the *Desktop* item right after *Documents* has a Desktop folder icon (Classic: the blue Explorer Desktop folder), hot key `'` opens the Desktop folder as a disk path; the drive bar's Desktop button (tooltip *Desktop*) does the same (feature 425)
-- [ ] Czech UI: Alt+F1 lists *Plocha* (hot key `'`) and the plug-in's *SloĹľky Windows* (hot key `-`, the letters intact); pressing `-` opens `fld:`; Configuration > Change Drive Menu and Drive Bar shows the check box *Plocha*, unticking it hides the item and the button (feature 425)
+- [ ] Czech UI: Alt+F1 lists *Plocha* (hot key `'`) and the plug-in's *SloÄąÄľky Windows* (hot key `-`, the letters intact); pressing `-` opens `fld:`; Configuration > Change Drive Menu and Drive Bar shows the check box *Plocha*, unticking it hides the item and the button (feature 425)
 - [ ] A Desktop redirected to a network share or a disconnected mapped drive (e.g. OneDrive or folder redirection to `\\server\share\Desktop`): the Desktop item reconnects or asks for the login as typing the path does, ESC cancels a slow check, and the panel stays where it was when it fails (feature 425)
 - [ ] Inside Shell Folders (`fld:`): Enter on a folder shortcut (This PC > a network location added in Explorer) stays in `fld:` and lists the target; Enter on a junction or a directory symbolic link on the desktop opens it as a disk path (feature 425)
 - [ ] Backlog app while the loop runs an item (feature 426): create an item in the app - the toast says "Landed on main as <hash>" and the item is on main; when the run ends its last message, the loop shows the item finished within about 30 s even if the run had scheduled a wakeup, and the live run page shows the same phase as the chat's run snapshot during the run
+- [ ] Dark theme, on a real screen: the PictView viewer's toolbar (incl. the blue arrows and the disabled buttons), its status bar (dark, the crosshair / size / pipette icons light) and File Comparator (toolbar strip, "Difference" list dropped open, scrollbars, the frames of the views) have no light-grey part and every icon is readable (feature 427)
+- [ ] With a PictView viewer and File Comparator open, switch Dark -> Default -> Dark (View menu or Configuration): every part follows at once - toolbars, status bar text and icons, scrollbars, File Comparator's strip - with nothing half-dark (feature 427)
+- [ ] At 125 % or 150 % display scaling in Dark: PictView's status-bar icons are not stretched and the text after them is not cut (feature 427)
 
 ## Log
 
@@ -121,3 +124,4 @@ Before the release, every line below is ticked (`BL step <slug> <n> --done`). Or
 - 2026-11-12 — feature 424: two checks widened (review 1)
 - 2026-11-12 — edited Steps
 - 2026-11-12 — step added by feature 426
+- 2026-11-12 — 3 steps added by feature 427

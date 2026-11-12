@@ -39,9 +39,9 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | WebView2 viewers (Markdown, Code) | 081, 085, 262, 314, 408, 424 |
 | Privacy and security | 083, 085, 086, 090, 123, 420, 421, 422 |
 | FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279, 288, 303, 323, 341, 345, 347, 348, 384, 385, 410 |
-| PictView | 105, 111, 120, 267 |
+| PictView | 105, 111, 120, 267, 427 |
 | Undelete | 114, 115, 148, 324 |
-| File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287, 387, 388 |
+| File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287, 387, 388, 427 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
 | User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373, 374, 375, 376, 404, 405, 407, 413, 416, 417, 418, 420, 421, 422, 423, 425 |
@@ -7144,3 +7144,32 @@ a few early ones are out of sequence).
   side worktree 2 FAIL on the old code -> 9/9; stream 908 of 3025 events -> 3025; `FinishedRunTests` 3
   of 5 FAIL -> 6/6; the 425 trace through the route 211 -> 1694 of 1694 events; `npm run check` 519 ->
   530, Python 258 -> 264; refute-first review 1: no MUST, no SHOULD (NOTE 3 test added).
+- 427-dark-plugin-toolbars: in the Dark theme PictView's and File Comparator's toolbars kept their old
+  16-colour glyphs (black outlines and navy arrows nearly invisible on the dark strip), File
+  Comparator's toolbar strip, gaps, frames, scrollbars and its list of differences stayed light grey or
+  white, PictView's status bar stayed light grey with black icons, and none of it followed a live theme
+  switch (GitHub #25) - now both toolbars get the core's Dark adaptation of legacy glyphs (feature 028,
+  `ThemeDarkAdaptBitmap`, moved to the header-only `src/common/themes_bitmap.h`) plus, for plug-ins
+  only, a 3:1 lift of low-contrast saturated colours (`ThemeDarkAdaptBitmapLift`), File Comparator's
+  chrome uses the theme's brushes and colours (rebar and band colours, the combo frame pens,
+  `WM_CTLCOLORLISTBOX`, the rows under the auto-sized rebar, the static edges repainted in `WM_NCPAINT`,
+  `ThemeApplyToDialog` for the combo and the scrollbars), PictView themes its status bar and image
+  window and adapts the status icons (`ThemeDarkAdaptIcon`), and both windows rebuild all of it on
+  `PLUGINEVENT_COLORSCHANGED` (PictView refills its image lists in place; File Comparator
+  `RefreshThemeChrome`, `TB_REPLACEBITMAP`). The core's dark status-bar repaint now draws part icons at
+  their own size and repaints a part changed by `SB_SETICON` / `SB_SETTEXT`. No plug-in interface
+  change; a window opened in Default and never switched is unchanged. **Traps**: a `TB_ADDBITMAP` bitmap
+  must keep the SYSTEM face colour as its background (the toolbar treats it as transparent - mapped to
+  the Dark face the disabled glyphs became solid squares); a rebar band keeps the colours it was
+  inserted with (`RBBIM_COLORS` per band); the core's catch-all theming touches a window only while it
+  has a scrollbar style (PictView's image window has one only for large images); the 029 rule keeps
+  saturated colours with a channel >= 120 (navy stays ~1.2:1 - hence the lift); a probe capture reads
+  the window surface, so a queued repaint shows as a stale picture (`RDW_UPDATENOW` on the owning
+  thread). Limits: the black checkbox labels of the report did not reproduce on Windows 10.0.26300 (all
+  light) - Inbox item `dark-checkbox-labels-other-windows-builds`, the draft reply asks for the
+  reporter's build; the toolbars keep the old pictures (no Fluent 2 artwork). From backlog item
+  `tmavy-motiv`. Probe `dark427_probe` (hidden desktop, Dark and Default, live switches both ways on two
+  different files): PictView neutral glyph px 696 -> 0, coloured below 1.6:1 218 -> 1, File Comparator
+  glyphs 1346 -> 18, light chrome 109,871 -> 167, whole windows after a switch 0 px, Default 0 px
+  against the before run; saltests 287,448; refute-first reviews 1-5 (M1-M5 and S1-S8 fixed; the run
+  stopped after review 3 and was finished at the maintainer's request).

@@ -2253,7 +2253,9 @@ void CViewerWindow::ApplyRendererTheme()
 // feature 427: repaints a top-level window of the viewer's thread and all its children
 static BOOL CALLBACK RepaintThreadWindow427(HWND hWnd, LPARAM)
 {
-    RedrawWindow(hWnd, NULL, NULL, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);
+    // UPDATENOW: painted at once on this thread, not when the queue gets to it (review 5, S8: the
+    // status bar's surface lagged behind its content after a switch)
+    RedrawWindow(hWnd, NULL, NULL, RDW_INVALIDATE | RDW_ERASE | RDW_FRAME | RDW_ALLCHILDREN | RDW_UPDATENOW);
     return TRUE;
 }
 

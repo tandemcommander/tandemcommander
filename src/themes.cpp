@@ -574,6 +574,25 @@ static LRESULT CALLBACK ThemeStatusBarSubclassProc(HWND hWnd, UINT uMsg, WPARAM 
 {
     switch (uMsg)
     {
+    case SB_SETICON:
+    case SB_SETTEXTA:
+    case SB_SETTEXTW:
+    case SB_SETPARTS:
+    {
+        // feature 427 (review 5, S8): the native control updates a part without a WM_PAINT this
+        // repaint sees (a part icon set after the last paint stayed missing in Dark) - repaint it
+        LRESULT ret = DefSubclassProc(hWnd, uMsg, wParam, lParam);
+        if (IsDarkThemeActive())
+        {
+            RECT r;
+            if (uMsg != SB_SETPARTS && SendMessage(hWnd, SB_GETRECT, (WPARAM)(wParam & 0xFF), (LPARAM)&r))
+                InvalidateRect(hWnd, &r, TRUE);
+            else
+                InvalidateRect(hWnd, NULL, TRUE);
+        }
+        return ret;
+    }
+
     case WM_ERASEBKGND:
     {
         if (!IsDarkThemeActive())

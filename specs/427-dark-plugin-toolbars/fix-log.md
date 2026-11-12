@@ -288,3 +288,23 @@ SUCCEEDED; encoding guard TOTAL: 0.
 Probe after: `ROWS: 0 FAIL` (LIVE / LIVE-D every whole window 0 px, SB rows equal state and the
 theme's background), registry restored identical; saltests 287,448 checks, 0 failed; build
 SUCCEEDED; encoding guard TOTAL: 0.
+
+## Review 5 (final refute-first agent): no MUST, 1 SHOULD - fixed
+
+- **S8** - after a live switch the viewer's status bar showed on its window surface without parts of
+  its content (the "W:… H:…" text, the pipette icon, the size grip), while its content drawn on
+  request was right. Two causes, both fixed: (1) the repaint after a switch was only queued -
+  `RepaintThreadWindow427` now redraws with `RDW_FRAME | RDW_UPDATENOW` on the viewer's own thread
+  (measured: the 582 px Default difference → 0); (2) in Dark a part icon set after the last paint
+  stayed missing (31 px, the pipette) - the core's dark status-bar repaint
+  (`ThemeStatusBarSubclassProc`, src/themes.cpp) now invalidates the changed part after
+  `SB_SETICON` / `SB_SETTEXT` and the whole bar after `SB_SETPARTS` (Dark only; the Find window and
+  packac use the same repaint and only gain the repaint of a changed part). The probe compares the
+  viewer's status bar pixel for pixel again (no excluded area, 0 px allowed): every LIVE / LIVE-D step
+  0 px.
+- NOTEs: icon size above 100 % not measured (the probes run at 100 %; a release-checklist line);
+  `GetIconInfo` per part per paint (small cost, no leak); the alpha path of `ThemeDarkAdaptIcon` has no
+  saltests case (PictView's status icons are legacy mask icons, covered).
+
+Final probe (`-Label after`): `ROWS: 0 FAIL`, registry restored identical; saltests 287,448, 0 failed;
+build SUCCEEDED.

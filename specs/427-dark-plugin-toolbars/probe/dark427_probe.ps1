@@ -392,8 +392,8 @@ function Live-Capture([int]$Id, [IntPtr]$Viewer, [IntPtr]$Fc, [string]$Name) {
     Start-Sleep -Milliseconds 800
     foreach ($w in @(@($Viewer, 'pv'), @($Fc, 'fc'))) {
         $cap = [Cap416]::Capture($w[0], $true); Save-Png $cap (Join-Path $CapDir ("live_{0}_{1}.png" -f $w[1], $Name))
-        if ($w[1] -eq 'pv' -and $script:PvSkip.Count -eq 4) {
-            $sbc = $cap.Clone((New-Object Drawing.Rectangle($script:PvSkip[0], $script:PvSkip[1], ($script:PvSkip[2] - $script:PvSkip[0]), ($script:PvSkip[3] - $script:PvSkip[1]))), [Drawing.Imaging.PixelFormat]::Format32bppRgb)
+        if ($w[1] -eq 'pv' -and $script:PvSb) {
+            $sbc = [Cap416]::Crop($cap, $w[0], $script:PvSb)
             $bg = 0; $sat = 0; [void][Px427]::DarkerThanStrip($sbc, [ref]$bg, [ref]$sat); $sbc.Dispose()
             $script:SbInfo[$Name] = @{ State = (Sb-State $script:PvSb); Bg = $bg }
         }
@@ -426,13 +426,10 @@ function Run-Live([int]$StartTheme) {
         if ($viewer -eq [IntPtr]::Zero -or $fc -eq [IntPtr]::Zero) { Row $tag 'OPEN' 'FAIL' 'the viewer or File Comparator did not open'; return }
         Start-Sleep -Milliseconds 4000
         $script:FcSkip = Skip-Rects $fc 'SFC File View Window Class'
-        # the whole viewer counts - the image (1:1) and its scrollbars - except the status bar's content,
-        # which follows the mouse and activation state and, under File Comparator, the moment of its
-        # last paint (measured with a separate debug probe: its parts, texts and icons are the same
-        # before and after a switch); the status bar is checked by its state and its colour instead
+        # the whole viewer counts: the image (1:1) with its scrollbars and the status bar (review 5, S8:
+        # its surface had lagged behind its content after a switch); its state is recorded too
         $script:PvSb = @(Get-Desc $viewer 'msctls_statusbar32') | Select-Object -First 1
         $script:PvSkip = [int[]]@()
-        if ($script:PvSb) { $o = New-Object Cap416+POINT; $o.x = 0; $o.y = 0; [void][Cap416]::ClientToScreen($viewer, [ref]$o); $rc = New-Object Cap416+RECT; [void][Cap416]::GetWindowRect($script:PvSb, [ref]$rc); $script:PvSkip = [int[]]@(($rc.left - $o.x), ($rc.top - $o.y), ($rc.right - $o.x), ($rc.bottom - $o.y)) }
         Live-Capture $id $viewer $fc ("{0}_start_{1}" -f $tag, $start)
         # the drop-down list of differences in Dark (review 3, S3)
         if ($StartTheme -eq 1) {
@@ -480,7 +477,7 @@ function Compare-Live {
             $x = New-Object Drawing.Bitmap $a; $y = New-Object Drawing.Bitmap $b
             $d = [Px427]::DiffOutside($x, $y, [int[]]$pair[1]); $x.Dispose(); $y.Dispose()
             $allowed = 0
-            Row $tag ("{0}-{1}->{2}" -f $pair[0].ToUpper(), $k, $theme) (V ($d -ge 0 -and $d -le $allowed)) ("whole window after the switch: {0} px differ from a window opened in {1} ({2}; allowed {3})" -f $d, $theme, $(if ($pair[0] -eq 'fc') { "outside the views' text" } else { 'the whole window with the image 1:1 and its scrollbars, the status bar apart' }), $allowed)
+            Row $tag ("{0}-{1}->{2}" -f $pair[0].ToUpper(), $k, $theme) (V ($d -ge 0 -and $d -le $allowed)) ("whole window after the switch: {0} px differ from a window opened in {1} ({2}; allowed {3})" -f $d, $theme, $(if ($pair[0] -eq 'fc') { "outside the views' text" } else { 'the whole window: the image 1:1 with its scrollbars, the status bar' }), $allowed)
         }
     }
 }
