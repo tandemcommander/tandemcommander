@@ -5,6 +5,12 @@
 **Status**: Draft
 **Input**: From backlog item tmavy-motiv. GitHub issue #25 ("Tmavý motiv"): in the Dark theme, plug-in windows are only partly dark - black checkbox labels (PictView settings, Batch Rename), old toolbar icons not made for a dark background (PictView, File Comparator), parts of some windows stay light grey.
 
+## Clarifications
+
+### Session 2026-11-12
+
+- Q: Does FR-003 cover File Comparator's combo box ("Difference" list) and the scrollbars of its two views, or only the rebar strip? → A: all of its chrome that stays light grey in the measurement - the rebar strip, the band text area, the splitter, the combo box and the view scrollbars; the two text views keep their own configurable colours (autonomous run: item - "no light-grey area remains in those windows").
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Readable toolbar icons in PictView and File Comparator (Priority: P1)
@@ -89,8 +95,9 @@ Batch Rename against its background (contrast at least 4.5:1).
   core applies to its legacy glyphs (feature 028/029).
 - **FR-002**: In the Dark theme, File Comparator's toolbar glyphs MUST use the same Dark palette.
 - **FR-003**: In the Dark theme, File Comparator's window chrome (rebar band background, the band
-  text area, the splitter fill, the static text background) MUST use the theme's colours instead of
-  the classic light-grey system colours.
+  text area, the splitter fill, the static text background, the "Difference" combo box and the
+  scrollbars of the two views) MUST use the theme's colours instead of the classic light-grey
+  system colours; the text views keep their own configurable colours.
 - **FR-004**: In the Default theme all of the above MUST stay pixel-identical to before; the Classic
   icon set is never restyled beyond what the core already does in Dark.
 - **FR-005**: The change MUST NOT change the plug-in interface (no new interface function, no

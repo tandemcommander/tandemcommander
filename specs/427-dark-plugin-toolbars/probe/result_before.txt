@@ -1,0 +1,48 @@
+dark427_probe before on E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe; hot keys: renamer.spl, filecomp.spl; OS 10.0.26300.0
+DARK       PV-TOOLBAR INFO        class WinLib Universal Window2; strip #2D2D2D; glyph pixels darker than the strip: 909
+  pv_page0_DARK: id 2030 'Show image file &path in titlebar' bg #2D2D2D ink #FFFFFF contrast 13,77
+  pv_page3_DARK: id 2078 'Pipette picks colors in he&xadecimal' bg #2D2D2D ink #FFFFFF contrast 13,77
+  pv_page4_DARK: id 2050 '...nails stored in image files (slower)' bg #2D2D2D ink #FFFFFF contrast 13,77
+  pv_page4_DARK: id 2052 '...PEG images (digital camera pictures)' bg #2D2D2D ink #FFFFFF contrast 13,77
+  pv_page4_DARK: id 2053 '... message box on successful file save' bg #2D2D2D ink #FFFFFF contrast 13,77
+  pv_page4_DARK: id 2054 '...screenshots, scans, clipboard pastes' bg #2D2D2D ink #FFFFFF contrast 13,77
+DARK       PV-LABELS PASS        6 checkboxes on 5 pages, lowest label contrast 13,77
+  renamer_DARK: id 102 'Include su&bdirectories' bg #2D2D2D ink #FFFFFF contrast 13,77
+  renamer_DARK: id 105 'Manua&l mode' bg #2D2D2D ink #FFFFFF contrast 13,77
+  renamer_DARK: id 112 'Case sensi&tive' bg #2D2D2D ink #FFFFFF contrast 13,77
+  renamer_DARK: id 114 'Onl&y once in each name' bg #2D2D2D ink #FFFFFF contrast 13,77
+  renamer_DARK: id 113 '&Whole words' bg #2D2D2D ink #FFFFFF contrast 13,77
+  renamer_DARK: id 115 'Re&gular expression' bg #2D2D2D ink #FFFFFF contrast 13,77
+  renamer_DARK: id 123 'Exclu&de extension' bg #2D2D2D ink #FFFFFF contrast 13,77
+  renamer_DARK: id 118 'Incl&ude path part' bg #2D2D2D ink #FFFFFF contrast 13,77
+DARK       RN-LABELS PASS        8 checkboxes, lowest label contrast 13,77
+DARK       FC-TOOLBAR INFO        strip #F0F0F0; glyph pixels darker than the strip: 1400
+DARK       FC-GREY INFO        light-grey pixels outside the text views: 68099 (in the views 2682; views: SFC File View Window Class, SFC File View Window Class)
+DEFAULT    PV-TOOLBAR INFO        class WinLib Universal Window2; strip #F0F0F0; glyph pixels darker than the strip: 1891
+  pv_page0_DEFAULT: id 2030 'Show image file &path in titlebar' bg #F9F9F9 ink #000000 contrast 19,95
+  pv_page3_DEFAULT: id 2078 'Pipette picks colors in he&xadecimal' bg #F9F9F9 ink #000000 contrast 19,95
+  pv_page4_DEFAULT: id 2050 '...nails stored in image files (slower)' bg #F9F9F9 ink #000000 contrast 19,95
+  pv_page4_DEFAULT: id 2052 '...PEG images (digital camera pictures)' bg #F9F9F9 ink #000000 contrast 19,95
+  pv_page4_DEFAULT: id 2053 '... message box on successful file save' bg #F9F9F9 ink #000000 contrast 19,95
+  pv_page4_DEFAULT: id 2054 '...screenshots, scans, clipboard pastes' bg #F9F9F9 ink #000000 contrast 19,95
+DEFAULT    PV-LABELS INFO        6 checkboxes on 5 pages, lowest label contrast 19,95
+  renamer_DEFAULT: id 102 'Include su&bdirectories' bg #F0F0F0 ink #000000 contrast 18,43
+  renamer_DEFAULT: id 105 'Manua&l mode' bg #F0F0F0 ink #000000 contrast 18,43
+  renamer_DEFAULT: id 112 'Case sensi&tive' bg #F0F0F0 ink #000000 contrast 18,43
+  renamer_DEFAULT: id 114 'Onl&y once in each name' bg #F0F0F0 ink #000000 contrast 18,43
+  renamer_DEFAULT: id 113 '&Whole words' bg #F0F0F0 ink #000000 contrast 18,43
+  renamer_DEFAULT: id 115 'Re&gular expression' bg #F0F0F0 ink #000000 contrast 18,43
+  renamer_DEFAULT: id 123 'Exclu&de extension' bg #F0F0F0 ink #000000 contrast 18,43
+  renamer_DEFAULT: id 118 'Incl&ude path part' bg #F0F0F0 ink #000000 contrast 18,43
+DEFAULT    RN-LABELS INFO        8 checkboxes, lowest label contrast 18,43
+DEFAULT    FC-TOOLBAR INFO        strip #F0F0F0; glyph pixels darker than the strip: 491
+DEFAULT    FC-GREY INFO        light-grey pixels outside the text views: 72316 (in the views 0; views: SFC File View Window Class, SFC File View Window Class)
+Registry: restored; identical=True; SHA-256 before B94D4679FDE3D64A25B4DFE3AAEFB0F13E93982989A34F1D87C63FAA94CAAE46 / after B94D4679FDE3D64A25B4DFE3AAEFB0F13E93982989A34F1D87C63FAA94CAAE46
+registry restored+identical: True
+NUM FC-GREY DEFAULT 72316
+NUM PV-TOOLBAR DEFAULT 1891
+NUM FC-TOOLBAR DEFAULT 491
+NUM PV-TOOLBAR DARK 909
+NUM FC-GREY DARK 68099
+NUM FC-TOOLBAR DARK 1400
+ROWS: 0 FAIL
