@@ -629,6 +629,16 @@ static LRESULT CALLBACK ThemeStatusBarSubclassProc(HWND hWnd, UINT uMsg, WPARAM 
                 RECT br = r;
                 ThemeDrawEdge(hDC, &br, BDR_SUNKENOUTER, BF_RECT);
             }
+            // feature 427: a part's icon (SB_SETICON - PictView's pipette / anchor parts) was not
+            // drawn by this repaint; drawn at the left as the native status bar does, the text after it
+            int textLeft = 3;
+            HICON partIcon = (HICON)SendMessage(hWnd, SB_GETICON, i, 0);
+            if (partIcon != NULL)
+            {
+                int cx = GetSystemMetrics(SM_CXSMICON), cy = GetSystemMetrics(SM_CYSMICON);
+                DrawIconEx(hDC, r.left + 2, r.top + (r.bottom - r.top - cy) / 2, partIcon, cx, cy, 0, NULL, DI_NORMAL);
+                textLeft = 2 + cx + 2;
+            }
             int len = LOWORD(lenType);
             if (len > 0)
             {
@@ -641,7 +651,7 @@ static LRESULT CALLBACK ThemeStatusBarSubclassProc(HWND hWnd, UINT uMsg, WPARAM 
                     buf[0] = 0;
                     SendMessage(hWnd, SB_GETTEXTW, i, (LPARAM)buf);
                     RECT tr = r;
-                    tr.left += 3;
+                    tr.left += textLeft;
                     tr.right -= 3;
                     DrawTextW(hDC, buf, -1, &tr, DT_SINGLELINE | DT_VCENTER | DT_NOPREFIX);
                     if (buf != stackBuf)

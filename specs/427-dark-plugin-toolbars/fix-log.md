@@ -226,3 +226,33 @@ the 3:1 lift (PV-COLOR 218 → 1, PV-TOOLBAR 696 → 0, FC-TOOLBAR 1346 → 18),
 dark (FC-LIGHT 109,871 → 167), a live switch followed by the toolbars both ways (LIVE / LIVE-D 0 px),
 the Default theme unchanged for windows never switched (DEFAULT-SAME 0 px); open: M4, S2, S3, S4.
 The checkbox-label part is in the Inbox item `dark-checkbox-labels-other-windows-builds`.
+
+## Continued at the maintainer's request (2026-11-12): "fix it and finish it all so that it works"
+
+The maintainer asked to fix the open review-3 findings and finish the feature; the item was unblocked
+on `main` (`backlog: tmavy-motiv unblocked`), the lock taken again, the work continued on this branch.
+
+- **M4**: File Comparator's `WM_PAINT` paints the rows between the auto-sized rebar's real bottom and
+  the gap in both themes - the Dark face in Dark, white in Default (what a window opened in Default
+  shows there, so a window never switched stays identical).
+- **S2**: PictView calls `SalamanderGeneral->ThemeApplyToDialog(HWindow)` when its status bar is created
+  and on `WM_USER_VIEWERCFGCHNG` (the core's dark status-bar repaint `ThemeStatusBarSubclassProc`, the
+  renderer's scrollbars `DarkMode_Explorer`; a no-op in Default). That core repaint drew no part
+  icons (`SB_SETICON` - PictView's crosshair / anchor / pipette parts): `src/themes.cpp` now draws a
+  part's icon at the left, small-icon size, and the text after it (no change for parts without an
+  icon). PV-STATUS in Dark: 150 light-grey pixels of 37,950 (Default 34,489); the icons are visible.
+- **S3**: `CComboBox::WindowProc` answers `WM_CTLCOLORLISTBOX` with the theme's window colours (the
+  system's in Default), and `CComboBox::ChangeColors` (now also called in `Init`) gives the drop-down
+  list `DarkMode_Explorer` in Dark and resets it only if it darkened it (`ListDarkened`);
+  `#pragma comment(lib, "uxtheme.lib")` in controls.cpp. FC-LIST: 55 items, 3,164 light pixels of
+  611,550 (the selected item's highlight).
+- **S4**: the probe's LIVE rows now run File Comparator on two DIFFERENT files (`diff\a.png`,
+  `diff\b.png`: a list of 55 differences, difference lines in the views) and compare WHOLE windows
+  with the start capture of the run that opened its windows in that theme - File Comparator outside
+  its views' text (allowed 0 px), the viewer outside its image area (allowed 120 px for the status
+  bar's mouse-state icon, review 3 NOTE). Result: every step of LIVE and LIVE-D **0 px** for both
+  windows.
+- Not chrome, unchanged: the PictView image area's configurable background (`#ABABAB`) and its edge.
+
+Probe after: `ROWS: 0 FAIL`, registry restored identical; saltests 287,439, 0 failed; build
+SUCCEEDED; encoding guard TOTAL: 0.

@@ -171,6 +171,7 @@ BOOL CMainWindow::Init()
         edit->AttachToWindowKeepKind(editHWnd); // feature 102: see above
     else
         TRACE_E("LOW MEMORY");
+    ComboBox->ChangeColors(); // feature 427: the drop-down list's scrollbar style in Dark
 
     Rebar = new CRebar();
     if (!Rebar)
@@ -1182,20 +1183,25 @@ CMainWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         GetClientRect(LeftHeader->HWindow, &r2);
         // draw the gap between the rebar and the header
         r3.top = RebarHeight - REBAR_BORDER;
-        // feature 427: the auto-sized rebar is shorter than RebarHeight; in Dark the rows between
-        // its real bottom and the gap are filled too (nothing painted them: white in Dark)
-        if (SG->IsDarkThemeActive())
-        {
-            RECT rr;
-            GetWindowRect(Rebar->HWindow, &rr);
-            POINT pt = {0, rr.bottom};
-            ScreenToClient(HWindow, &pt);
-            if (pt.y >= 0 && pt.y < r3.top)
-                r3.top = pt.y;
-        }
         r3.bottom = RebarHeight;
         r3.left = 0;
         r3.right = r1.right;
+        // feature 427: the auto-sized rebar is shorter than RebarHeight - nothing painted the rows
+        // between its real bottom and the gap. In Dark they get the Dark face colour; in Default
+        // white, the colour a window opened in Default shows there (review 3, M4: after a switch
+        // Dark -> Default the dark rows stayed)
+        RECT rr;
+        GetWindowRect(Rebar->HWindow, &rr);
+        POINT pt = {0, rr.bottom};
+        ScreenToClient(HWindow, &pt);
+        if (pt.y >= 0 && pt.y < r3.top)
+        {
+            RECT below = r3;
+            below.top = pt.y;
+            below.bottom = r3.top;
+            FillRect(dc, &below, SG->IsDarkThemeActive() ? SG->GetThemeSysColorBrush(COLOR_BTNFACE)
+                                                         : (HBRUSH)GetStockObject(WHITE_BRUSH));
+        }
         FillRect(dc, &r3, SG->GetThemeSysColorBrush(COLOR_BTNFACE)); // feature 427: dark in Dark
         // draw the gap between the header and the text window
         r3.top = RebarHeight + r2.bottom + 2;

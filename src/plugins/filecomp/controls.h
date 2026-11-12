@@ -110,6 +110,7 @@ protected:
     HPEN BtnShadowPen;
     HPEN BtnHilightPen;
     BOOL Tracking;
+    BOOL ListDarkened; // feature 427: the drop-down list got the dark scrollbar style
 
 public:
     CComboBox();

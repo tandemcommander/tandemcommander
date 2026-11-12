@@ -2765,6 +2765,10 @@ void CViewerWindow::ToggleStatusBar()
             return;
         }
         G.StatusbarVisible = TRUE;
+        // feature 427 (review 3, S2): the core's control theming for the viewer's children - the
+        // status bar gets the core's dark repaint (it stayed light grey in Dark), the renderer's
+        // scrollbars the dark style; a strict no-op in the Default theme
+        SalamanderGeneral->ThemeApplyToDialog(HWindow);
     }
     else
     {
@@ -3180,6 +3184,7 @@ CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (HHotToolBarImageList != NULL && HGrayToolBarImageList != NULL)
         {
             InitializeGraphics();
+            SalamanderGeneral->ThemeApplyToDialog(HWindow); // feature 427: the status bar follows the switch
             // every window of this viewer's thread (the toolbar, the histogram window and its
             // toolbar) repaints with the refilled lists (427 review 2)
             EnumThreadWindows(GetCurrentThreadId(), RepaintThreadWindow427, 0);

@@ -15,9 +15,12 @@
 #   PV-LABELS   PictView settings, all five pages: every checkbox label contrast >= 4.5
 #   RN-LABELS   Batch Rename: every checkbox label contrast >= 4.5
 #   PV-COLOR / FC-COLOR coloured glyph pixels below 1.6:1 on the strip (Dark: < 10 % of before)
-#   LIVE        Dark -> Default -> Dark with both windows open (LIVE-D: opened in Default, then
-#               Default -> Dark -> Default -> Dark): the toolbars equal a window opened in
-#               that theme, File Comparator's top rows light / dark accordingly
+#   LIVE        Dark -> Default -> Dark with both windows open, File Comparator on two different files
+#               (LIVE-D: opened in Default, then Default -> Dark -> Default -> Dark): every whole window
+#               equals a window opened in that theme (File Comparator outside its views' text: 0 px;
+#               the viewer outside its image: <= 120 px for the status bar's mouse-state icon)
+#   PV-STATUS   light-grey pixels in the viewer's status bar (Dark: <= 1 %)
+#   FC-LIST     the dropped list of differences in Dark: light pixels <= 2 %
 #   DEFAULT-SAME (after only) the Default theme's toolbar and File Comparator captures equal the
 #               before run's
 [CmdletBinding()]
@@ -37,6 +40,7 @@ $OutFile = Join-Path $ProbeDir ("result_{0}_rows.txt" -f $Label)
 $Root = $TempRoot + '\tc427probe'
 $StartDir = $Root + '\start'
 $Left = $Root + '\left'
+$LeftDiff = $Root + '\diff'   # two different images: File Comparator shows differences, its list has items
 $CfgKey = "$RegKey\Settings\Configuration"
 $Image = Join-Path $Repo 'backlog\items\tmavy-motiv\evidence\issue25-pictview-settings-advanced.png'
 if (-not (Test-Path -LiteralPath $Image)) { $Image = Join-Path $ProbeDir 'captures_measure\pictview_page4.png' }
@@ -139,6 +143,22 @@ public static class Px427
             if (same >= 2) continue;
             if (mx - mn >= 32 && Contrast(c, bg) < 1.6) n++;
         }
+        return n;
+    }
+    // pixels that differ between two captures of the same size outside the given rectangles
+    // (x0,y0,x1,y1 quadruples): a stale part after a theme switch shows here
+    public static int DiffOutside(Bitmap a, Bitmap b, int[] skip)
+    {
+        if (a.Width != b.Width || a.Height != b.Height) return -1;
+        int[] pa = Px(a), pb = Px(b); int n = 0;
+        for (int y = 0; y < a.Height; y++)
+            for (int x = 0; x < a.Width; x++)
+            {
+                bool inside = false;
+                for (int k = 0; k + 3 < skip.Length; k += 4)
+                    if (x >= skip[k] && y >= skip[k + 1] && x < skip[k + 2] && y < skip[k + 3]) { inside = true; break; }
+                if (!inside && pa[y * a.Width + x] != pb[y * a.Width + x]) n++;
+            }
         return n;
     }
     public static int Grey(Bitmap b, int x0, int y0, int x1, int y1)
@@ -265,6 +285,19 @@ function Run-Theme([int]$Theme) {
             Row $t 'PV-COLOR' 'INFO' ("coloured glyph pixels below 1.6:1 on the strip: {0}" -f $r.Low)
             Row $t 'PV-TOOLBAR' 'INFO' ("class {0}; strip #{1:X6}; neutral glyph pixels darker than the strip: {2} (saturated, kept by the palette rule: {3})" -f [Cap416]::Cls($tbs[0]), $r.Bg, $r.N, $r.Sat)
         }
+        # the viewer's status bar (review 3, S2): light grey in Dark before
+        $vcap = [Cap416]::Capture($viewer, $true); Save-Png $vcap (Join-Path $CapDir ("pv_window_{0}.png" -f $t))
+        $sb = @(Get-Desc $viewer 'msctls_statusbar32') | Select-Object -First 1
+        if ($sb) {
+            $o = New-Object Cap416+POINT; $o.x = 0; $o.y = 0; [void][Cap416]::ClientToScreen($viewer, [ref]$o)
+            $rc = New-Object Cap416+RECT; [void][Cap416]::GetWindowRect($sb, [ref]$rc)
+            $g = [Px427]::Grey($vcap, $rc.left - $o.x, $rc.top - $o.y, $rc.right - $o.x, $rc.bottom - $o.y)
+            $area = ($rc.right - $rc.left) * ($rc.bottom - $rc.top)
+            $script:Num["PV-STATUS $t"] = $g
+            $v = if ($Theme -eq 1) { V ($g -le [Math]::Floor($area * 0.01)) } else { 'INFO' }
+            Row $t 'PV-STATUS' $v ("light-grey pixels in the status bar: {0} of {1}" -f $g, $area)
+        }
+        $vcap.Dispose()
         # PictView settings (CMD_CFG 112 in the viewer), five pages
         $known = Get-Tops $id
         Post-Cmd $viewer 112
@@ -335,48 +368,92 @@ function Run-Theme([int]$Theme) {
     finally { Stop-Tc $id }
 }
 
-# 427 review M1: a live theme switch with a viewer and File Comparator open - the toolbars must equal
-# this run's captures of the theme switched to (Dark -> Default -> Dark)
+# 427 reviews 1-3: a live theme switch with a viewer and File Comparator open (File Comparator on two
+# DIFFERENT files). Every capture is compared, after both runs, with the start capture of the run that
+# opened its windows in that theme: whole windows (File Comparator without its views' text, the
+# viewer without its image area) - a stale part anywhere shows (review 3, S4)
+function Live-Capture([int]$Id, [IntPtr]$Viewer, [IntPtr]$Fc, [string]$Name) {
+    [void][Drv098f]::Send((Get-Main $Id), 0, 0, 0, 10000); [void][Drv098f]::Send($Viewer, 0, 0, 0, 10000); [void][Drv098f]::Send($Fc, 0, 0, 0, 10000)
+    Start-Sleep -Milliseconds 1500
+    foreach ($w in @(@($Viewer, 'pv'), @($Fc, 'fc'))) {
+        $cap = [Cap416]::Capture($w[0], $true); Save-Png $cap (Join-Path $CapDir ("live_{0}_{1}.png" -f $w[1], $Name)); $cap.Dispose()
+    }
+}
+function Skip-Rects([IntPtr]$Top, [string]$Cls) {
+    $o = New-Object Cap416+POINT; $o.x = 0; $o.y = 0; [void][Cap416]::ClientToScreen($Top, [ref]$o)
+    $r = @()
+    foreach ($h in @(Get-Desc $Top $Cls)) {
+        $cr = New-Object Cap416+RECT; [void][Cap416]::GetClientRect($h, [ref]$cr)
+        $p = New-Object Cap416+POINT; $p.x = 0; $p.y = 0; [void][Cap416]::ClientToScreen($h, [ref]$p)
+        $r += @(($p.x - $o.x), ($p.y - $o.y), ($p.x - $o.x + $cr.right), ($p.y - $o.y + $cr.bottom))
+    }
+    return , [int[]]$r
+}
 function Run-Live([int]$StartTheme) {
     & reg.exe add $CfgKey /v 'Theme Mode' /t REG_DWORD /d $StartTheme /f | Out-Null
     $tag = if ($StartTheme -eq 1) { 'LIVE' } else { 'LIVE-D' }
+    $start = if ($StartTheme -eq 1) { 'DARK' } else { 'DEFAULT' }
     $id = Start-Tc $Left
     [void](Serve $id 6)
     try {
         $viewer = Open-Viewer $id
+        [void](Do-ChangeDir $id $LeftDiff); [void](Serve $id 8)
         Post-Cmd (Get-Main $id) 842; Start-Sleep -Milliseconds 800
         $fc = Open-ByKey $id 0x43
         if ($fc -ne [IntPtr]::Zero -and [Drv098f]::Cls($fc) -eq '#32770') { $known = Get-Tops $id; Click-Ok $fc; $fc = Wait-NewWin $id $known 20 }
         if ($viewer -eq [IntPtr]::Zero -or $fc -eq [IntPtr]::Zero) { Row $tag 'OPEN' 'FAIL' 'the viewer or File Comparator did not open'; return }
-        Start-Sleep -Milliseconds 3000
+        Start-Sleep -Milliseconds 4000
+        $script:FcSkip = Skip-Rects $fc 'SFC File View Window Class'
+        $rend = @([Cap416]::Kids($viewer) | Where-Object { [Cap416]::IsWindowVisible($_) -and [Cap416]::Cls($_) -eq 'PICTVIEW - WinLib Universal Window2' -and [Cap416]::GetParent($_) -eq $viewer }) | Select-Object -First 1
+        $script:PvSkip = @()
+        if ($rend) { $o = New-Object Cap416+POINT; $o.x = 0; $o.y = 0; [void][Cap416]::ClientToScreen($viewer, [ref]$o); $rc = New-Object Cap416+RECT; [void][Cap416]::GetWindowRect($rend, [ref]$rc); $script:PvSkip = [int[]]@(($rc.left - $o.x), ($rc.top - $o.y), ($rc.right - $o.x), ($rc.bottom - $o.y)) }
+        Live-Capture $id $viewer $fc ("{0}_start_{1}" -f $tag, $start)
+        # the drop-down list of differences in Dark (review 3, S3)
+        if ($StartTheme -eq 1) {
+            $combo = @(Get-Desc $fc 'ComboBox') | Select-Object -First 1
+            if ($combo) {
+                $count = [Cap416]::Send($combo, 0x0146, [IntPtr]::Zero, [IntPtr]::Zero).ToInt64()   # CB_GETCOUNT
+                $known = @([Drv098f]::Top([uint32]$id))
+                [void][Drv098f]::PostMessageW($combo, 0x014F, [IntPtr]1, [IntPtr]::Zero)               # CB_SHOWDROPDOWN
+                Start-Sleep -Milliseconds 1200
+                $list = @([Drv098f]::Top([uint32]$id) | Where-Object { [Drv098f]::Cls($_) -eq 'ComboLBox' -and [Drv098f]::IsWindowVisible($_) }) | Select-Object -First 1
+                if ($list) {
+                    $lc = [Cap416]::Capture($list, $true); Save-Png $lc (Join-Path $CapDir 'live_fc_list_DARK.png')
+                    $l = [Px427]::Light($lc, 0, 0, $lc.Width, $lc.Height); $area = $lc.Width * $lc.Height; $lc.Dispose()
+                    Row 'DARK' 'FC-LIST' (V ($count -gt 0 -and $l -le [Math]::Floor($area * 0.02))) ("{0} items; light neutral pixels in the dropped list: {1} of {2}" -f $count, $l, $area)
+                }
+                else { Row 'DARK' 'FC-LIST' 'FAIL' ("{0} items; the list did not drop" -f $count) }
+                [void][Drv098f]::PostMessageW($combo, 0x014F, [IntPtr]::Zero, [IntPtr]::Zero); Start-Sleep -Milliseconds 600
+            }
+        }
         $steps = if ($StartTheme -eq 1) { @(@(2943, 'DEFAULT'), @(2944, 'DARK')) } else { @(@(2944, 'DARK'), @(2943, 'DEFAULT'), @(2944, 'DARK')) }
+        $k = 0
         foreach ($step in $steps) {
+            $k++
             Post-Cmd (Get-Main $id) $step[0]
             Start-Sleep -Milliseconds 3000
-            [void][Drv098f]::Send((Get-Main $id), 0, 0, 0, 10000); [void][Drv098f]::Send($viewer, 0, 0, 0, 10000); [void][Drv098f]::Send($fc, 0, 0, 0, 10000)
-            Start-Sleep -Milliseconds 1500
-            $rb = @(Get-Desc $viewer 'ReBarWindow32') | Select-Object -First 1
-            $bars = @(); if ($rb) { $bars = @(Get-Desc $rb 'WinLib Universal Window2') }
-            if ($bars.Count -ge 2) { [void](Toolbar-Dark $viewer $bars[$bars.Count - 1] ("live_pv_toolbar_{0}" -f $step[1])) }
-            $tb = @(Get-Desc $fc 'ToolbarWindow32') | Select-Object -First 1
-            if ($tb) { [void](Toolbar-Dark $fc $tb ("live_fc_toolbar_{0}" -f $step[1])) }
-            $cap = [Cap416]::Capture($fc, $true); Save-Png $cap (Join-Path $CapDir ("live_fc_window_{0}.png" -f $step[1]))
-            $light = [Px427]::Light($cap, 0, 0, $cap.Width, 60); $cap.Dispose()
-            foreach ($n in @('pv', 'fc')) {
-                $a = Join-Path $CapDir ("live_{0}_toolbar_{1}.png" -f $n, $step[1]); $b = Join-Path $CapDir ("{0}_toolbar_{1}.png" -f $n, $step[1])
-                if ((Test-Path $a) -and (Test-Path $b)) {
-                    $x = New-Object Drawing.Bitmap $a; $y = New-Object Drawing.Bitmap $b
-                    $d = [Cap416]::Diff($x, $y); $x.Dispose(); $y.Dispose()
-                    Row $tag ("{0}->{1}" -f $n.ToUpper(), $step[1]) (V ($d -eq 0)) ("{0} toolbar after the switch to {1}: {2} pixels differ from a window opened in {1}" -f $n, $step[1], $d)
-                }
-                else { Row $tag ("{0}->{1}" -f $n.ToUpper(), $step[1]) 'FAIL' 'capture missing' }
-            }
-            $want = if ($step[1] -eq 'DARK') { 'the top 60 rows nearly free of light pixels' } else { 'light chrome again' }
-            $ok = if ($step[1] -eq 'DARK') { $light -le 300 } else { $light -ge 20000 }
-            Row $tag ("FC-TOP->{0}" -f $step[1]) (V $ok) ("light neutral pixels in File Comparator's top 60 rows: {0} ({1})" -f $light, $want)
+            Live-Capture $id $viewer $fc ("{0}_{1}_{2}" -f $tag, $k, $step[1])
+            [void]$script:LiveSteps.Add(@($tag, $k, $step[1]))
         }
     }
     finally { Stop-Tc $id }
+}
+function Compare-Live {
+    foreach ($st in $script:LiveSteps) {
+        $tag = $st[0]; $k = $st[1]; $theme = $st[2]
+        $refTag = if ($theme -eq 'DARK') { 'LIVE' } else { 'LIVE-D' }
+        foreach ($pair in @(@('fc', $script:FcSkip), @('pv', $script:PvSkip))) {
+            $a = Join-Path $CapDir ("live_{0}_{1}_start_{2}.png" -f $pair[0], $refTag, $theme)
+            $b = Join-Path $CapDir ("live_{0}_{1}_{2}_{3}.png" -f $pair[0], $tag, $k, $theme)
+            if (-not (Test-Path $a) -or -not (Test-Path $b)) { Row $tag ("{0}-{1}->{2}" -f $pair[0].ToUpper(), $k, $theme) 'FAIL' 'capture missing'; continue }
+            $x = New-Object Drawing.Bitmap $a; $y = New-Object Drawing.Bitmap $b
+            $d = [Px427]::DiffOutside($x, $y, [int[]]$pair[1]); $x.Dispose(); $y.Dispose()
+            # the viewer's status bar shows the mouse state (pipette / anchor icon) and the size grip
+            # with the maximise state: up to 120 px are allowed there (review 3, NOTE)
+            $allowed = if ($pair[0] -eq 'pv') { 120 } else { 0 }
+            Row $tag ("{0}-{1}->{2}" -f $pair[0].ToUpper(), $k, $theme) (V ($d -ge 0 -and $d -le $allowed)) ("whole window after the switch: {0} px differ from a window opened in {1} (outside the {2}; allowed {3})" -f $d, $theme, $(if ($pair[0] -eq 'fc') { "views' text" } else { 'image area' }), $allowed)
+        }
+    }
 }
 
 $backup = Join-Path $env:TEMP 'tc427_backup.reg'
@@ -384,11 +461,17 @@ $existed = Backup-Reg $backup
 $restored = $false
 $script:Num = @{}
 $script:Views = @{}
+$script:LiveSteps = New-Object System.Collections.ArrayList
+$script:FcSkip = @(); $script:PvSkip = @()
 try {
     if ([IO.Directory]::Exists($LP + $Root)) { [IO.Directory]::Delete($LP + $Root, $true) }
     NewDir $StartDir; NewDir $Left
     Copy-Item -LiteralPath $Image -Destination (Join-Path $Left 'image.png')
     Copy-Item -LiteralPath $Image -Destination (Join-Path $Left 'image2.png')
+    NewDir $LeftDiff
+    Copy-Item -LiteralPath $Image -Destination (Join-Path $LeftDiff 'a.png')
+    $other = Join-Path $Repo 'specs\427-dark-plugin-toolbars\evidence\issue25-batch-rename.png'
+    Copy-Item -LiteralPath $other -Destination (Join-Path $LeftDiff 'b.png')
     Set-Config
     & reg.exe add $CfgKey /v 'Toolbar Icon Set' /t REG_DWORD /d 0 /f | Out-Null
     Out ("dark427_probe {0} on {1}; hot keys: {2}; OS {3}" -f $Label, $Exe, (Set-HotKeys), [Environment]::OSVersion.Version)
@@ -396,6 +479,7 @@ try {
     Run-Theme 0
     Run-Live 1
     Run-Live 0
+    Compare-Live
     # compare with the before run
     if ($Label -ne 'before' -and (Test-Path $BeforeDir)) {
         # the before values: the same measurement on the captures the before run saved

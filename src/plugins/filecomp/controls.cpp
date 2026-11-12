@@ -4,6 +4,7 @@
 #include "precomp.h"
 
 #include <uxtheme.h>
+#pragma comment(lib, "uxtheme.lib") // feature 427: SetWindowTheme of the combo box's drop-down list
 
 #include <Shlwapi.h>
 
@@ -665,6 +666,7 @@ CComboBox::CComboBox()
     BtnShadowPen = CreatePen(PS_SOLID, 0, SG->GetThemeSysColor(COLOR_BTNSHADOW));
     BtnHilightPen = CreatePen(PS_SOLID, 0, SG->GetThemeSysColor(COLOR_BTNHIGHLIGHT));
     Tracking = FALSE;
+    ListDarkened = FALSE;
 }
 
 CComboBox::~CComboBox()
@@ -690,6 +692,24 @@ void CComboBox::ChangeColors()
     BtnFacePen = CreatePen(PS_SOLID, 0, SG->GetThemeSysColor(COLOR_BTNFACE));
     BtnShadowPen = CreatePen(PS_SOLID, 0, SG->GetThemeSysColor(COLOR_BTNSHADOW));
     BtnHilightPen = CreatePen(PS_SOLID, 0, SG->GetThemeSysColor(COLOR_BTNHIGHLIGHT));
+    // feature 427: the drop-down list's scrollbar in the theme's style (the list is a popup the
+    // core's ThemeApplyToDialog does not reach); only once it was darkened does Default reset it
+    COMBOBOXINFO cbi;
+    memset(&cbi, 0, sizeof(cbi));
+    cbi.cbSize = sizeof(cbi);
+    if (HWindow != NULL && GetComboBoxInfo(HWindow, &cbi) && cbi.hwndList != NULL)
+    {
+        if (SG->IsDarkThemeActive())
+        {
+            SetWindowTheme(cbi.hwndList, L"DarkMode_Explorer", NULL);
+            ListDarkened = TRUE;
+        }
+        else if (ListDarkened)
+        {
+            SetWindowTheme(cbi.hwndList, NULL, NULL);
+            ListDarkened = FALSE;
+        }
+    }
 }
 
 LRESULT
@@ -728,6 +748,15 @@ CComboBox::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         SetBkColor((HDC)wParam, SG->GetThemeSysColor(COLOR_WINDOW));
         SetTextColor((HDC)wParam, SG->GetThemeSysColor(COLOR_WINDOWTEXT));
         return (LRESULT)SG->GetThemeSysColorBrush(COLOR_WINDOW) /* feature 427 */;
+    }
+
+    case WM_CTLCOLORLISTBOX:
+    {
+        // feature 427 (review 3, S3): the drop-down list of differences in the theme's colours - it
+        // stayed white in Dark; the same colours as the system's in Default
+        SetBkColor((HDC)wParam, SG->GetThemeSysColor(COLOR_WINDOW));
+        SetTextColor((HDC)wParam, SG->GetThemeSysColor(COLOR_WINDOWTEXT));
+        return (LRESULT)SG->GetThemeSysColorBrush(COLOR_WINDOW);
     }
 
     case WM_PAINT:
