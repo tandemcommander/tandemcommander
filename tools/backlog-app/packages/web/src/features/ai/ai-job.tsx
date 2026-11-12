@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import type { AiJob, AiJobKind } from "@backlog-app/shared";
 import { Button } from "@/components/ui/button.tsx";
 import { Alert, Card } from "@/components/ui/primitives.tsx";
-import { apiGet, apiPost, ApiFailure } from "@/lib/api.ts";
+import { apiGet, apiPost, errorText } from "@/lib/api.ts";
 import { formatDuration } from "@/lib/utils.ts";
 import { useNow } from "@/lib/now.ts";
 
@@ -42,7 +42,7 @@ export function useAiJob() {
       setJobId(created.id);
       void queryClient.invalidateQueries({ queryKey: ["jobs"] });
     },
-    onError: (error) => toast.error(error instanceof ApiFailure ? error.message : String(error)),
+    onError: (error) => toast.error(errorText(error)),
   });
   const cancel = useMutation({
     mutationFn: () => apiPost(`/api/ai/jobs/${jobId}/cancel`, {}),

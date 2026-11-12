@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Virtuoso } from "react-virtuoso";
-import type { TraceEvent } from "@backlog-app/shared";
+import { PhaseSchema, type Phase, type TraceEvent } from "@backlog-app/shared";
 import { Input } from "@/components/ui/primitives.tsx";
 import { Dialog, DialogContent } from "@/components/ui/overlays.tsx";
 import { openStream } from "@/lib/sse.ts";
@@ -37,12 +37,16 @@ export function useTraceStream(id: string | null) {
   const [events, setEvents] = useState<TraceEvent[]>([]);
   const [ended, setEnded] = useState(false);
   const [connected, setConnected] = useState(false);
+  // The server's own phase of the live run (its `phase` event; feature 426): the lower bound of
+  // the phase the page folds from the events.
+  const [phase, setPhase] = useState<Phase | null>(null);
   const [streamOf, setStreamOf] = useState(id);
   // Another run: start from an empty transcript (adjusted during render).
   if (id !== streamOf) {
     setStreamOf(id);
     setEvents([]);
     setEnded(false);
+    setPhase(null);
   }
   useEffect(() => {
     if (!id || id.startsWith("runs-md-")) return;
@@ -65,6 +69,9 @@ export function useTraceStream(id: string | null) {
         if (event === "trace" || event === "attempt") {
           batch.push(data as TraceEvent);
           if (!frame) frame = window.requestAnimationFrame(flush);
+        } else if (event === "phase") {
+          const parsed = PhaseSchema.safeParse((data as { phase?: unknown } | null)?.phase);
+          if (parsed.success) setPhase(parsed.data);
         } else if (event === "ended") {
           setEnded(true);
           close();
@@ -76,7 +83,7 @@ export function useTraceStream(id: string | null) {
       if (frame) window.cancelAnimationFrame(frame);
     };
   }, [id]);
-  return { events, ended, connected };
+  return { events, ended, connected, phase };
 }
 
 /** Icons per event kind. */

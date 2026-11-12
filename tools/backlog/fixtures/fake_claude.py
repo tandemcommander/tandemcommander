@@ -22,7 +22,9 @@ trace as the run's output); branch-hang [seconds] (371: a run on a feature branc
 it - start, the branch in the lock, a wait, the close, `returning` and the
 return to main with the backlog recipe when main moved).
 A finished run with `add: slug
-[, severity: n]` first records a new Inbox item.  For the loop's
+[, severity: n]` first records a new Inbox item; with `linger: seconds` it stays alive that long
+after its final result (426: a pending wakeup), with `after: seconds` it first writes an
+assistant line that long after the result.  For the loop's
 auto-triage: triage (every Inbox item to Next - severity 7+ at the top -
 and a commit), triage-none (no change, no commit), triage-dirty (a change
 left uncommitted), triage-hang
@@ -116,6 +118,24 @@ def finish(slug, outcome, step=None):
     git("commit", "-q", "-m", subject)
     bl("lock", "release", "--slug", slug)
     result(f"Outcome: {outcome}\nItem: {slug}")
+    linger(step)
+
+
+def linger(step=None):
+    """426: stay alive after the final result, as a real claude -p does while a wakeup it
+    scheduled earlier is still pending; `after` emits an assistant line that many seconds after
+    the result first (a turn that goes on), then lingers again."""
+    step = step or {}
+    seconds = float(step.get("linger", 0))
+    if step.get("after") is not None:
+        time.sleep(float(step["after"]))
+        emit({"type": "assistant", "message": {"role": "assistant", "content": [
+            {"type": "text", "text": "still working after the result"}]},
+            "parent_tool_use_id": None, "session_id": SESSION})
+        note_call(after_emitted=time.time())
+    if seconds > 0:
+        time.sleep(seconds)
+        note_call(lingered=seconds)
 
 
 def git_out(*args) -> str:
@@ -191,6 +211,7 @@ def branch_run(slug, step):
               returning_code=returning.returncode)
     bl("lock", "release", "--slug", slug)
     result(f"Outcome: closed\nItem: {slug}")
+    linger(step)
 
 
 def loop_gate():
@@ -263,6 +284,7 @@ def play(step, slug):
     if do == "stall":
         ensure_lock(slug)
         result("I stopped here.")
+        linger(step)
         return 0
     if do == "row-keep-lock":
         ensure_lock(slug)
@@ -271,6 +293,7 @@ def play(step, slug):
         git("add", "-A")
         git("commit", "-q", "-m", f"fake: {slug} closed, lock kept")
         result("Outcome: closed (lock not released)")
+        linger(step)
         return 0
     if do == "release":
         bl("lock", "release", "--slug", slug)

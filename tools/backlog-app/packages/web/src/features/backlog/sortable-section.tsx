@@ -36,7 +36,7 @@ import { GripVerticalIcon } from "lucide-react";
 import { cloneElement, useMemo, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { toast } from "sonner";
 import type { ChangeResult, ItemRowView, SectionName } from "@backlog-app/shared";
-import { apiPost, ApiFailure } from "@/lib/api.ts";
+import { apiPost, errorText } from "@/lib/api.ts";
 import { useShortcuts, type Shortcut } from "@/lib/hotkeys.ts";
 import { useWriteAccess } from "@/features/gate/gate-banner.tsx";
 import { SectionTable, type SectionTableProps } from "./section-table.tsx";
@@ -160,7 +160,7 @@ export function SortableSection({
     onError: (error) => {
       // Put the rows back where the server has them.
       setOrder(rows.map((r) => r.slug));
-      toast.error(error instanceof ApiFailure ? error.message : String(error));
+      toast.error(errorText(error));
       void queryClient.invalidateQueries({ queryKey: ["board"] });
     },
   });

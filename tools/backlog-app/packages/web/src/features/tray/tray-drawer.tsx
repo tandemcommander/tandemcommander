@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button.tsx";
 import { Badge, Label, Textarea } from "@/components/ui/primitives.tsx";
 import { Dialog, SheetContent } from "@/components/ui/overlays.tsx";
 import { ChangeProblemBox } from "@/components/change-problem.tsx";
-import { apiGet, apiPost, ApiFailure } from "@/lib/api.ts";
+import { apiGet, apiPost, ApiFailure, errorText } from "@/lib/api.ts";
 import { useShortcuts, type Shortcut } from "@/lib/hotkeys.ts";
 import { relativeTime } from "@/lib/utils.ts";
 import { useAppStore } from "@/app/store.ts";
@@ -49,7 +49,7 @@ function useUndo() {
       toast.success("Undone");
       void queryClient.invalidateQueries();
     },
-    onError: (error) => toast.error(error instanceof ApiFailure ? error.message : String(error)),
+    onError: (error) => toast.error(errorText(error)),
   });
 }
 
@@ -91,7 +91,7 @@ function TrayPanel({
     onError: (error) =>
       setProblem(
         error instanceof ApiFailure
-          ? { code: error.code, message: error.message }
+          ? { code: error.code, message: errorText(error) }
           : { code: "network", message: String(error) },
       ),
   });

@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import type { ChangeResult, ItemRowView, SectionName } from "@backlog-app/shared";
 import { Button } from "@/components/ui/button.tsx";
 import { Tooltip } from "@/components/ui/overlays.tsx";
-import { apiPost, ApiFailure } from "@/lib/api.ts";
+import { apiPost, ApiFailure, errorText } from "@/lib/api.ts";
 import { useBoard } from "@/lib/queries.ts";
 import { cn } from "@/lib/utils.ts";
 import { itemReason, useWriteAccess } from "@/features/gate/gate-banner.tsx";
@@ -101,7 +101,7 @@ export function usePlaceAt(section: SectionName | null) {
         );
     },
     onError: (error) => {
-      toast.error(error instanceof ApiFailure ? error.message : String(error));
+      toast.error(errorText(error));
       void queryClient.invalidateQueries({ queryKey: ["board"] });
     },
   });

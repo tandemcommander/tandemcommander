@@ -91,6 +91,7 @@ MAX_REFUSALS = 2             # runs in a row that did not take their item
 MAX_LIMITS = 10              # continuations of one run after usage limits (claude waits most out itself)
 IDLE_WAKEUPS = 2             # no-op wakeups in a row, no background task: the run waits for nothing
 MAX_NUDGES = 3               # continuations of one run after such idling
+FINISH_GRACE = 30.0          # a finished run whose claude stays alive after its last result is ended after this (426)
 BG_WAIT_CEILING_MS = "7200000"  # background tasks outlive the last turn this long (reviewers: about 45 min)
 TICK = 1.0                   # how often waits look at pause / stop / kill
 STILL_ACTIVE = 259
@@ -471,6 +472,7 @@ class LogInfo:
         self.idle_wakeups = 0    # wakeup ticks that only scheduled a no-op wakeup, since the last sign of work
         self.in_tick = False     # the current turn was started by a scheduled wakeup
         self.tick_counted = False
+        self.last_kind = None    # the type of the newest object that shows work ("result" = the turn ended; 426)
 
     @property
     def idle(self) -> bool:
@@ -539,7 +541,10 @@ def scan(lines: list, info: LogInfo) -> None:
         kind = obj.get("type")
         if obj.get("parent_tool_use_id"):
             info.idle_wakeups = 0  # a subagent is working
+            info.last_kind = "subagent"
             continue
+        if kind != "rate_limit_event":  # usage figures may follow a result; they are not work
+            info.last_kind = kind
         if kind == "result":
             info.result = obj
         elif kind == "rate_limit_event" and isinstance(obj.get("rate_limit_info"), dict):
@@ -1065,6 +1070,7 @@ class Loop:
         info = LogInfo()
         told = set()
         killed_at = 0.0
+        last_line = time.time()
         while running():
             self.check_kill()
             if self.args.deadline and time.time() - self.started > self.args.deadline:
@@ -1075,6 +1081,7 @@ class Loop:
             lines, offset = read_lines(Path(source["log"]), offset)
             if lines:
                 scan(lines, info)
+                last_line = time.time()
                 if info.rate_limit:
                     self.usage = info.rate_limit
             # this run's claude - also a previous loop's (pending()), never the auto-triage's
@@ -1088,6 +1095,19 @@ class Loop:
                         "stopping it to continue it with a reminder")
                 kill_tree(pid)
                 killed_at = time.time()  # tried again after 30 s if it is still alive
+            # 426: the run is over (its journal row is written, the run lock is not its own any
+            # more) and its last turn ended, but claude stays alive - a wakeup it scheduled earlier
+            # is still pending. Nothing of the run is left to do: end it, so that the edit lock of
+            # the return is released and the loop goes on.
+            if (pid and source is self.run and info.last_kind == "result"
+                    and time.time() - last_line >= FINISH_GRACE and time.time() - killed_at > 30
+                    and self.run_finished()):
+                if "finished" not in told:
+                    told.add("finished")
+                    say(f"item {self.run['slug']}: the run finished, but claude is still alive "
+                        f"{int(time.time() - last_line)} s after its last result (a pending wakeup?) - ending it")
+                kill_tree(pid)
+                killed_at = time.time()
             state_detail = detail
             if info.rate_limit and info.rate_limit.get("status") == "rejected":
                 reset = info.reset_at
@@ -1115,6 +1135,11 @@ class Loop:
         elif self.repo.returning_flag.exists():
             slug = (self.run or {}).get("slug") or "-"
             self.take_edit(f"loop: the run of {slug} returns to main")  # retried next tick while the app changes
+
+    def run_finished(self) -> bool:
+        """426: the run has ended its work - its item's journal row is written since it began and
+        the run lock is no longer the run's (the skill releases it last)."""
+        return self.our_row(self.repo.runs()) is not None and not self.holds(self.repo.lock())
 
     def our_row(self, rows: list) -> str | None:
         """The outcome of a journal row of this run's item written since it started."""
@@ -1875,6 +1900,24 @@ def start_new_window(repo: Repo, args) -> int:
     return 1
 
 
+def finished_outcome(repo: Repo, run: dict | None) -> str | None:
+    """426: the outcome of a recorded run that has finished its work - its item's journal row is
+    written since it began and no run lock of that item is held - or None. Such a record is
+    concluded by the next start without claude (Loop.pending); a lock of the same item counts as
+    the run's own (never called finished then)."""
+    if not run or run.get("kind") == traces.TRIAGE or "rows_before" not in run:
+        return None
+    outcome = None
+    for r in repo.runs()[run["rows_before"]:]:
+        if len(r) > 2 and r[1] == run["slug"]:
+            outcome = r[2]
+            break
+    lock = repo.lock()
+    if outcome is None or (lock is not None and lock.get("slug") == run["slug"]):
+        return None
+    return outcome
+
+
 def describe(repo: Repo) -> dict:
     """What status prints, as data."""
     loop = load_json(repo.loop_file)
@@ -1893,6 +1936,7 @@ def describe(repo: Repo) -> dict:
             # 344: a pending kill (a flag without a live loop is stale: the next start removes it)
             "kill": repo.kill_flag.exists() and live, "last": load_json(repo.last_file),
             "edit_lock": edit, "log": str(repo.log_file),
+            "finished": finished_outcome(repo, run),  # 426
             # 344: a claude of a dead loop still working (the item's run or the auto-triage) - the
             # same checks the text output makes, so the backlog app need not test processes itself
             "orphan": not live and bool((run and alive(run.get("child_pid"), run.get("child_ident")))
@@ -1942,6 +1986,9 @@ def cmd_status(repo: Repo, args) -> int:
             print("         then bin/backlog-loop.sh start --forget-run")
         elif not d["live"] and alive(run.get("child_pid"), run.get("child_ident")):
             print(f"         its claude (pid {run['child_pid']}) is still working; the next bin/backlog-loop.sh start waits for it")
+        elif not d["live"] and d["finished"]:
+            # 426: a hard stop after the run's end (its claude lingered): nothing is continued
+            print(f"         the run finished ({d['finished']}); the next bin/backlog-loop.sh start records it")
         elif not d["live"]:
             print("         the next bin/backlog-loop.sh start continues this run in the same session")
             if run.get("phase") in ("running", "killed", "new"):

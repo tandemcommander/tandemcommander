@@ -13,7 +13,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { Phase, Run, TraceEvent } from "@backlog-app/shared";
+import { laterPhase, type Phase, type Run, type TraceEvent } from "@backlog-app/shared";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/overlays.tsx";
 import { useBoard } from "@/lib/queries.ts";
 import { useNow } from "@/lib/now.ts";
@@ -58,6 +58,7 @@ const SCROLL = "min-h-0 flex-1 overflow-y-auto";
 export function RunDashboard({
   run,
   events,
+  serverPhase = null,
   connected,
   live,
   heading,
@@ -66,6 +67,7 @@ export function RunDashboard({
 }: {
   /** The run. */ run: Run;
   /** The trace events so far. */ events: TraceEvent[];
+  /** The server's phase from the trace stream (live runs), or null. */ serverPhase?: Phase | null;
   /** The stream is connected. */ connected: boolean;
   /** The run is live (follow the end, tick the clock, offer the chat). */ live: boolean;
   /** The page's heading. */ heading: ReactNode;
@@ -90,13 +92,19 @@ export function RunDashboard({
       for (const row of section.rows) if (row.kind === "item" && row.slug === run.slug) return row.title;
     return null;
   }, [board.data, run.slug, run.title]);
-  // The fold of the full trace knows the phase as well as the server; before any event, the
-  // server's phase.
-  const folded: Phase = events.length > 0 ? runView.phase : run.phase;
+  // The page's own fold of the streamed events, never earlier than the server's fold of the same
+  // trace (its `phase` stream event, else the run's phase; feature 426: a fold of a partial list
+  // stayed at "Specify"); before any event, the server's phase.
+  const lowerBound = laterPhase(run.phase, serverPhase);
+  const folded: Phase = events.length > 0 ? laterPhase(runView.phase, lowerBound) : lowerBound;
   // A closed run is finished even when its trace ends before the last marker (the close and the
   // merge are backlog commands of the loop's own, not always in the trace).
   const phase: Phase = !live && run.outcome === "closed" && folded !== "stopped" ? "done" : folded;
-  const timeline = events.length > 0 ? runView.timeline : run.phaseTimeline;
+  const timeline = useMemo(() => {
+    const own = events.length > 0 ? runView.timeline : run.phaseTimeline;
+    // The server's phase is reached even when the page's fold has not seen it.
+    return own.some((t) => t.phase === folded) ? own : [...own, { phase: folded, at: null }];
+  }, [events.length, runView.timeline, run.phaseTimeline, folded]);
   const progress = progressOf(run, phase, timeline, insight.data, nowMs);
   const reached = useMemo(() => new Set(timeline.map((t) => t.phase)), [timeline]);
   const commits = run.commits.length > 0 ? run.commits : runView.commits;

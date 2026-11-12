@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import type { LoopShown, LoopView } from "@backlog-app/shared";
 import { Button } from "@/components/ui/button.tsx";
 import { Tooltip } from "@/components/ui/overlays.tsx";
-import { apiPost, ApiFailure } from "@/lib/api.ts";
+import { apiPost, errorText } from "@/lib/api.ts";
 import { cn, relativeTime } from "@/lib/utils.ts";
 import { useAppStore } from "@/app/store.ts";
 
@@ -61,7 +61,7 @@ export function useLoopCommand(command: "pause" | "resume" | "stop") {
       // Resume commits the tray as the setting *Auto-commit before loop* says (server side).
       apiPost<{ output: string }>(`/api/loop/${command}`, {}),
     onSuccess: (answer) => toast.success(answer.output || `${command} sent`),
-    onError: (error) => toast.error(error instanceof ApiFailure ? error.message : String(error)),
+    onError: (error) => toast.error(errorText(error)),
   });
 }
 

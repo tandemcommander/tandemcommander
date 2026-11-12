@@ -45,6 +45,7 @@ export function RunPage() {
           key={run.data.id}
           run={run.data}
           events={trace.events}
+          serverPhase={trace.phase}
           connected={trace.connected}
           live={run.data.outcome === "running"}
           heading={`Run ${id}`}

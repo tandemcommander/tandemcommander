@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/primitives.tsx";
 import { Dialog, DialogContent, DialogFooter } from "@/components/ui/overlays.tsx";
 import { ChangeProblemBox } from "@/components/change-problem.tsx";
-import { apiPost, ApiFailure } from "@/lib/api.ts";
+import { apiPost, ApiFailure, errorText } from "@/lib/api.ts";
 import { useBoard, useLiveRun, useLoop, useSettings } from "@/lib/queries.ts";
 import { formatBytes, relativeTime } from "@/lib/utils.ts";
 import { useAppStore } from "@/app/store.ts";
@@ -56,7 +56,7 @@ function useLoopAction(path: string, onDone?: () => void) {
     onError: (error) =>
       setProblem(
         error instanceof ApiFailure
-          ? { code: error.code, message: error.message }
+          ? { code: error.code, message: errorText(error) }
           : { code: "network", message: String(error) },
       ),
   });

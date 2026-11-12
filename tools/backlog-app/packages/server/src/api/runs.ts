@@ -77,26 +77,33 @@ export function runRoutes(services: Services): Hono {
   app.get("/runs/:id/stream", (c) => {
     const id = param(c.req.param("id"), RUN_ID_PATTERN, "run");
     const resume = Number(c.req.header("last-event-id") ?? c.req.query("from") ?? "0");
-    let offset = Number.isInteger(resume) && resume >= 0 ? resume : 0;
+    // The end of the last line whose events were all sent (feature 426: kept apart from the
+    // catch-up's read position - sharing one variable ended the catch-up after its first page).
+    let sent = Number.isInteger(resume) && resume >= 0 ? resume : 0;
     return streamSSE(c, async (stream) => {
       let closed = false;
       stream.onAbort(() => {
         closed = true;
       });
       /**
-       * Sends events, each with the offset after its line as the id.
+       * Sends events. All events of one line share the line's end offset; they are all sent
+       * (feature 426: the second and later ones were skipped), and only the last of them carries
+       * that offset as its id, so a resume after a lost connection never skips the rest of a line.
        *
-       * @param events - The events.
+       * @param events - The events, in order.
        */
       const send = async (events: TraceEvent[]): Promise<void> => {
-        for (const event of events) {
-          if (event.end <= offset) continue;
+        const floor = sent;
+        for (let i = 0; i < events.length; i++) {
+          const event = events[i]!;
+          if (event.end <= floor) continue;
+          const lastOfLine = events[i + 1]?.end !== event.end;
           await stream.writeSSE({
             event: event.kind === "attempt" ? "attempt" : "trace",
-            id: String(event.end),
+            ...(lastOfLine ? { id: String(event.end) } : {}),
             data: JSON.stringify(event),
           });
-          offset = Math.max(offset, event.end);
+          if (lastOfLine) sent = Math.max(sent, event.end);
         }
       };
       // Live events that arrive during the catch-up wait in a queue.
@@ -105,19 +112,19 @@ export function runRoutes(services: Services): Hono {
         if (runId === id) queued.push(...events);
       });
       try {
-        // Catch up from the file, a page at a time.
+        // Catch up from the file, a page at a time, until a page makes no progress (a page
+        // without events - lines that give none - is not the end).
+        let readAt = sent;
         for (;;) {
           if (closed) return;
-          const page = services.runs.events(id, offset);
+          const page = services.runs.events(id, readAt);
           await send(page.events);
-          if (page.next <= offset || page.events.length === 0) {
-            offset = Math.max(offset, page.next);
-            break;
-          }
-          offset = page.next;
+          if (page.next <= readAt) break;
+          readAt = page.next;
         }
+        sent = Math.max(sent, readAt);
         if (services.runs.liveId() !== id) {
-          await stream.writeSSE({ event: "ended", data: JSON.stringify({ offset }) });
+          await stream.writeSSE({ event: "ended", data: JSON.stringify({ offset: sent }) });
           return;
         }
         // Follow the live run.
@@ -127,7 +134,7 @@ export function runRoutes(services: Services): Hono {
           await send(events);
           const live = services.runs.liveRun();
           if (!live || live.id !== id) {
-            await stream.writeSSE({ event: "ended", data: JSON.stringify({ offset }) });
+            await stream.writeSSE({ event: "ended", data: JSON.stringify({ offset: sent }) });
             return;
           }
           if (live.phase !== lastPhase) {

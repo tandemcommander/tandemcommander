@@ -14,7 +14,7 @@ import { SECTION_NAMES, type Legend, type SectionName } from "@backlog-app/share
 import { Button } from "@/components/ui/button.tsx";
 import { Input, Label, NativeSelect } from "@/components/ui/primitives.tsx";
 import { Dialog, DialogContent, DialogFooter } from "@/components/ui/overlays.tsx";
-import { apiPost, ApiFailure } from "@/lib/api.ts";
+import { apiPost, errorText } from "@/lib/api.ts";
 
 /** The answer of `POST /api/bulk`. */
 interface BulkAnswer {
@@ -69,9 +69,7 @@ export function BulkBar({
     },
     onError: (error) =>
       setAnswer({
-        results: [
-          { slug: "-", ok: false, refused: error instanceof ApiFailure ? error.message : String(error) },
-        ],
+        results: [{ slug: "-", ok: false, refused: errorText(error) }],
       }),
   });
   if (slugs.length === 0) return null;

@@ -22,7 +22,7 @@ import {
 import { Button } from "@/components/ui/button.tsx";
 import { Alert, Input, Skeleton } from "@/components/ui/primitives.tsx";
 import { Dialog, DialogContent, DialogFooter } from "@/components/ui/overlays.tsx";
-import { apiPost, ApiFailure } from "@/lib/api.ts";
+import { apiPost, errorText } from "@/lib/api.ts";
 import { useBoard, useLegend } from "@/lib/queries.ts";
 import { useShortcuts, type Shortcut } from "@/lib/hotkeys.ts";
 import { ItemView } from "@/features/item/item-view.tsx";
@@ -80,7 +80,7 @@ function SaveViewDialog({
       onOpenChange(false);
       setName("");
     },
-    onError: (error) => toast.error(error instanceof ApiFailure ? error.message : String(error)),
+    onError: (error) => toast.error(errorText(error)),
   });
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -257,11 +257,7 @@ export function BacklogPage() {
             ))}
           </div>
         ) : null}
-        {board.error ? (
-          <Alert tone="bad">
-            {board.error instanceof ApiFailure ? board.error.message : String(board.error)}
-          </Alert>
-        ) : null}
+        {board.error ? <Alert tone="bad">{errorText(board.error)}</Alert> : null}
         {(board.data?.unreadable.length ?? 0) > 0 ? (
           <Alert tone="bad">
             {board.data!.unreadable.length} item(s) cannot be read:{" "}

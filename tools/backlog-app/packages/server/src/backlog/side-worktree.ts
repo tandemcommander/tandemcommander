@@ -32,11 +32,13 @@ import { GIT_TIMEOUT_MS } from "../repo/git.ts";
 export const SIDE_WORKTREE_FOLDER = "main-worktree";
 
 /**
- * The sparse patterns: the backlog only. The feature folders the tool's `feature-missing` rule
- * looks for are created empty by {@link SideWorktree.sync} from the commit's tree (a pattern
- * for one file per folder misses folders without that file; every folder is 67 MB).
+ * The sparse patterns: the top-level `backlog/` only (non-cone patterns are gitignore patterns:
+ * an unanchored `backlog` also matched `tools/backlog/` and every other folder of that name,
+ * feature 426). The feature folders the tool's `feature-missing` rule looks for are created
+ * empty by {@link SideWorktree.sync} from the commit's tree (a pattern for one file per folder
+ * misses folders without that file; every folder is 67 MB).
  */
-const SPARSE_PATTERNS = ["backlog"];
+const SPARSE_PATTERNS = ["/backlog/"];
 
 /** The side worktree of one repository. */
 export class SideWorktree {
@@ -169,13 +171,23 @@ export class SideWorktree {
     // `extensions.worktreeConfig`, which `sparse-checkout` already enabled.
     await this.inTree(["config", "--worktree", "core.autocrlf", "false"]);
     await this.inTree(["config", "--worktree", "core.eol", "lf"]);
+    // First back to the worktree's own HEAD, whatever a failed change or an older version of this
+    // code left (feature 426): a checkout refuses to overwrite a tracked file that is deleted or
+    // changed here, so the tree is made clean before it moves, not only after. `reset --hard`
+    // also puts a tracked file back where the old sync had left an empty folder (measured).
+    await this.inTree(["reset", "-q", "--hard"]);
+    await this.inTree(["clean", "-fdq", "--", "backlog"]);
     await this.inTree(["checkout", "-q", "--detach", commit]);
-    await this.inTree(["sparse-checkout", "reapply"]);
+    // `set`, not `reapply`: a worktree made with the older pattern takes the current one.
+    await this.inTree(["sparse-checkout", "set", "--no-cone", ...SPARSE_PATTERNS]);
     await this.inTree(["reset", "-q", "--hard", commit]);
     await this.inTree(["clean", "-fdq", "--", "backlog"]);
     // The feature folders, empty: the tool's `feature-missing` rule only asks whether
-    // `specs/NNN-*` exists. Empty folders are invisible to git status.
-    const folders = (await this.inTree(["ls-tree", "--name-only", "-z", commit, "--", "specs/"])).split("\0");
+    // `specs/NNN-*` exists. Empty folders are invisible to git status. Trees only (`-d`): a file
+    // directly under specs/ (FEATURE-HISTORY.md) must never become a folder (feature 426).
+    const folders = (await this.inTree(["ls-tree", "-d", "--name-only", "-z", commit, "--", "specs/"])).split(
+      "\0",
+    );
     for (const folder of folders) {
       if (/^specs\/[^/]+$/.test(folder))
         mkdirSync(join(this.path, "specs", folder.slice(6)), { recursive: true });

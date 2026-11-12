@@ -21,7 +21,7 @@ import {
   NativeSelect,
   Skeleton,
 } from "@/components/ui/primitives.tsx";
-import { apiCall, ApiFailure } from "@/lib/api.ts";
+import { apiCall, errorText } from "@/lib/api.ts";
 import { useSettings, useViews } from "@/lib/queries.ts";
 import { setTheme, useTheme, type ThemeChoice } from "@/lib/theme.ts";
 import { applyNotificationSettings, requestDesktopPermission } from "@/features/notifications/desktop.ts";
@@ -62,12 +62,12 @@ export function SettingsPage() {
       applyNotificationSettings(stored);
       void queryClient.invalidateQueries({ queryKey: ["settings"] });
     },
-    onError: (error) => toast.error(error instanceof ApiFailure ? error.message : String(error)),
+    onError: (error) => toast.error(errorText(error)),
   });
   const removeView = useMutation({
     mutationFn: (name: string) => apiCall("DELETE", `/api/views/${encodeURIComponent(name)}`, {}),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["views"] }),
-    onError: (error) => toast.error(error instanceof ApiFailure ? error.message : String(error)),
+    onError: (error) => toast.error(errorText(error)),
   });
   if (!draft) return <Skeleton className="m-4 h-60" />;
   /**

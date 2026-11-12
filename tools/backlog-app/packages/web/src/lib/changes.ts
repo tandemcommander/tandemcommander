@@ -15,7 +15,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import type { ChangeResult } from "@backlog-app/shared";
-import { apiPost, ApiFailure } from "./api.ts";
+import { apiPost, ApiFailure, errorText } from "./api.ts";
 
 /** What a change dialog shows after a failed submit. */
 export interface ChangeProblem {
@@ -63,7 +63,7 @@ export function useChange(onDone?: (result: ChangeResult) => void) {
     },
     onError: (error) => {
       const failure = error instanceof ApiFailure ? error : new ApiFailure(0, "network", String(error));
-      setProblem({ code: failure.code, message: failure.message });
+      setProblem({ code: failure.code, message: errorText(failure) });
       if (failure.code === "changed-underneath") {
         void queryClient.invalidateQueries({ queryKey: ["board"] });
         void queryClient.invalidateQueries({ queryKey: ["item"] });

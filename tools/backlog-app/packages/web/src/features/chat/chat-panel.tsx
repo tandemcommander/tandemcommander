@@ -17,7 +17,7 @@ import type { ChatContext, Conversation, Turn } from "@backlog-app/shared";
 import { Markdown } from "@/components/markdown.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Alert, Skeleton, Textarea } from "@/components/ui/primitives.tsx";
-import { apiGet, apiPost, ApiFailure } from "@/lib/api.ts";
+import { apiGet, apiPost, errorText } from "@/lib/api.ts";
 import { openStream } from "@/lib/sse.ts";
 import { cn, relativeTime } from "@/lib/utils.ts";
 import { chatSignature } from "@/features/live/run-views.ts";
@@ -238,12 +238,12 @@ export function ChatPanel({
       setText("");
       void queryClient.invalidateQueries({ queryKey: ["chat", slug] });
     },
-    onError: (error) => setProblem(error instanceof ApiFailure ? error.message : String(error)),
+    onError: (error) => setProblem(errorText(error)),
   });
   const stop = useMutation({
     mutationFn: () => apiPost(`/api/items/${slug}/chat/stop`, {}),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["chat", slug] }),
-    onError: (error) => toast.error(error instanceof ApiFailure ? error.message : String(error)),
+    onError: (error) => toast.error(errorText(error)),
   });
   const reset = useMutation({
     mutationFn: () => apiPost(`/api/items/${slug}/chat/reset`, {}),
@@ -251,7 +251,7 @@ export function ChatPanel({
       toast.success("A new conversation");
       void queryClient.invalidateQueries({ queryKey: ["chat", slug] });
     },
-    onError: (error) => toast.error(error instanceof ApiFailure ? error.message : String(error)),
+    onError: (error) => toast.error(errorText(error)),
   });
 
   /**

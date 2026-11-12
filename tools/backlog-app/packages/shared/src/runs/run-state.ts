@@ -41,6 +41,21 @@ export const PHASE_ORDER: readonly Phase[] = [
   "done",
 ];
 
+/**
+ * The later of two phases of one run (feature 426: the live page never shows a phase earlier than
+ * the server's fold). The stop path wins (it is final); a phase outside the order (triage) loses
+ * to one in it; of two such phases the first is kept.
+ *
+ * @param a - One phase (e.g. the page's own fold).
+ * @param b - The other (e.g. the server's), or null.
+ * @returns The later one.
+ */
+export function laterPhase(a: Phase, b: Phase | null | undefined): Phase {
+  if (b === null || b === undefined || a === b) return a;
+  if (a === "stopped" || b === "stopped") return "stopped";
+  return PHASE_ORDER.indexOf(b) > PHASE_ORDER.indexOf(a) ? b : a;
+}
+
 /** Spec Kit skills and the phase each starts. */
 const SKILL_PHASE: Record<string, Phase> = {
   "speckit-specify": "specify",

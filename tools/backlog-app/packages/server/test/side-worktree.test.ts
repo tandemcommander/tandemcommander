@@ -9,7 +9,7 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { SideWorktree } from "../src/backlog/side-worktree.ts";
@@ -140,6 +140,64 @@ describe("SideWorktree", () => {
     await worktree.sync(base);
     expect(existsSync(join(worktree.path, "leftover.txt"))).toBe(false);
     expect(await worktree.exists()).toBe(true);
+  });
+
+  it("keeps a file directly under specs/ a file and lands ten changes in a row (426)", async () => {
+    // The real repository has specs/FEATURE-HISTORY.md besides the feature folders; the old sync
+    // made a folder of it and then could never check main out again. A folder named backlog
+    // deeper in the tree is not part of the sparse set.
+    writeFileSync(join(root, "specs", "FEATURE-HISTORY.md"), "# History\n");
+    mkdirSync(join(root, "tools", "x", "backlog"), { recursive: true });
+    writeFileSync(join(root, "tools", "x", "backlog", "a.txt"), "a\n");
+    await gitIn(root, ["add", "-A"]);
+    await gitIn(root, ["commit", "-q", "-m", "a history file"]);
+    await gitIn(root, ["checkout", "-q", "-b", "345-a-run"]);
+    const overview = join(worktree.path, "backlog", "BACKLOG.md");
+    for (let round = 1; round <= 10; round++) {
+      const base = await mainCommit();
+      await worktree.sync(base);
+      const history = join(worktree.path, "specs", "FEATURE-HISTORY.md");
+      expect(existsSync(history) && statSync(history).isDirectory()).toBe(false);
+      expect(existsSync(join(worktree.path, "specs", "243-example"))).toBe(true);
+      expect(existsSync(join(worktree.path, "tools"))).toBe(false);
+      writeFileSync(overview, readFileSync(overview, "utf8") + `\n<!-- round ${round} -->\n`);
+      const hash = await worktree.commit(["backlog/BACKLOG.md"], `backlog(app): round ${round}\n`);
+      expect(await worktree.landOnMain(hash, base)).toBe(true);
+      // main changes the history file meanwhile (a run's merge), as on 2026-11-12.
+      await gitIn(root, ["checkout", "-q", "main"]);
+      writeFileSync(join(root, "specs", "FEATURE-HISTORY.md"), `# History\n- ${round}\n`);
+      await gitIn(root, ["commit", "-q", "-am", `history ${round}`]);
+      await gitIn(root, ["checkout", "-q", "345-a-run"]);
+    }
+    expect(
+      (await gitIn(root, ["log", "--format=%s", "main"]))
+        .split("\n")
+        .filter((s) => s.startsWith("backlog(app): round")),
+    ).toHaveLength(10);
+  });
+
+  it("brings a dirty worktree back to main: a folder at a file's path, a deleted and a changed file (426)", async () => {
+    writeFileSync(join(root, "specs", "FEATURE-HISTORY.md"), "# History\n");
+    await gitIn(root, ["add", "-A"]);
+    await gitIn(root, ["commit", "-q", "-m", "a history file"]);
+    await worktree.ensure();
+    // The state the old sync left: an empty folder where the tracked file belongs ...
+    const history = join(worktree.path, "specs", "FEATURE-HISTORY.md");
+    rmSync(history, { force: true });
+    mkdirSync(history, { recursive: true });
+    // ... and other damage of a crashed change.
+    rmSync(join(worktree.path, "backlog", "RUNS.md"));
+    writeFileSync(join(worktree.path, "backlog", "BACKLOG.md"), "broken");
+    // main moves on, changing the file the folder stands in for.
+    writeFileSync(join(root, "specs", "FEATURE-HISTORY.md"), "# History\n- moved\n");
+    await gitIn(root, ["commit", "-q", "-am", "history moved"]);
+    const moved = await mainCommit();
+    await worktree.sync(moved);
+    expect((await gitIn(worktree.path, ["rev-parse", "HEAD"])).trim()).toBe(moved);
+    expect((await gitIn(worktree.path, ["status", "--porcelain", "--untracked-files=all"])).trim()).toBe("");
+    expect(existsSync(join(worktree.path, "backlog", "RUNS.md"))).toBe(true);
+    expect(readFileSync(join(worktree.path, "backlog", "BACKLOG.md"), "utf8")).not.toBe("broken");
+    expect(existsSync(history) && statSync(history).isDirectory()).toBe(false);
   });
 
   it.skipIf(process.platform !== "win32")(

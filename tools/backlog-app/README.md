@@ -116,13 +116,16 @@ browser (React 19, Vite build)          server (Node 24, Hono on node:http, 127.
   run holds the run lock and works on its branch: the backlog tool runs in the
   app's sparse detached side worktree of `main`
   (`.git/tandem-backlog-app/main-worktree/`), the change is committed there and
-  `main` is moved with a compare-and-swap. The primary working tree is never
+  `main` is moved with a compare-and-swap (the side worktree is made clean
+  before every change, whatever a failed one left; feature 426). The primary
+  working tree is never
   touched while a run holds the lock; the item the run works on is frozen
   (also against indirect changes); the run merges `main` at its end by the
   recipe of `/tandem-backlog-implement` step 9.
 - The loop holds the app's edit lock while a run starts (until the run is on
   its branch) and while it returns to `main` (`bin/backlog-loop.sh returning`
-  at step 9); then the gate is read-only for a moment (`run-starting`,
+  at step 9; a finished run whose claude stays alive after its last result -
+  a pending wakeup - is ended after 30 s, feature 426); then the gate is read-only for a moment (`run-starting`,
   `run-on-main`) and opens again by itself.
 - The conversation about an item runs one `claude -p` process in bidirectional
   stream-json mode with the file tools only (Read, Grep, Glob - no shell: even

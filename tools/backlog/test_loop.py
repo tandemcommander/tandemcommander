@@ -24,6 +24,7 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
+from unittest import mock
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
@@ -1802,6 +1803,91 @@ class EditLockTests(Base):
         self.write_plan(["close"])
         self.run_loop("--until-idle")
         self.assertEqual(json.loads(self.ctl("status", "--json")[1])["last"]["reason"], "until-idle")
+
+
+class FinishedRunTests(Base):
+    """426: a run that finished while its claude stays alive (a pending wakeup), and its status
+    after a hard stop."""
+
+    def grace(self, seconds):
+        return mock.patch.object(loop, "FINISH_GRACE", seconds, create=True)
+
+    def test_a_finished_run_whose_claude_lingers_is_ended(self):
+        self.write_plan([{"do": "close", "linger": 45}])
+        began = time.time()
+        with self.grace(0.5):
+            code, out = self.run_loop("--max-items", "1")
+        took = time.time() - began
+        self.assertEqual(code, 0, out)
+        self.assertLess(took, 20, out)
+        self.assertIn("the run finished, but claude is still alive", out)
+        self.assertIn(f"item {FTP}: closed", out)
+        self.assertNotIn("lingered", self.calls()[0])  # ended before its linger was over
+        self.assertTrue(any(r[1] == FTP and r[2] == "closed" for r in self.runs()), self.runs())
+        self.assertFalse(self.repo.run_file.exists())
+        (d,) = self.trace_dirs()
+        meta = json.loads((d / "meta.json").read_text(encoding="utf-8"))
+        self.assertEqual(meta["outcome"], "closed")
+        self.assertIsNotNone(meta["ended"])
+
+    def test_the_return_of_a_lingering_run_releases_the_edit_lock(self):
+        # the 425 case: the run returned to main (the loop holds the app's edit lock for it), then
+        # its claude stayed alive
+        self.write_plan([{"do": "branch-hang", "seconds": 0.2, "linger": 45}])
+        began = time.time()
+        with self.grace(0.5):
+            code, out = self.run_loop("--max-items", "1")
+        self.assertEqual(code, 0, out)
+        self.assertLess(time.time() - began, 25, out)
+        self.assertIn("the run finished, but claude is still alive", out)
+        self.assertIsNone(self.repo.edit_lock())
+        self.assertFalse(self.repo.returning_flag.exists())
+        self.assertNotIn("lingered", self.calls()[0])
+
+    def test_a_run_that_still_holds_its_lock_is_never_ended(self):
+        # the row is written, but the lock is kept: the run is not over (it may wait for a reviewer)
+        self.write_plan([{"do": "row-keep-lock", "linger": 2}, "release"])
+        with self.grace(0.3):
+            code, out = self.run_loop("--max-items", "1")
+        self.assertEqual(code, 0, out)
+        self.assertNotIn("the run finished, but claude is still alive", out)
+        first, second = self.calls()
+        self.assertEqual(first["lingered"], 2)  # it ended by itself
+        self.assertTrue(second["resume"])
+
+    def test_activity_after_the_result_means_the_turn_goes_on(self):
+        # a newer assistant line than the result: the turn is not over, nothing is ended
+        self.write_plan([{"do": "close", "after": 0.1, "linger": 2}])
+        with self.grace(0.5):
+            code, out = self.run_loop("--max-items", "1")
+        self.assertEqual(code, 0, out)
+        self.assertNotIn("the run finished, but claude is still alive", out)
+        call = self.calls()[0]
+        self.assertIn("after_emitted", call)
+        self.assertEqual(call["lingered"], 2)
+
+    def test_status_after_a_hard_stop_of_a_finished_run(self):
+        # the maintainer ends a finished run that lingers (the default grace is longer than this
+        # test waits): status says finished, the next start records it without claude
+        self.write_plan([{"do": "close", "linger": 60}])
+        p = self.spawn_loop()
+        self.wait_for(lambda: any(r[1] == FTP and r[2] == "closed" for r in self.runs())
+                      and self.repo.lock() is None, what="the closed row and the released lock")
+        self.ctl("kill")
+        self.assertEqual(p.wait(timeout=30), 130, self.output(p))
+        self.assertEqual(loop.load_json(self.repo.run_file)["phase"], "killed")
+        _, status = self.ctl("status")
+        self.assertIn("the run finished (closed); the next bin/backlog-loop.sh start records it", status)
+        self.assertNotIn("continues this run", status)
+        self.assertEqual(json.loads(self.ctl("status", "--json")[1])["finished"], "closed")
+        code, out = self.run_loop("--until-idle")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(len(self.calls()), 1)  # never continued
+        self.assertFalse(self.repo.run_file.exists())
+        (d,) = self.trace_dirs()
+        meta = json.loads((d / "meta.json").read_text(encoding="utf-8"))
+        self.assertEqual(meta["outcome"], "closed")
+        self.assertIsNotNone(meta["ended"])
 
 
 class ItemTests(Base):

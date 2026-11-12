@@ -8,7 +8,7 @@
 
 import { describe, expect, it } from "vitest";
 import { normalizeTraceLine } from "../src/runs/trace-event.ts";
-import { RunState } from "../src/runs/run-state.ts";
+import { laterPhase, RunState } from "../src/runs/run-state.ts";
 
 /** Byte offset counter for the synthetic trace. */
 let offset = 0;
@@ -247,5 +247,19 @@ describe("RunState", () => {
       tool("b", "Bash", { command: "bin/backlog.sh lock release" }),
     ]);
     expect(state.timeline.map((t) => t.phase)).toEqual(["triage", "done"]);
+  });
+});
+
+describe("laterPhase (426)", () => {
+  it("gives the later phase of the order, the stop path always, and keeps a phase outside the order", () => {
+    expect(laterPhase("specify", "review")).toBe("review");
+    expect(laterPhase("review", "specify")).toBe("review");
+    expect(laterPhase("verify", null)).toBe("verify");
+    expect(laterPhase("verify", undefined)).toBe("verify");
+    expect(laterPhase("done", "stopped")).toBe("stopped");
+    expect(laterPhase("stopped", "review")).toBe("stopped");
+    expect(laterPhase("triage", "done")).toBe("done");
+    expect(laterPhase("done", "triage")).toBe("done");
+    expect(laterPhase("triage", "triage")).toBe("triage");
   });
 });

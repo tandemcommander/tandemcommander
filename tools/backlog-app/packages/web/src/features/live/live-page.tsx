@@ -76,6 +76,7 @@ export function LivePage() {
         key={run.id}
         run={run}
         events={trace.events}
+        serverPhase={trace.phase}
         connected={trace.connected}
         live
         heading="Live run"

@@ -381,6 +381,16 @@ with file:line and a reproduction.
   times and the run failed. While a reviewer runs, end every turn with a
   scheduled fallback wakeup (the rule above), never with only a text that
   waits for it.
+- **A wakeup is for a reviewer or a command of this run, and is cancelled
+  at the end** (feature 426). A wakeup still pending keeps `claude -p`
+  alive after the final message (measured: a 60 s wakeup kept the process
+  for 122 s and ran another turn; in 425 a 1800 s wakeup held the app's
+  edit lock for the loop until a person ended it). Never schedule one to
+  wait for the maintainer (their program to close, an answer): what cannot
+  run while they work is recorded as NOT DRIVEN and owed to a person
+  (stop-rules rule 9). Before the final message of §11, on every path, if
+  the run ever called `ScheduleWakeup`, call it once more with only
+  `stop: true` (it answers "cancelled n pending wakeup(s)").
 - A reviewer must leave the tree as it found it: its prompt says it does
   not edit files; a negative control that needs old code is done in a
   copy (`git worktree add <scratchpad>/neg-<NNN> HEAD~n` or a copy of the
@@ -637,6 +647,9 @@ If a step of 10 itself fails: do the remaining steps you can, always
 release the lock, and say exactly what is left in the final message.
 
 ## 11. Final message (every path)
+
+First, if the run scheduled any wakeup: `ScheduleWakeup` with `stop: true`
+(step 7, feature 426). Then the message:
 
 ```text
 Outcome: closed | blocked | split | not-reproduced | nothing-to-do | dry-run | refused (<why>)

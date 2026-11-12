@@ -48,6 +48,27 @@ export class ApiFailure extends Error {
   }
 }
 
+/** Most characters of an error's detail shown with its message. */
+const DETAIL_SHOWN = 600;
+
+/**
+ * The text that tells the maintainer why a call failed: the server's message and, when the
+ * server sent one, its textual detail (git's own reason for a refused side worktree, feature 426:
+ * the message alone said only "git checkout in the side worktree failed"). A long detail is cut
+ * at a whole character.
+ *
+ * @param error - What the call threw.
+ * @returns The text.
+ */
+export function errorText(error: unknown): string {
+  if (!(error instanceof ApiFailure)) return error instanceof Error ? error.message : String(error);
+  const detail = typeof error.detail === "string" ? error.detail.trim() : "";
+  if (detail === "" || detail === error.message.trim()) return error.message;
+  const chars = Array.from(detail);
+  const shown = chars.length > DETAIL_SHOWN ? `${chars.slice(0, DETAIL_SHOWN).join("")}…` : detail;
+  return `${error.message}: ${shown}`;
+}
+
 /**
  * Reads a stored value; storage can be unavailable.
  *
