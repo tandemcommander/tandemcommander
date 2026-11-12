@@ -190,3 +190,39 @@ remaining coloured pixels were ClearType fringes of "100 %", the separators / fr
 
 Probe after (all rows): `ROWS: 0 FAIL`, registry restored identical (`3C6996DB…`). saltests 287,439
 checks, 0 failed; encoding guard TOTAL: 0.
+
+## Review 3 (refute-first agent): 1 MUST, 3 SHOULD - the run stops
+
+- **M4 (new in 427)** - after a live switch Dark → Default, File Comparator keeps a 4-row dark stripe
+  (1650 × 4 = 6,600 px of `#2D2D2D`) between the light toolbar and the light gap:
+  `mainwnd.cpp` WM_PAINT fills from the rebar's real bottom (row 23) to the gap only in Dark; in
+  Default nothing paints rows 23-26 (`WM_ERASEBKGND` returns 1, the Default fill starts at
+  `RebarHeight - REBAR_BORDER`), so what Dark left stays. Evidence in the committed captures:
+  `captures_after/live_fc_window_DEFAULT.png` rows 23-26 = (45,45,45), `fc_window_DEFAULT.png`
+  (255,255,255). The probe's LIVE FC-TOP->DEFAULT checks only ">= 20,000 light pixels"; the claim
+  above "54,905 in Default (as a window opened in Default)" was not a comparison with a window
+  opened in Default. Fix proposed by the reviewer: paint those rows in Default too, with the colour a
+  fresh Default window shows there (white) to keep FR-004, and compare whole windows (minus the
+  views' text) in the LIVE rows.
+- **S2** - PictView viewer's status bar stays light grey in Dark (~24,600 px of `#F0F0F0` in the
+  bottom 16 rows, before and after 427; visible in the reporter's own screenshot): the viewer was
+  never measured for grey; `SG->ThemeApplyToDialog` on the viewer (the core's
+  `ThemeStatusBarSubclassProc`) would probably darken it.
+- **S3** - File Comparator's "Difference" drop-down list stays white in Dark (not new):
+  `WM_CTLCOLORLISTBOX` handled neither in `CComboBox::WindowProc` nor in `CRebar::WindowProc`.
+- **S4** - the probe's LIVE rows compare toolbar crops and a threshold only, and the comparison
+  uses identical files (an empty combo, no difference lines).
+- NOTEs: everything else follows a live switch both ways (viewer 0 px, histogram 0 px, the
+  drop-down 0 px, File Comparator in Dark = a window opened in Dark except view-text timing); stale
+  since before 427: the histogram's frame pens (`histwnd.cpp:45-47`, `GetSysColor`), File
+  Comparator's modal dialogs open during a switch; no interface change, no data path touched.
+
+## Stop
+
+Stop-rules §3 #3 / SKILL step 7: the independent review found MUST findings three times (review 1
+M1 + M2, review 2 M3, review 3 M4). The work so far stays on this branch (everything committed);
+what it does at its last commit: PictView's and File Comparator's toolbars in the Dark palette with
+the 3:1 lift (PV-COLOR 218 → 1, PV-TOOLBAR 696 → 0, FC-TOOLBAR 1346 → 18), File Comparator's chrome
+dark (FC-LIGHT 109,871 → 167), a live switch followed by the toolbars both ways (LIVE / LIVE-D 0 px),
+the Default theme unchanged for windows never switched (DEFAULT-SAME 0 px); open: M4, S2, S3, S4.
+The checkbox-label part is in the Inbox item `dark-checkbox-labels-other-windows-builds`.
