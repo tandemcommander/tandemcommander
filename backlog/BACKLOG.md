@@ -22,7 +22,7 @@ Last triaged: 2026-11-12
 
 | # | Item | Type | Sev | Area | Who | Effort | Status |
 |---|---|---|---|---|---|---|---|
-| 1 | [Dark theme: black checkbox labels and old toolbar icons in plug-in windows](items/tmavy-motiv/desc.md) | bug | 4 | other-plugins | agent | M | blocked |
+| 1 | [Dark theme: black checkbox labels and old toolbar icons in plug-in windows](items/tmavy-motiv/desc.md) | bug | 4 | other-plugins | agent | M | open |
 | 2 | [Plug-in hot keys on F-keys never run; F-keys run commands bound to letters](items/plug-in-hot-keys-on-f-keys-never-run-f-keys-run-commands/desc.md) | bug | 4 | panels-ui | agent | S | open |
 | 3 | [Environment variables passed to the program arrive as question marks outside the code page](items/environment-variables-passed-to-the-program-arrive-as/desc.md) | bug | 4 | encoding | agent | M | open |
 | 4 | [Viewer Find does not find non-ASCII text in a file shown in a code page](items/viewer-find-does-not-find-non-ascii-text-in-a-file-shown-in/desc.md) | bug | 4 | encoding | agent | M | open |
