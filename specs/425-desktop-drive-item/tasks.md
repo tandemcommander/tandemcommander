@@ -29,7 +29,7 @@
 
 **Independent test**: probe row MENU-PLUGIN.
 
-- [X] T012 [US2] `IDS_DRIVEMENUTEXT` = "`\tShell Folders" in `src/plugins/folders/lang/lang.rc2`
+- [X] T012 [US2] `IDS_DRIVEMENUTEXT` = "-\tShell Folders" in `src/plugins/folders/lang/lang.rc2`
 
 ## Phase 5: User Story 3 - A real folder inside fld: opens as a disk path (P2)
 

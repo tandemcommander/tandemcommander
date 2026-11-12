@@ -20521,15 +20521,35 @@ static void TestDesktopDrive425()
     CHECK(!SalDesktopFolderUsable(FILE_ATTRIBUTE_ARCHIVE));  // a file of that name
     CHECK(!SalDesktopFolderUsable(FILE_ATTRIBUTE_NORMAL));
     CHECK(SAL_DESKTOP_INVALID_ATTRS == INVALID_FILE_ATTRIBUTES && SAL_DESKTOP_ATTR_DIRECTORY == FILE_ATTRIBUTE_DIRECTORY);
+    // the Desktop path found accessible: refused only when it names something that is not a folder
+    // (review 1, SHOULD 2: a missing or unreachable path is the check of a path's to report)
+    CHECK(SalDesktopPathIsNotFolder(FILE_ATTRIBUTE_ARCHIVE));
+    CHECK(SalDesktopPathIsNotFolder(FILE_ATTRIBUTE_NORMAL));
+    CHECK(!SalDesktopPathIsNotFolder(FILE_ATTRIBUTE_DIRECTORY));
+    CHECK(!SalDesktopPathIsNotFolder(FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_REPARSE_POINT));
+    CHECK(!SalDesktopPathIsNotFolder(INVALID_FILE_ATTRIBUTES)); // attributes unreadable: left to the path change
+    // a recycle bin's storage folder in a path (review 1, SHOULD 1)
+    CHECK(SalPathHasRecycleBinPart("C:\\$Recycle.Bin\\S-1-5-21-1-1001\\$RJXI5S0"));
+    CHECK(SalPathHasRecycleBinPart("D:\\$RECYCLE.BIN\\S-1-5-21-1-1001\\$R1\\sub"));
+    CHECK(SalPathHasRecycleBinPart("E:\\RECYCLER\\x"));
+    CHECK(SalPathHasRecycleBinPart("E:/Recycled"));
+    CHECK(SalPathHasRecycleBinPart("$Recycle.Bin"));
+    CHECK(!SalPathHasRecycleBinPart("C:\\Users\\pavel\\Documents"));
+    CHECK(!SalPathHasRecycleBinPart("C:\\$Recycle.Bin.old\\x")); // a whole component only
+    CHECK(!SalPathHasRecycleBinPart("C:\\my$Recycle.Bin"));
+    CHECK(!SalPathHasRecycleBinPart("C:\\Recycler2"));
+    CHECK(!SalPathHasRecycleBinPart(""));
+    CHECK(!SalPathHasRecycleBinPart(NULL));
     // fld: items: a file-system folder with a directory path opens as a disk path, all else stays
     const unsigned long dir = FILE_ATTRIBUTE_DIRECTORY;
-    CHECK(SalShellFolderOpensAsDisk(true, true, true, dir));                      // Documents, a drive, the user's folder
-    CHECK(!SalShellFolderOpensAsDisk(true, true, true, FILE_ATTRIBUTE_ARCHIVE));  // a zip archive / a .lnk to a folder
-    CHECK(!SalShellFolderOpensAsDisk(true, true, true, INVALID_FILE_ATTRIBUTES)); // the path is gone or unreachable
-    CHECK(!SalShellFolderOpensAsDisk(true, true, false, dir));                    // the shell gave no path
-    CHECK(!SalShellFolderOpensAsDisk(true, false, true, dir));                    // a virtual folder (This PC, Control Panel)
-    CHECK(!SalShellFolderOpensAsDisk(false, true, true, dir));                    // not a folder of the shell
-    CHECK(!SalShellFolderOpensAsDisk(false, false, false, INVALID_FILE_ATTRIBUTES));
+    CHECK(SalShellFolderOpensAsDisk(true, true, true, dir, false));                      // Documents, a drive, the user's folder
+    CHECK(!SalShellFolderOpensAsDisk(true, true, true, dir, true));                      // a deleted folder in the Recycle Bin
+    CHECK(!SalShellFolderOpensAsDisk(true, true, true, FILE_ATTRIBUTE_ARCHIVE, false));  // a zip archive / a .lnk to a folder
+    CHECK(!SalShellFolderOpensAsDisk(true, true, true, INVALID_FILE_ATTRIBUTES, false)); // the path is gone or unreachable
+    CHECK(!SalShellFolderOpensAsDisk(true, true, false, dir, false));                    // the shell gave no path
+    CHECK(!SalShellFolderOpensAsDisk(true, false, true, dir, false));                    // a virtual folder (This PC, Control Panel)
+    CHECK(!SalShellFolderOpensAsDisk(false, true, true, dir, false));                    // not a folder of the shell
+    CHECK(!SalShellFolderOpensAsDisk(false, false, false, INVALID_FILE_ATTRIBUTES, false));
 }
 
 static void TestDocumentsPath386()

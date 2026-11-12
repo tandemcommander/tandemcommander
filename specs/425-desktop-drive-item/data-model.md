@@ -27,4 +27,4 @@ Not part of the Altap / Open Salamander settings import (rule 245 FR-016).
 
 ## Folders plug-in drive-menu entry
 
-`IDS_DRIVEMENUTEXT` = `` "`\tShell Folders" `` (hot key `` ` ``).
+`IDS_DRIVEMENUTEXT` = `"-\tShell Folders"` (hot key `-`).

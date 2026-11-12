@@ -77,7 +77,7 @@ src/lang/lang.rc, lang.rh          IDC_CHD_SHOWDESKTOP on IDD_CFGPAGE_CHANGEDRIV
 src/common/saliconset.h            SAL_ICONSET_NAME_DESKTOP "OpenDesktop"
 src/plugins/folders/fs1.cpp        ExecuteOnFS: a file-system folder opens as a disk path (+ seam)
 src/plugins/folders/fs2.cpp        ListCurrentPath seam line
-src/plugins/folders/lang/lang.rc2  "`\tShell Folders"
+src/plugins/folders/lang/lang.rc2  "-\tShell Folders"
 help/src/hh/salamand/{configuration_chdrv,navigating_chdrvmenu,windows_drivebar}.htm
 ```
 

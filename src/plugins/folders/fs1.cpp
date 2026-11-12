@@ -208,7 +208,19 @@ static char* GetDiskPathOfShellFolder(IShellFolder* folder, LPCITEMIDLIST folder
         free(pathW);
     if (absPIDL != NULL)
         ILFree(absPIDL);
-    if (!SalShellFolderOpensAsDisk(isFolder != FALSE, isFileSystem != FALSE, havePath != FALSE, pathAttrs))
+    // review 1 (SHOULD 1): the Recycle Bin's items (deleted folders are file-system folders in
+    // <drive>:\$Recycle.Bin\<SID>\$R...) stay in fld:
+    BOOL inRecycleBin = havePath && SalPathHasRecycleBinPart(pathU8);
+    PIDLIST_ABSOLUTE recyclePIDL = NULL;
+    if (!inRecycleBin && SUCCEEDED(SHGetKnownFolderIDList(FOLDERID_RecycleBinFolder, 0, NULL, &recyclePIDL)) &&
+        recyclePIDL != NULL)
+    {
+        inRecycleBin = ILIsEqual(recyclePIDL, folderPIDL) || ILIsParent(recyclePIDL, folderPIDL, FALSE);
+    }
+    if (recyclePIDL != NULL)
+        ILFree(recyclePIDL);
+    if (!SalShellFolderOpensAsDisk(isFolder != FALSE, isFileSystem != FALSE, havePath != FALSE, pathAttrs,
+                                   inRecycleBin != FALSE))
     {
         if (pathU8 != NULL)
             free(pathU8);

@@ -19,12 +19,15 @@
       ERR-NONE      the shell reports no Desktop path (seam: empty file): an error message, the panel stays
       ERR-MISSING   the Desktop folder does not exist (seam: a missing folder in the fixture): an error
                     message, the panel stays (never the existing parent)
+      ERR-FILE      the Desktop path names a file: an error message, the panel stays
       FLD-CPL       inside fld:, Enter on Control Panel: the panel stays in fld:
       FLD-USER      inside fld:, Enter on the user's folder (root): the panel is on %USERPROFILE%
       FLD-DOCS      inside fld:, Enter on Documents (root, or under This PC): the Documents disk path
       FLD-DRIVE     inside fld:, This PC stays in fld:, then Enter on the system drive: its root as a disk path
       FLD-ZIP       inside fld:, a zip archive on the desktop (a shell folder whose path is a file) stays in fld:
                     (NOT DRIVEN when the desktop holds none - the probe never writes there)
+      FLD-RB        inside fld:, Recycle Bin stays in fld:, and so does a deleted folder in it (review 1; a
+                    fixture folder is recycled for it and its $R / $I entries are removed at the end)
 
     MUST run through tools\run_on_hidden_desktop.ps1; refuses while tandemcommander.exe runs.
     Backs up and restores HKCU\Software\Tandem Commander (SHA-256 verified). Exit code = number of FAIL rows.
@@ -223,6 +226,8 @@ function Fld-Enter([int]$Id, [string]$Dump, [string]$Pick) {
     return $res
 }
 
+$RbTestName = 'tcdesk_rb_probe'
+$script:RbPath = $null
 $backup = Join-Path $env:TEMP 'tcdesk_backup.reg'
 $existed = Backup-Reg $backup
 $restored = $false; $nf = 0
@@ -314,10 +319,11 @@ try {
     }
 
     # --- errors (seam TC_PROBE_DESKTOP_FILE) -------------------------------------------------------
-    foreach ($case in @(@('ERR-NONE', ''), @('ERR-MISSING', ($Root + '\gone\Desktop')))) {
+    foreach ($case in @(@('ERR-NONE', ''), @('ERR-MISSING', ($Root + '\gone\Desktop')), @('ERR-FILE', ($Root + '\gone\DesktopFile')))) {
         $seam = $Root + '\desktop_' + $case[0] + '.txt'
         [IO.File]::WriteAllText($seam, $case[1], (New-Object Text.UTF8Encoding($false)))
         NewDir ($Root + '\gone')   # the parent exists: a shortened path would land there
+        if ($case[0] -eq 'ERR-FILE') { WriteFile $case[1] 'not a folder' }   # a file where the Desktop should be
         $dump = $Root + '\dump_' + $case[0] + '.txt'
         $env:TC_PROBE_DRIVES_DUMP = $dump
         $env:TC_PROBE_DESKTOP_FILE = $seam
@@ -348,7 +354,7 @@ try {
     try {
         $id = Start-Tc $StartDir
         if (-not (Fld-Root $id $fdump)) {
-            foreach ($r in @('FLD-CPL', 'FLD-USER', 'FLD-DOCS', 'FLD-DRIVE', 'FLD-ZIP')) { Row $r 'RUN' 'NOT DRIVEN' 'no LIST line: the plug-in has no seam (Enter is never pressed without it)' }
+            foreach ($r in @('FLD-CPL', 'FLD-USER', 'FLD-DOCS', 'FLD-DRIVE', 'FLD-ZIP', 'FLD-RB')) { Row $r 'RUN' 'NOT DRIVEN' 'no LIST line: the plug-in has no seam (Enter is never pressed without it)' }
         }
         else {
             # Control Panel (root): stays in fld:
@@ -400,6 +406,28 @@ try {
                 Row 'FLD-ZIP' 'RUN' (V $ok) ("'{0}': {1}; panel '{2}'" -f (Esc $NameZip), $(if ($e) { "action=$($e.Action) attrs=$($e.Attrs) path=$(Esc $e.Path)" } else { 'none' }), (Esc $loc))
             }
             else { Row 'FLD-ZIP' 'RUN' 'NOT DRIVEN' 'no zip archive on the desktop (the probe never writes there)' }
+            # review 1 (SHOULD 1): a deleted folder in the Recycle Bin (a file-system folder in
+            # $Recycle.Bin) stays in fld: - a probe folder of the fixture, recycled here, removed at the end
+            $rbSrc = $Root + '\rb\' + $RbTestName
+            [void][IO.Directory]::CreateDirectory($rbSrc)
+            [IO.File]::WriteAllText($rbSrc + '\inner.txt', 'x')
+            Add-Type -AssemblyName Microsoft.VisualBasic
+            [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteDirectory($rbSrc, 'OnlyErrorDialogs', 'SendToRecycleBin')
+            foreach ($it in @($Shell.Namespace(10).Items())) { if ($it.Name -ceq $RbTestName -and $it.Path -like '*\$Recycle.Bin\*\$R*') { $script:RbPath = $it.Path } }
+            $NameRb = Shell-Name $DeskNs { param($p) $p -like '::{645FF040-5081-101B-9F08-00AA002F954E}*' }
+            if ($script:RbPath -and $NameRb) {
+                [void](Fld-Root $id $fdump)
+                $e1 = Fld-Enter $id $fdump $NameRb
+                Start-Sleep -Milliseconds 1500; Sync $id
+                $loc1 = Get-Loc $id
+                $e = $null
+                if ($null -ne $e1 -and $loc1 -ceq 'fld:') { $e = Fld-Enter $id $fdump $RbTestName }
+                Start-Sleep -Milliseconds 1500
+                $loc = Get-Loc $id
+                $ok = $null -ne $e1 -and $e1.Action -ceq 'fld' -and $null -ne $e -and $e.Action -ceq 'fld' -and $loc -ceq 'fld:'
+                Row 'FLD-RB' 'RUN' (V $ok) ("Recycle Bin: {0}, panel '{1}'; the deleted folder ({2}): {3}; panel '{4}'" -f $(if ($e1) { "action=$($e1.Action)" } else { 'none' }), (Esc $loc1), (Esc $script:RbPath), $(if ($e) { "action=$($e.Action) attrs=$($e.Attrs) path=$(Esc $e.Path)" } else { 'none' }), (Esc $loc))
+            }
+            else { Row 'FLD-RB' 'RUN' 'FAIL' ("the probe folder did not reach the Recycle Bin ('{0}', name '{1}')" -f (Esc $script:RbPath), (Esc $NameRb)) }
         }
         $fatal = Fatal-Win $id
         if ($fatal) { Row 'RUN-fld' 'RUN' 'FAIL' $fatal }
@@ -420,6 +448,14 @@ finally {
     foreach ($v in @('TC_PROBE_DRIVES_DUMP', 'TC_PROBE_DESKTOP_FILE', 'TC_PROBE_FLD_DUMP')) { Remove-Item ('Env:\' + $v) -ErrorAction SilentlyContinue }
     $restored = Restore-Reg $backup $existed
     if ($restored -and (Test-Path -LiteralPath $backup)) { Remove-Item -LiteralPath $backup -Force }
+    # the probe's own Recycle Bin item out again (its $R folder and $I file), nothing else
+    if ($script:RbPath -and $script:RbPath -like '*\$Recycle.Bin\*\$R*' -and (Split-Path -Leaf $script:RbPath) -like '$R*') {
+        $leaf = Split-Path -Leaf $script:RbPath
+        $iPath = Join-Path (Split-Path -Parent $script:RbPath) ('$I' + $leaf.Substring(2))
+        Remove-Item -LiteralPath $script:RbPath -Recurse -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $iPath -Force -ErrorAction SilentlyContinue
+        Out ("Recycle Bin: the probe's item removed {0}" -f (-not (Test-Path -LiteralPath $script:RbPath)))
+    }
     try { if ([IO.Directory]::Exists($LP + $Root)) { [IO.Directory]::Delete($LP + $Root, $true) } } catch { Out ('Fixture: ' + $_.Exception.Message) }
     $np = @($script:Rows | Where-Object { $_.Verdict -eq 'PASS' }).Count
     $nf = @($script:Rows | Where-Object { $_.Verdict -eq 'FAIL' }).Count

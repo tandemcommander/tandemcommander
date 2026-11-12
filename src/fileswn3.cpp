@@ -2688,8 +2688,9 @@ BOOL CFilesWindow::ChangePathToWslDistro(HWND parent, const char* name)
 }
 
 // feature 425 (GitHub #31): opens the Desktop folder (FOLDERID_Desktop) as a disk path through the
-// ordinary disk path change; no path, a missing folder or a path that does not fit gives a message and
-// leaves the panel as it is - never an empty path, never the parent the path change would fall back to
+// ordinary disk path change; no path, a missing folder, a file of that name or a path that does not
+// fit gives a message and leaves the panel as it is - never an empty path, never the parent the path
+// change would fall back to
 BOOL CFilesWindow::ChangePathToDesktop(HWND parent)
 {
     CALL_STACK_MESSAGE1("CFilesWindow::ChangePathToDesktop()");
@@ -2711,9 +2712,14 @@ BOOL CFilesWindow::ChangePathToDesktop(HWND parent)
         SalMessageBox(parent, LoadStrU8(IDS_DESKTOPNOTFOUND), LoadStr(IDS_ERRORCHANGINGDIR), MB_OK | MB_ICONEXCLAMATION);
         return FALSE;
     }
-    if (!SalDesktopFolderUsable(SalGetFileAttributes(path)))
+    // review 1 (SHOULD 2): the program's own check of a path first - it reconnects a remembered network
+    // drive, offers a login for a share, can be cancelled with ESC and reports a missing or unreachable
+    // path itself (the panel stays); only then is a path that names a file refused here
+    if (!SalCheckAndRestorePath(parent, path, TRUE))
+        return FALSE;
+    if (SalDesktopPathIsNotFolder(SalGetFileAttributes(path)))
     {
-        TRACE_E("CFilesWindow::ChangePathToDesktop(): the Desktop folder is not an existing directory");
+        TRACE_E("CFilesWindow::ChangePathToDesktop(): the Desktop path is not a folder");
         // "Path: "<path>"\nError: <text>" - every piece UTF-8, the buffer as long as the whole path
         const char* format = LoadStrU8(IDS_PATHERRORFORMAT);
         char* reason = DupStr(LoadStrU8(IDS_DESKTOPNOTFOUND));

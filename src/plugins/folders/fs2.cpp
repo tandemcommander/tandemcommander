@@ -193,7 +193,7 @@ CPluginFSInterface::ListCurrentPath(CSalamanderDirectoryAbstract* dir,
     probeDirs = probeItems;
 #endif // _DEBUG
     LPENUMIDLIST enumIDList;
-    flags =SHCONTF_FOLDERS | SHCONTF_NONFOLDERS | SHCONTF_INCLUDEHIDDEN;
+    flags = SHCONTF_FOLDERS | SHCONTF_NONFOLDERS | SHCONTF_INCLUDEHIDDEN;
     if (SUCCEEDED(currentFolder->EnumObjects(NULL, flags, &enumIDList)))
     {
         int sortByExtDirsAsFiles;

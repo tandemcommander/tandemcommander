@@ -22,7 +22,7 @@
 
 - Measured at 472d20a8 (stored "FS Cmd Name" values and the drive dump): `;` Documents, `,` Network,
   `.` As Other Panel, `/` FTP and SFTP, `'` the Folders plug-in. **Decision**: `'` for the core Desktop
-  (the key users already press for "Desktop"), `` ` `` for Shell Folders.
+  (the key users already press for "Desktop"), `-` for Shell Folders (review 1: the backtick, the first choice, is a dead key on most enabled layouts).
 
 ## R4 The plug-in's stored drive-menu text
 

@@ -1,11 +1,11 @@
-desktop probe (GitHub #31) after
+desktop probe (GitHub #31) after-review1
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-11-12 14:42; registry key existed True
+Date    : 2026-11-12 15:05; registry key existed True
 Desktop : 'C:\Users\pavel\Desktop'; Documents 'C:\Users\pavel\Documents'; shell names: This PC 'Tento po\u010D\u00EDta\u010D', Documents 'Dokumenty' / '', Control Panel 'Ovl\u00E1dac\u00ED panely', user 'Pavel Stupka', C: 'M\u00EDstn\u00ED disk (C:)', zip 'Newt Commander web design.zip'
 
 [on] menus opened 2/2; builds 4 (menu 2, bar 2)
 MENU-DESKTOP RUN    PASS        Desktop items 1: ''' / 'Desktop' idx 7; Documents idx 6; right after Documents True
-MENU-PLUGIN RUN    PASS        plug-in items: '/' FTP Client | '`' Shell Folders | '' Portable Devices | '' Windows Registry | '/' SFTP Client | '' Undelete; others with the hot key ': 0
+MENU-PLUGIN RUN    PASS        plug-in items: '/' FTP Client | '-' Shell Folders | '' Portable Devices | '' Windows Registry | '/' SFTP Client | '' Undelete; others with the hot key ': 0
 BAR-DESKTOP RUN    PASS        Desktop buttons 1; tooltip 'Desktop' True
 SAVED      RUN    PASS        value after the exit of a run without it: '1'
 [off] menus opened 2/2; builds 4 (menu 2, bar 2)
@@ -14,13 +14,16 @@ REGRESS    RUN    PASS        19 other items with the option on, 19 off; identic
 OPEN-MENU  RUN    PASS        item position 6; panel 'C:\Users\pavel\Desktop' (expected 'C:\Users\pavel\Desktop'); message none
 OPEN-BAR   RUN    PASS        button idx 7; panel before 'C:\Users\pavel\AppData\Local\Temp\tcdesk\start', after 'C:\Users\pavel\Desktop'
 ERR-NONE   RUN    PASS        seam ''; item position 6; message [#32770 'Error Changing Directory'] [Static id=2477] The Desktop folder cannot be found. | [Button id=1] OK; panel 'C:\Users\pavel\AppData\Local\Temp\tcdesk\start'
-ERR-MISSING RUN    PASS        seam 'C:\Users\pavel\AppData\Local\Temp\tcdesk\gone\Desktop'; item position 6; message [#32770 'Error Changing Directory'] [Static id=2477] Path: "C:\Users\pavel\AppData\Local\Temp\tcdesk\gone\Desktop" Error: The Desktop folder cannot be found. | [Button id=1] OK; panel 'C:\Users\pavel\AppData\Local\Temp\tcdesk\start'
+ERR-MISSING RUN    PASS        seam 'C:\Users\pavel\AppData\Local\Temp\tcdesk\gone\Desktop'; item position 6; message [#32770 'Error'] [Static id=2477] The path or file name "C:\Users\pavel\AppData\Local\Temp\tcdesk\gone\Desktop" is invalid. | [Button id=1] OK; panel 'C:\Users\pavel\AppData\Local\Temp\tcdesk\start'
+ERR-FILE   RUN    PASS        seam 'C:\Users\pavel\AppData\Local\Temp\tcdesk\gone\DesktopFile'; item position 6; message [#32770 'Error Changing Directory'] [Static id=2477] Path: "C:\Users\pavel\AppData\Local\Temp\tcdesk\gone\DesktopFile" Error: The Desktop folder cannot be found. | [Button id=1] OK; panel 'C:\Users\pavel\AppData\Local\Temp\tcdesk\start'
 FLD-CPL    RUN    PASS        EXEC action=fld attrs=20000000 path=-; panel 'fld:'
 FLD-USER   RUN    PASS        EXEC action=disk attrs=60000000 path=C:\Users\pavel; panel 'C:\Users\pavel' (expected 'C:\Users\pavel')
 FLD-DOCS   RUN    PASS        at the root; Documents: action=disk attrs=60000000 path=C:\Users\pavel\Documents; panel 'C:\Users\pavel\Documents' (expected 'C:\Users\pavel\Documents')
 FLD-DRIVE  RUN    PASS        This PC: action=fld, panel 'fld:'; M\u00EDstn\u00ED disk (C:): action=disk path=C:\; panel 'C:\' (expected 'C:\')
 FLD-ZIP    RUN    PASS        'Newt Commander web design.zip': action=fld attrs=60000000 path=-; panel 'fld:'
-fld: items skipped 49; acted upon: Ovl\u00E1dac\u00ED panely=fld, Pavel Stupka=disk, Dokumenty=disk, Tento po\u010D\u00EDta\u010D=fld, M\u00EDstn\u00ED disk (C:)=disk, Newt Commander web design.zip=fld
+FLD-RB     RUN    PASS        Recycle Bin: action=fld, panel 'fld:'; the deleted folder (C:\$Recycle.Bin\S-1-5-21-2934764448-1324481543-3308592849-1001\$RM6B85A): action=fld attrs=60000000 path=-; panel 'fld:'
+fld: items skipped 55; acted upon: Ovl\u00E1dac\u00ED panely=fld, Pavel Stupka=disk, Dokumenty=disk, Tento po\u010D\u00EDta\u010D=fld, M\u00EDstn\u00ED disk (C:)=disk, Newt Commander web design.zip=fld, Ko\u0161=fld, tcdesk_rb_probe=fld
 Registry: restored; identical=True; SHA-256 before B5E391EB06CE2946B2B5B6B17021038F59FB15172F93A8099A466FE5DDBDE6B3 / after B5E391EB06CE2946B2B5B6B17021038F59FB15172F93A8099A466FE5DDBDE6B3
+Recycle Bin: the probe's item removed True
 
-Rows: PASS 15, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
+Rows: PASS 17, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

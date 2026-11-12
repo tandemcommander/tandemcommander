@@ -959,32 +959,32 @@
   },
   "folders": {
     "_feature_425": [
-      "The Folders plug-in's drive-menu entry (hot key `, the core Desktop item has ') names what it opens - the Windows shell namespace: DeepL left 'Shell Folders' in English in every language.",
+      "The Folders plug-in's drive-menu entry (hot key -, the core Desktop item has '; review 1: ` is a dead key on the cs/sk/de/fr/hu layouts) names what it opens - the Windows shell namespace: DeepL left 'Shell Folders' in English in every language.",
       "Wording after the item's Czech example 'Slozky Windows'; sk 'zlozka' as the rest of the Slovak corpus."
     ],
     "czech": {
-      "IDS_DRIVEMENUTEXT": "`\\tSložky Windows"
+      "IDS_DRIVEMENUTEXT": "-\\tSložky Windows"
     },
     "slovak": {
-      "IDS_DRIVEMENUTEXT": "`\\tZložky Windows"
+      "IDS_DRIVEMENUTEXT": "-\\tZložky Windows"
     },
     "german": {
-      "IDS_DRIVEMENUTEXT": "`\\tWindows-Ordner"
+      "IDS_DRIVEMENUTEXT": "-\\tWindows-Ordner"
     },
     "french": {
-      "IDS_DRIVEMENUTEXT": "`\\tDossiers Windows"
+      "IDS_DRIVEMENUTEXT": "-\\tDossiers Windows"
     },
     "dutch": {
-      "IDS_DRIVEMENUTEXT": "`\\tWindows-mappen"
+      "IDS_DRIVEMENUTEXT": "-\\tWindows-mappen"
     },
     "hungarian": {
-      "IDS_DRIVEMENUTEXT": "`\\tWindows-mappák"
+      "IDS_DRIVEMENUTEXT": "-\\tWindows-mappák"
     },
     "romanian": {
-      "IDS_DRIVEMENUTEXT": "`\\tFoldere Windows"
+      "IDS_DRIVEMENUTEXT": "-\\tFoldere Windows"
     },
     "spanish": {
-      "IDS_DRIVEMENUTEXT": "`\\tCarpetas de Windows"
+      "IDS_DRIVEMENUTEXT": "-\\tCarpetas de Windows"
     }
   }
 }

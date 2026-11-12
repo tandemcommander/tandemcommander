@@ -18,7 +18,7 @@ Folders plug-in's virtual `fld:` view instead of the Desktop folder.
   Bin, Control Panel (twice: the category folder and a non-folder item), Libraries, Gallery, Network, Home
   (virtual) and two zip archives (shell folders whose path is a file). This PC lists only the drives.
 - Stored plug-in drive-menu texts (`FS Cmd Name`): `;` Documents (core), `,` Network, `.` As Other Panel,
-  `/` FTP and SFTP, `'` Folders -> the core Desktop takes `'`, Shell Folders takes `` ` ``.
+  `/` FTP and SFTP, `'` Folders -> the core Desktop takes `'`, Shell Folders takes `-` (first the backtick; review 1 NOTE 3: a dead key).
 
 ## Decisions
 
@@ -36,7 +36,7 @@ Folders plug-in's virtual `fld:` view instead of the Desktop folder.
   KF_FLAG_DONT_VERIFY)`, Debug seam `TC_PROBE_DESKTOP_FILE`); `CFilesWindow::ChangePathToDesktop`: no path ->
   `IDS_DESKTOPNOTFOUND`; not a directory -> `IDS_PATHERRORFORMAT` with the path (heap buffer, UTF-8 pieces);
   too long -> `IDS_TOOLONGPATH`; else `ChangePathToDisk`. Check box "Des&ktop" (6305) on the Change Drive page.
-- Plug-in: `IDS_DRIVEMENUTEXT` = "`\tShell Folders"; `ExecuteOnFS` sub-folder branch asks
+- Plug-in: `IDS_DRIVEMENUTEXT` = "-\tShell Folders"; `ExecuteOnFS` sub-folder branch asks
   `GetDiskPathOfShellFolder` (attributes on the current folder, `ILCombine` + `SHGetPathFromIDListEx` into a
   32768-unit buffer, `SplWToU8` whole into `SAL_MAX_PATH_UTF8`, `SalGetFileAttributes`) and calls
   `ChangePanelPathToDisk`; nothing of `fs` / `file` is used after it. Debug seam `TC_PROBE_FLD_DUMP` (LIST /
@@ -80,3 +80,39 @@ Folders plug-in's virtual `fld:` view instead of the Desktop folder.
   item's name). Merges again: 0 failures; `translate.slt --verify`: 298 files, round-trip byte-exact.
 - Layout drift: none outside the page's own re-layout (the 9 moved controls in each language).
 - `build.cmd full`: BUILD SUCCEEDED, 189 language modules.
+
+## Review
+
+### Review 1 (refute-first agent) - no MUST, 2 SHOULD, 6 NOTE
+
+The reviewer re-ran the probe (15 / 0, registry identical) and saltests (287,391 / 0), enumerated the
+callers (build, bar inclusion, icon-only style, tooltip, context menu, ExecuteItem, the checked item,
+ChangeDrive, CDriveBar::Execute) and found the Desktop type handled wherever Documents is.
+
+- **SHOULD 1 (fixed)**: Enter on a deleted folder in fld: > Recycle Bin opened the bin's storage
+  (`C:\$Recycle.Bin\<SID>\$R...`) as a disk panel - measured by the reviewer's scratch probe. Now
+  `SalShellFolderOpensAsDisk` takes `inRecycleBin`: the current fld: folder is the Recycle Bin or inside
+  it (`SHGetKnownFolderIDList(FOLDERID_RecycleBinFolder)` + `ILIsEqual` / `ILIsParent`), or the path has a
+  `$Recycle.Bin` / `RECYCLER` / `RECYCLED` component (`SalPathHasRecycleBinPart`, saltests). New probe row
+  FLD-RB (a fixture folder recycled, its `$R` / `$I` entries removed at the end): the reviewer's run
+  before the fix FAIL (action=disk) -> PASS (action=fld, panel fld:).
+- **SHOULD 2 (fixed)**: the Desktop item's existence check (`GetFileAttributes`) skipped the reconnection
+  of a remembered network drive, the login for a share and the ESC wait. Now `ChangePathToDesktop` calls
+  `SalCheckAndRestorePath(parent, path, TRUE)` first (it reports a missing or unreachable path itself and
+  the panel stays); only a path that names a file is refused afterwards (`SalDesktopPathIsNotFolder`;
+  unreadable attributes go on to the path change). Probe ERR-MISSING now shows the core's message ("The
+  path or file name ... is invalid"), panel unchanged; new row ERR-FILE (a file at the Desktop path) PASS.
+  A redirected network Desktop is not drivable here: a release-checklist line.
+- NOTE 1 (fixed): a stray whitespace edit in `fs2.cpp` (`flags =SHCONTF_...`).
+- NOTE 2 (fix-log only, stop-rules 11): the disabled languages (chinesesimplified, russian, ukrainian)
+  keep `'\tDesktop` in `folders.slt`; enabling one is the maintainer's and would need its refresh.
+- NOTE 3 (fixed): the backtick is a dead key on the cs/sk/de/fr/hu layouts - the Shell Folders hot key is
+  `-` now (plug-in text, the 8 pins, the manual, the spec documents).
+- NOTE 4: covered by SHOULD 2 (the core's check reports the real error).
+- NOTE 5: T019 is the closing step (run step 8).
+- NOTE 6: only Debug was built; the seams are `#ifdef _DEBUG`. A Release build is part of the release
+  (`build.cmd full release`), not run here.
+
+After the fixes: `build.cmd full` BUILD SUCCEEDED (189 language modules), saltests 287,408 / 0, folders
+merge 0 gaps (the pins carry the new hot key), `slt --verify` byte-exact, encoding guard TOTAL: 0, probe
+`result_after.txt` **17 PASS / 0 FAIL / 0 NOT DRIVEN**, registry identical, the probe's Recycle Bin item removed.

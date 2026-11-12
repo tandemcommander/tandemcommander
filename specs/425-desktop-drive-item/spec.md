@@ -9,7 +9,7 @@
 
 ### Session 2026-11-12
 
-- Q: Which hot key does the Folders plug-in's entry get once `'` belongs to the core Desktop item? → A: `` ` `` (backtick) - the free punctuation key nearest the others; `;` `,` `.` `/` are taken (autonomous run: conservative)
+- Q: Which hot key does the Folders plug-in's entry get once `'` belongs to the core Desktop item? → A: `-` - free and typed without a dead key on every enabled layout (review 1: the first choice, the backtick, is a dead key on the cs/sk/de/fr/hu layouts); `;` `,` `.` `/` are taken (autonomous run: conservative)
 - Q: Do the plug-in's name and description in the Plugins manager change too? → A: No - only the drive-menu entry, which is the text that collides with Desktop; the description already says it browses folders "such as Desktop, Control Panel, Recycle Bin" (autonomous run: conservative)
 - Q: Is the Desktop item checked in Alt+F1 when the panel shows the Desktop folder? → A: No - it behaves as the Documents item: the menu checks the drive the path is on (autonomous run: conservative)
 - Q: What does Enter on a real folder inside `fld:` do when the folder cannot be opened (access denied, offline share)? → A: The program's ordinary change of a disk path decides and reports, exactly as when the user types that path (autonomous run: item - "the same as typing it")
@@ -148,7 +148,7 @@ on Control Panel → the panel stays in `fld:`; This PC stays in `fld:`, then En
 
 - Assumption (autonomous run): the Fluent 2 icon of the existing "Open Desktop" toolbar command
   (`OpenDesktop`, light and dark) is the Desktop item's icon; Classic uses the Windows Desktop folder icon.
-- Assumption (autonomous run): the Folders plug-in gets the hot key `` ` `` (free: `;` Documents, `,`
+- Assumption (autonomous run): the Folders plug-in gets the hot key `-` (free: `;` Documents, `,`
   Network, `.` As Other Panel, `/` FTP and SFTP are taken).
 - Assumption (autonomous run): the new configuration value is not carried by the Altap / Open
   Salamander settings import (rule 245 FR-016, as feature 374 did for WSL).
