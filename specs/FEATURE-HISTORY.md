@@ -44,7 +44,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287, 387, 388 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
-| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373, 374, 375, 376, 404, 405, 407, 413, 416, 417, 418, 420, 421, 422, 423 |
+| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373, 374, 375, 376, 404, 405, 407, 413, 416, 417, 418, 420, 421, 422, 423, 425 |
 
 ## Feature notes
 
@@ -7091,3 +7091,37 @@ a few early ones are out of sequence).
   4 FAIL (default and Dark) -> after **7 / 0** (both), geometry identical. Regression probes `pw314`
   16 / 0, `cvtab262` 16 / 0, `copy408` 19 / 0 / 1 NOT DRIVEN. saltests -> 287,267 checks; refute-first
   reviews: 1 (no MUST; S1 documented, S2 and S3 fixed), 2 (no MUST; its S1 - the re-measure did nothing - fixed), 3 (no MUST, no SHOULD).
+- 425-desktop-drive-item: the drive menu's and drive bar's **Desktop** (Alt+F1 / Alt+F2, hot key `'`)
+  was the Folders plug-in's virtual `fld:` view - the shell namespace's Desktop mixed with This PC,
+  Libraries, Network, Control Panel - with the path line showing only `fld:`, and inside `fld:` a real
+  folder (Documents, a drive, the user's folder) stayed virtual without the operations of a disk panel
+  (GitHub #31). Now the core has its own **Desktop** item right after Documents (`drvtDesktop` = 21,
+  appended; hot key `'`; Fluent 2 `OpenDesktop` / Classic imageres 183; drive bar icon-only, tooltip
+  "Desktop", no context menu; check box *Desktop* on the Change Drive page, value `Change Drive Show
+  Desktop`, default and absent = on): it opens `FOLDERID_Desktop` (`SHGetKnownFolderPath`,
+  `KF_FLAG_DONT_VERIFY`, any length, whole or refused - `SalDesktopPathToU8`) through `ChangePathToDisk`
+  after the program's check of a path (`SalCheckAndRestorePath`: reconnects a network drive, offers a
+  share login, ESC, reports a missing path) and a refusal of a path that names a file
+  (`SalDesktopPathIsNotFolder`): no path -> "The Desktop folder cannot be found.", too long ->
+  `IDS_TOOLONGPATH`, the panel unchanged (never the parent `ChangePathToDisk` would fall back to). The plug-in's entry reads **Shell Folders** (hot key
+  `-`), and its `ExecuteOnFS` opens a shell folder in the file system whose path is an existing
+  directory as a disk path (`ChangePanelPathToDisk`; `SalShellFolderOpensAsDisk`, header-only
+  `src/common/saldesktop.h`); virtual places, zip archives (a file path), folder shortcuts (`SFGAO_LINK`
+  without a reparse point - a junction or directory symlink opens), the Recycle Bin and its items
+  (`FOLDERID_RecycleBinFolder`, `SalPathHasRecycleBinPart`) and items without a path stay in `fld:`; the
+  plug-in hands its drive-menu text over as UTF-8 (`SplLoadStrU8`). On the way: `SalCheckPath`'s
+  path-not-found and canceled-check messages hold the whole path (were cut at ~360 / ~400 bytes). **Traps**: the plug-in's drive-menu text is stored (`FS Cmd Name`) and replaced
+  only at the plug-in's next load - a new `plugins.ver` loads all once, the probe resets `Plugins.ver
+  Version (x64)`; nothing of the FS or the file data is used after `ChangePanelPathToDisk` (it may close
+  the FS); `small` is a Windows macro; a `goto` may not skip an initialized local; DeepL left "Shell
+  Folders" English everywhere and quoted the English "Desktop" in the error (pinned). Limits: a readable
+  path inside `fld:` left out (maintainer decision); an unreadable (access denied) Desktop is reported by
+  the ordinary path change, as a typed path; on-screen checks (icons light / dark, Classic, a translated
+  UI, the check box) are release-checklist lines. From backlog item
+  `ikona-na-desktop-vede-kamsi-neznamo-kam`. Probe `desktop_probe` (seams `TC_PROBE_DRIVES_DUMP`, new
+  `TC_PROBE_DESKTOP_FILE`, new plug-in `TC_PROBE_FLD_DUMP` that acts only on a picked item and never runs a
+  file) main 2 PASS / 8 FAIL / 3 NOT DRIVEN -> 18 / 0 / 0; negative controls: the fld: fix disabled fails the
+  three disk rows, the old message fails ERR-LONG; saltests 287,414 (`TestDesktopDrive425`); refute-first
+  reviews: 1 (no MUST; Recycle Bin items, network Desktop, dead-key hot key fixed), 2 (no MUST; folder
+  shortcuts, UTF-8 menu text, the cut message fixed), 3 (no MUST; junctions / symlinks open, the
+  canceled-check message, `SplLoadStrU8`).

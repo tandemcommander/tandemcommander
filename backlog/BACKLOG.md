@@ -17,7 +17,6 @@ Last triaged: 2026-11-12
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Desktop in the drive menu opens a virtual fld: view, not the Desktop folder](items/ikona-na-desktop-vede-kamsi-neznamo-kam/desc.md) | bug | 4 | other-plugins | 425 |
 
 ## Next
 

@@ -44,7 +44,7 @@
 - [X] T016 Two-stage `.slt` refresh for the modules `salamand` and `folders` (stop-rules §2.13), pins where DeepL drifts, `slt --verify`
 - [X] T017 `python tools/check_encoding.py --strict`, `python tools/brand/fluent-icons/check_iconset.py`, `build.cmd full`, `saltests`
 - [X] T018 Probe `desktop_probe.ps1` after the fix -> `probe/result_after.txt`; record before / after in `fix-log.md`
-- [ ] T019 `CHANGELOG.md` entry under `## [Unreleased]`, FEATURE-HISTORY entry, closing report (run step 8)
+- [X] T019 `CHANGELOG.md` entry under `## [Unreleased]`, FEATURE-HISTORY entry, closing report (run step 8)
 
 ## Dependencies
 

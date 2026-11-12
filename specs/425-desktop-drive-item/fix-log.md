@@ -175,3 +175,7 @@ message cut at 359 bytes = `MAX_PATH + 100 - 1`).
 - NOTE 4: probe coverage as recorded (ERR-LONG is ASCII; the link rule is a pure rule with saltests).
 
 After the fixes: `build.cmd full` BUILD SUCCEEDED (189 language modules), saltests 287,414 / 0.
+
+Final probe on 1b31ec01 (after review 3, `build.cmd full`): `result_after.txt` **18 PASS / 0 FAIL / 0 NOT DRIVEN**,
+registry identical, the probe's Recycle Bin item removed. Review 3's fixes were not reviewed again (no MUST in
+three reviews; the link rule and the message buffer are covered by saltests and ERR-LONG).
