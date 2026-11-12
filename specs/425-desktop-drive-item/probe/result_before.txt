@@ -1,0 +1,24 @@
+desktop probe (GitHub #31) main-472d20a8
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-12 14:18; registry key existed True
+Desktop : 'C:\Users\pavel\Desktop'; Documents 'C:\Users\pavel\Documents'; shell names: 'Tento po\u010D\u00EDta\u010D', 'Dokumenty', 'V\u0161echny polo\u017Eky Ovl\u00E1dac\u00EDch panel\u016F', 'pavel'
+
+[on] menus opened 2/2; builds 4 (menu 2, bar 2)
+MENU-DESKTOP RUN    FAIL        Desktop items 0: none; Documents idx 6; right after Documents False
+MENU-PLUGIN RUN    FAIL        plug-in items: '/' FTP Client | ''' Desktop | '' Portable Devices | '' Windows Registry | '/' SFTP Client | '' Undelete; others with the hot key ': 1
+BAR-DESKTOP RUN    FAIL        Desktop buttons 0; tooltip 'Desktop' True
+SAVED      RUN    FAIL        value after the exit of a run without it: ''
+[off] menus opened 2/2; builds 4 (menu 2, bar 2)
+OPT-OFF    RUN    PASS        Desktop items or buttons with the option off: 0
+REGRESS    RUN    PASS        19 other items with the option on, 19 off; identical True
+OPEN-MENU  RUN    FAIL        item position -1; panel 'C:\Users\pavel\AppData\Local\Temp\tcdesk\start' (expected 'C:\Users\pavel\Desktop'); message none
+OPEN-BAR   RUN    FAIL        button idx ; panel before 'C:\Users\pavel\AppData\Local\Temp\tcdesk\start', after '<not run>'
+ERR-NONE   RUN    FAIL        seam ''; item position -1; message none; panel 'C:\Users\pavel\AppData\Local\Temp\tcdesk\start'
+ERR-MISSING RUN    FAIL        seam 'C:\Users\pavel\AppData\Local\Temp\tcdesk\gone\Desktop'; item position -1; message none; panel 'C:\Users\pavel\AppData\Local\Temp\tcdesk\start'
+FLD-DOCS   RUN    NOT DRIVEN  no LIST line: the plug-in has no seam (Enter is never pressed without it)
+FLD-USER   RUN    NOT DRIVEN  no LIST line: the plug-in has no seam (Enter is never pressed without it)
+FLD-CPL    RUN    NOT DRIVEN  no LIST line: the plug-in has no seam (Enter is never pressed without it)
+fld: items skipped 0; acted upon: 
+Registry: restored; identical=True; SHA-256 before 1503ACD81636F9D131BD3D6EAF7AC359DBC0E11FF6FFFFD33C55FE97D5BCD566 / after 1503ACD81636F9D131BD3D6EAF7AC359DBC0E11FF6FFFFD33C55FE97D5BCD566
+
+Rows: PASS 2, FAIL 8, NOT DRIVEN 3. Left running: 0; fixture removed: True; registry restored+identical: True
