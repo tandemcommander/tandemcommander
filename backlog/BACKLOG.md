@@ -276,6 +276,7 @@ Last triaged: 2026-11-12
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Dark theme: black checkbox labels and old toolbar icons in plug-in windows](items/tmavy-motiv/desc.md) | bug | 4 | other-plugins | github#25 | 2026-11-12 |
 
 ## Parked
 
