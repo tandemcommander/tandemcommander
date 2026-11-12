@@ -23,9 +23,14 @@ void DarkMenuApply(HMENU bar);
 void DarkMenuRelease(HMENU bar);
 
 // WM_MEASUREITEM / WM_DRAWITEM handlers; return FALSE if the item is not one
-// of ours (caller falls through to default handling).
-BOOL DarkMenuMeasureItem(MEASUREITEMSTRUCT* mis);
-BOOL DarkMenuDrawItem(const DRAWITEMSTRUCT* dis);
+// of ours (caller falls through to default handling). 'dpi' is the window's
+// (GetDpiForWindow; the viewer windows are per-monitor aware, feature 424).
+BOOL DarkMenuMeasureItem(MEASUREITEMSTRUCT* mis, UINT dpi);
+BOOL DarkMenuDrawItem(const DRAWITEMSTRUCT* dis, UINT dpi);
+
+// WM_DPICHANGED (feature 424): makes every item of 'bar' and its submenus be
+// measured again at the new DPI; then DrawMenuBar.
+void DarkMenuRemeasure(HMENU bar);
 
 // Owner-drawn items lose automatic '&' mnemonic matching; call on WM_MENUCHAR
 // (lParam is the HMENU). Returns MAKELRESULT(index, MNC_EXECUTE/MNC_SELECT)

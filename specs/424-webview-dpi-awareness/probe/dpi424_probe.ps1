@@ -12,7 +12,8 @@
                   (before the feature: viewer, controller and browser 1)
       GEOMETRY    the page window starts at the client origin and covers the client width and the
                   client height minus the status bar; with -Before <result file of the before build>
-                  the GEO line (window rectangle, client size, status bar height) is identical
+                  the GEO line (window rectangle, client size, status bar and menu bar height) is
+                  identical; -Dark runs with the program's dark theme (owner-drawn viewer menus)
       DPICHANGED  WM_DPICHANGED (wParam 96/96, lParam = a rectangle 200 x 100 px smaller; Windows
                   marshals the rectangle) sent to the viewer: the window takes exactly that
                   rectangle and the page window still covers the client (before: the window keeps
@@ -25,6 +26,7 @@ param(
     [Parameter(Mandatory = $true)][string]$Exe,
     [string]$Label,
     [string]$Before,
+    [switch]$Dark,
     [string]$OutFile
 )
 $ErrorActionPreference = 'Stop'
@@ -52,6 +54,17 @@ public static class Dpi424
     [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr w, out RECT r);
     [DllImport("user32.dll")] public static extern bool GetClientRect(IntPtr w, out RECT r);
     [DllImport("user32.dll")] public static extern bool ClientToScreen(IntPtr w, ref POINT p);
+    [DllImport("user32.dll")] public static extern bool GetMenuBarInfo(IntPtr w, int obj, int item, ref MENUBARINFO mbi);
+    [StructLayout(LayoutKind.Sequential)] public struct MENUBARINFO { public int cbSize; public RECT rcBar; public IntPtr hMenu; public IntPtr hwndMenu; public int flags; }
+    [DllImport("user32.dll")] public static extern IntPtr GetMenu(IntPtr w);
+    [DllImport("user32.dll")] public static extern int GetMenuItemCount(IntPtr m);
+    [DllImport("user32.dll")] public static extern uint GetMenuState(IntPtr m, uint pos, uint flags);
+    // owner-drawn items of the menu bar (the viewers' dark menus, feature 037) and all items
+    [StructLayout(LayoutKind.Sequential)] public struct MENUITEMINFOW { public int cbSize; public uint fMask, fType, fState, wID; public IntPtr hSubMenu, hbmpChecked, hbmpUnchecked, dwItemData, dwTypeData; public uint cch; public IntPtr hbmpItem; }
+    [DllImport("user32.dll")] public static extern bool GetMenuItemInfoW(IntPtr m, uint item, bool byPos, ref MENUITEMINFOW mii);
+    // MIIM_FTYPE 0x100, MFT_OWNERDRAW 0x100 (GetMenuState packs a popup's item count into the same bits)
+    public static string OwnerDrawn(IntPtr w) { IntPtr m = GetMenu(w); int n = GetMenuItemCount(m), o = 0; for (int i = 0; i < n; i++) { var mi = new MENUITEMINFOW(); mi.cbSize = Marshal.SizeOf(typeof(MENUITEMINFOW)); mi.fMask = 0x100; if (GetMenuItemInfoW(m, (uint)i, true, ref mi) && (mi.fType & 0x100) != 0) o++; } return o + " of " + n; }
+    public static int MenuBarHeight(IntPtr w) { var m = new MENUBARINFO(); m.cbSize = Marshal.SizeOf(typeof(MENUBARINFO)); if (!GetMenuBarInfo(w, unchecked((int)0xFFFFFFFD), 0, ref m)) return -1; return m.rcBar.B - m.rcBar.T; }
     [DllImport("user32.dll", SetLastError = true)] public static extern IntPtr SendMessageTimeoutW(IntPtr w, uint m, IntPtr wp, IntPtr lp, uint flags, uint ms, out IntPtr res);
     [StructLayout(LayoutKind.Sequential)] public struct RECT { public int L, T, R, B; }
     [StructLayout(LayoutKind.Sequential)] public struct POINT { public int X, Y; }
@@ -122,12 +135,13 @@ try {
     if ([IO.Directory]::Exists($LP + $Root)) { [IO.Directory]::Delete($LP + $Root, $true) }
     NewDir $StartDir; NewDir $Files
     Set-Config
+    if ($Dark) { & reg.exe add "$RegKey\Settings\Configuration" /v 'Theme Mode' /t REG_DWORD /d 1 /f | Out-Null }
     $text = ''; for ($i = 1; $i -le 300; $i++) { $text += ("line {0:D4} the quick brown fox jumps over the lazy dog`r`n" -f $i) }
     WriteFile "$Files\a.txt" $text
     WriteFile "$Files\b.md" "# Heading`r`n`r`nSome *text* for the Markdown Viewer.`r`n`r`n- one`r`n- two`r`n"
     Out ("dpi424_probe (feature 424) {0}" -f $Label)
     Out ("Program : {0}" -f $Exe)
-    Out ("Date    : {0}; registry key existed {1}; baseline {2}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), $existed, $(if ($Before) { $Before } else { '-' }))
+    Out ("Date    : {0}; registry key existed {1}; baseline {2}; theme {3}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), $existed, $(if ($Before) { $Before } else { '-' }), $(if ($Dark) { 'Dark' } else { 'default' }))
     Out ''
 
     $id = 0; $before = Reports
@@ -161,8 +175,9 @@ try {
             Row $tag 'AWARE' (V $ok) ("viewer {0}, controller {1}; browsers {2} '{3}' awareness {4}; main window {5}, program {6}" -f $va, $ca, $kids.Count, $sw, $ba, $ma, $pa)
             # GEOMETRY
             $wr = [Dpi424]::Win($w); $c = [Dpi424]::Client($w)
-            $geo = ('window {0} client {1} x {2} status {3}' -f (RectS $wr), $c.R, $c.B, $fit[2])
+            $geo = ('window {0} client {1} x {2} status {3} menubar {4}' -f (RectS $wr), $c.R, $c.B, $fit[2], [Dpi424]::MenuBarHeight($w))
             Out ("GEO {0} {1}" -f $tag, $geo)
+            Out ("MENU {0} owner-drawn bar items {1}" -f $tag, [Dpi424]::OwnerDrawn($w))
             $same = $true; $cmp = 'no baseline'
             if ($beforeGeo.ContainsKey($tag)) { $same = ($beforeGeo[$tag] -eq $geo); $cmp = ("before '{0}'" -f $beforeGeo[$tag]) }
             Row $tag 'GEOMETRY' (V ($fit[0] -and $same)) ("{0}; {1}; {2}" -f $fit[1], $geo, $cmp)

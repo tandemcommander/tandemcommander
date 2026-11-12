@@ -16,28 +16,57 @@ struct DarkMenuItemData
     bool isBarItem;
 };
 
-static HFONT DarkMenuFontHandle = NULL;
-
-static HFONT DarkMenuFont()
+// One menu font per DPI (feature 424: the viewer windows are per-monitor aware, a window on a
+// monitor of another scaling needs the font of that scaling). Every viewer window has its own
+// thread, hence the lock. A font is never deleted while the module runs (a menu of another
+// thread may be drawing with it); when the table is full the first font serves.
+struct DarkMenuFontEntry
 {
-    if (DarkMenuFontHandle == NULL)
+    UINT dpi;
+    HFONT font;
+};
+static const int DARKMENU_FONT_SLOTS = 8;
+static DarkMenuFontEntry DarkMenuFonts[DARKMENU_FONT_SLOTS];
+static int DarkMenuFontCount = 0;
+static SRWLOCK DarkMenuFontLock = SRWLOCK_INIT;
+
+static UINT DarkMenuDpi(UINT dpi) { return dpi != 0 ? dpi : GetDpiForSystem(); }
+
+static HFONT DarkMenuFont(UINT dpi)
+{
+    dpi = DarkMenuDpi(dpi);
+    HFONT font = NULL;
+    AcquireSRWLockExclusive(&DarkMenuFontLock);
+    for (int i = 0; i < DarkMenuFontCount && font == NULL; i++)
+        if (DarkMenuFonts[i].dpi == dpi)
+            font = DarkMenuFonts[i].font;
+    if (font == NULL && DarkMenuFontCount < DARKMENU_FONT_SLOTS)
     {
-        NONCLIENTMETRICS ncm;
+        NONCLIENTMETRICSW ncm;
         memset(&ncm, 0, sizeof(ncm));
         ncm.cbSize = sizeof(ncm);
-        if (SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0))
-            DarkMenuFontHandle = CreateFontIndirect(&ncm.lfMenuFont);
-        if (DarkMenuFontHandle == NULL)
-            DarkMenuFontHandle = (HFONT)GetStockObject(DEFAULT_GUI_FONT);
+        if (SystemParametersInfoForDpi(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0, dpi))
+            font = CreateFontIndirectW(&ncm.lfMenuFont);
+        if (font != NULL)
+        {
+            DarkMenuFonts[DarkMenuFontCount].dpi = dpi;
+            DarkMenuFonts[DarkMenuFontCount].font = font;
+            DarkMenuFontCount++;
+        }
     }
-    return DarkMenuFontHandle;
+    if (font == NULL && DarkMenuFontCount > 0)
+        font = DarkMenuFonts[0].font;
+    ReleaseSRWLockExclusive(&DarkMenuFontLock);
+    return font != NULL ? font : (HFONT)GetStockObject(DEFAULT_GUI_FONT);
 }
 
 void DarkMenuReleaseFont()
 {
-    if (DarkMenuFontHandle != NULL && DarkMenuFontHandle != GetStockObject(DEFAULT_GUI_FONT))
-        DeleteObject(DarkMenuFontHandle);
-    DarkMenuFontHandle = NULL;
+    AcquireSRWLockExclusive(&DarkMenuFontLock);
+    for (int i = 0; i < DarkMenuFontCount; i++)
+        DeleteObject(DarkMenuFonts[i].font);
+    DarkMenuFontCount = 0;
+    ReleaseSRWLockExclusive(&DarkMenuFontLock);
 }
 
 static void SplitLabelAccel(const std::string& text, std::string& label, std::string& accel)
@@ -135,13 +164,47 @@ static void ReleaseMenu(HMENU menu)
     }
 }
 
+// feature 424: owner-drawn items keep the size measured at the DPI they were first shown at;
+// re-setting each item's type makes the menu measure them again (WM_MEASUREITEM) the next
+// time it is shown or the bar is drawn.
+static void RemeasureMenu(HMENU menu)
+{
+    int count = GetMenuItemCount(menu);
+    for (int i = 0; i < count; i++)
+    {
+        MENUITEMINFOA mii;
+        memset(&mii, 0, sizeof(mii));
+        mii.cbSize = sizeof(mii);
+        mii.fMask = MIIM_FTYPE | MIIM_SUBMENU;
+        if (!GetMenuItemInfoA(menu, i, TRUE, &mii))
+            continue;
+        if ((mii.fType & MFT_OWNERDRAW) != 0)
+        {
+            MENUITEMINFOA set;
+            memset(&set, 0, sizeof(set));
+            set.cbSize = sizeof(set);
+            set.fMask = MIIM_FTYPE;
+            set.fType = mii.fType;
+            SetMenuItemInfoA(menu, i, TRUE, &set);
+        }
+        if (mii.hSubMenu != NULL)
+            RemeasureMenu(mii.hSubMenu);
+    }
+}
+
+void DarkMenuRemeasure(HMENU bar)
+{
+    if (bar != NULL)
+        RemeasureMenu(bar);
+}
+
 void DarkMenuRelease(HMENU bar)
 {
     if (bar != NULL)
         ReleaseMenu(bar);
 }
 
-BOOL DarkMenuMeasureItem(MEASUREITEMSTRUCT* mis)
+BOOL DarkMenuMeasureItem(MEASUREITEMSTRUCT* mis, UINT dpi)
 {
     if (mis->CtlType != ODT_MENU || mis->itemData == 0)
         return FALSE;
@@ -158,7 +221,7 @@ BOOL DarkMenuMeasureItem(MEASUREITEMSTRUCT* mis)
     SplitLabelAccel(d->text, label, accel);
 
     HDC dc = GetDC(NULL);
-    HFONT old = (HFONT)SelectObject(dc, DarkMenuFont());
+    HFONT old = (HFONT)SelectObject(dc, DarkMenuFont(dpi));
     SIZE szLabel = {0, 0};
     SIZE szAccel = {0, 0};
     GetTextExtentPoint32A(dc, label.c_str(), (int)label.size(), &szLabel);
@@ -170,14 +233,14 @@ BOOL DarkMenuMeasureItem(MEASUREITEMSTRUCT* mis)
     if (d->isBarItem)
     {
         mis->itemWidth = szLabel.cx;
-        mis->itemHeight = GetSystemMetrics(SM_CYMENU);
+        mis->itemHeight = GetSystemMetricsForDpi(SM_CYMENU, DarkMenuDpi(dpi));
     }
     else
     {
-        int gutter = GetSystemMetrics(SM_CXMENUCHECK) + 6;
+        int gutter = GetSystemMetricsForDpi(SM_CXMENUCHECK, DarkMenuDpi(dpi)) + 6;
         mis->itemWidth = gutter + szLabel.cx + (accel.empty() ? 0 : 24 + szAccel.cx) + 14;
         int h = szLabel.cy + 8;
-        int minH = GetSystemMetrics(SM_CYMENU);
+        int minH = GetSystemMetricsForDpi(SM_CYMENU, DarkMenuDpi(dpi));
         mis->itemHeight = h > minH ? h : minH;
     }
     return TRUE;
@@ -186,10 +249,10 @@ BOOL DarkMenuMeasureItem(MEASUREITEMSTRUCT* mis)
 // Draws a check/radio glyph: DrawFrameControl renders black-on-white into a
 // mono bitmap; the mono->color BitBlt maps black to the DC text color and
 // white to the DC background color.
-static void DrawMenuGlyph(HDC dc, int x, int y, UINT dfcs, COLORREF fg, COLORREF bk)
+static void DrawMenuGlyph(HDC dc, int x, int y, UINT dfcs, COLORREF fg, COLORREF bk, UINT dpi)
 {
-    int cx = GetSystemMetrics(SM_CXMENUCHECK);
-    int cy = GetSystemMetrics(SM_CYMENUCHECK);
+    int cx = GetSystemMetricsForDpi(SM_CXMENUCHECK, DarkMenuDpi(dpi));
+    int cy = GetSystemMetricsForDpi(SM_CYMENUCHECK, DarkMenuDpi(dpi));
     HDC mem = CreateCompatibleDC(dc);
     if (mem == NULL)
         return;
@@ -210,7 +273,7 @@ static void DrawMenuGlyph(HDC dc, int x, int y, UINT dfcs, COLORREF fg, COLORREF
     DeleteDC(mem);
 }
 
-BOOL DarkMenuDrawItem(const DRAWITEMSTRUCT* dis)
+BOOL DarkMenuDrawItem(const DRAWITEMSTRUCT* dis, UINT dpi)
 {
     if (dis->CtlType != ODT_MENU || dis->itemData == 0)
         return FALSE;
@@ -249,7 +312,7 @@ BOOL DarkMenuDrawItem(const DRAWITEMSTRUCT* dis)
 
     SetTextColor(dc, txtColor);
     SetBkMode(dc, TRANSPARENT);
-    HFONT oldFont = (HFONT)SelectObject(dc, DarkMenuFont());
+    HFONT oldFont = (HFONT)SelectObject(dc, DarkMenuFont(dpi));
     UINT dt = DT_SINGLELINE | DT_VCENTER | DT_NOCLIP;
     if ((dis->itemState & ODS_NOACCEL) != 0)
         dt |= DT_HIDEPREFIX;
@@ -260,7 +323,7 @@ BOOL DarkMenuDrawItem(const DRAWITEMSTRUCT* dis)
     }
     else
     {
-        int gutter = GetSystemMetrics(SM_CXMENUCHECK) + 6;
+        int gutter = GetSystemMetricsForDpi(SM_CXMENUCHECK, DarkMenuDpi(dpi)) + 6;
         RECT tr = rc;
         tr.left += gutter + 2;
         DrawTextA(dc, label.c_str(), (int)label.size(), &tr, dt | DT_LEFT);
@@ -282,8 +345,8 @@ BOOL DarkMenuDrawItem(const DRAWITEMSTRUCT* dis)
             if (GetMenuItemInfoA((HMENU)dis->hwndItem, dis->itemID, FALSE, &mii) &&
                 (mii.fType & MFT_RADIOCHECK) != 0)
                 dfcs = DFCS_MENUBULLET;
-            int gy = rc.top + ((rc.bottom - rc.top) - GetSystemMetrics(SM_CYMENUCHECK)) / 2;
-            DrawMenuGlyph(dc, rc.left + 3, gy, dfcs, txtColor, bkColor);
+            int gy = rc.top + ((rc.bottom - rc.top) - GetSystemMetricsForDpi(SM_CYMENUCHECK, DarkMenuDpi(dpi))) / 2;
+            DrawMenuGlyph(dc, rc.left + 3, gy, dfcs, txtColor, bkColor, dpi);
         }
     }
     SelectObject(dc, oldFont);

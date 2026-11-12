@@ -191,7 +191,8 @@ void CTcWebKeeper::Arm(const TcWebKeeperConfig& config)
     }
     // feature 424: the holder window and the environment per-monitor v2 aware, as every
     // viewer's (webhost.h): the browser takes the DPI mode of the thread creating the first
-    // environment, and all environments on the shared folder must agree
+    // environment, and a later one of the other mode gets its environment but its CONTROLLER
+    // fails (0x8007139F, ERROR_INVALID_STATE; measured by the 424 review)
     CTcWebPerMonitorDpiScope dpiScope;
     s->hwnd = CreateWindowExW(WS_EX_TOOLWINDOW, config.ClassName, L"", WS_POPUP,
                               0, 0, 1, 1, NULL, NULL, config.Instance, this);

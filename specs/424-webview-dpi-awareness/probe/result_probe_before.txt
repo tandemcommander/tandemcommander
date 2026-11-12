@@ -1,16 +1,18 @@
 dpi424_probe (feature 424) before-a44dfdf4
-Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-11-12 13:03; registry key existed True; baseline -
+Program : C:\Users\pavel\AppData\Local\Temp\tc424negbuild\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-12 13:35; registry key existed True; baseline -; theme default
 
 CV         AWARE  FAIL        viewer 1, controller 1; browsers 1 '--embedded-browser-webview-dpi-awareness=1' awareness 1; main window 1, program 1
-GEO CV window (570,160)-(2159,1278) client 1573 x 1059 status 21
-CV         GEOMETRY PASS        page at (0,0) 1573 x 1038; client 1573 x 1059; status 21; window (570,160)-(2159,1278) client 1573 x 1059 status 21; no baseline
+GEO CV window (570,160)-(2159,1278) client 1573 x 1059 status 21 menubar 19
+MENU CV owner-drawn bar items 0 of 4
+CV         GEOMETRY PASS        page at (0,0) 1573 x 1038; client 1573 x 1059; status 21; window (570,160)-(2159,1278) client 1573 x 1059 status 21 menubar 19; no baseline
 CV         DPICHANGED FAIL        sent ok; wanted (610,190)-(1999,1208), window (570,160)-(2159,1278); page at (0,0) 1573 x 1038; client 1573 x 1059; status 21
 MD         AWARE  FAIL        viewer 1, controller 1; browsers 1 '--embedded-browser-webview-dpi-awareness=1' awareness 1; main window 1, program 1
-GEO MD window (398,40)-(2108,1330) client 1694 x 1231 status 0
-MD         GEOMETRY PASS        page at (0,0) 1694 x 1231; client 1694 x 1231; status 0; window (398,40)-(2108,1330) client 1694 x 1231 status 0; no baseline
+GEO MD window (398,40)-(2108,1330) client 1694 x 1231 status 0 menubar 19
+MENU MD owner-drawn bar items 0 of 4
+MD         GEOMETRY PASS        page at (0,0) 1694 x 1231; client 1694 x 1231; status 0; window (398,40)-(2108,1330) client 1694 x 1231 status 0 menubar 19; no baseline
 MD         DPICHANGED FAIL        sent ok; wanted (438,70)-(1948,1260), window (398,40)-(2108,1330); page at (0,0) 1694 x 1231; client 1694 x 1231; status 0
 RUN        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
-Registry: restored; identical=True; SHA-256 before 40177787F57FAF22D6548A415720D24B5299B3AAB18F5FD40B29714DFA4F4BEA / after 40177787F57FAF22D6548A415720D24B5299B3AAB18F5FD40B29714DFA4F4BEA
+Registry: restored; identical=True; SHA-256 before 1503ACD81636F9D131BD3D6EAF7AC359DBC0E11FF6FFFFD33C55FE97D5BCD566 / after 1503ACD81636F9D131BD3D6EAF7AC359DBC0E11FF6FFFFD33C55FE97D5BCD566
 
 Rows: PASS 3, FAIL 4, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

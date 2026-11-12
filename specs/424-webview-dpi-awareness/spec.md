@@ -84,7 +84,8 @@ within the client.
 
 - A second instance of an older version (0.3.0 or earlier) uses the same browser data folder at
   the same time and has already started the browser in the old DPI mode. The newer instance's
-  viewer engine may then fail to start. The viewer then reports the engine as unavailable, as it
+  viewer engine then fails to start (measured: the controller fails with `ERROR_INVALID_STATE`, in
+  both orders). The viewer then reports the engine as unavailable, as it
   already does for other environment mismatches (feature 085), and nothing is lost.
 - A window position remembered by an earlier version ("save position") is read as before. On a
   monitor at the scaling of the program's start it means the same place. Elsewhere it is kept

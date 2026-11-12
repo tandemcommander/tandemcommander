@@ -1,16 +1,18 @@
 dpi424_probe (feature 424) after
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-11-12 13:08; registry key existed True; baseline specs\424-webview-dpi-awareness\probe\result_probe_before.txt
+Date    : 2026-11-12 13:36; registry key existed True; baseline specs\424-webview-dpi-awareness\probe\result_probe_before.txt; theme default
 
 CV         AWARE  PASS        viewer 2, controller 2; browsers 1 '--embedded-browser-webview-dpi-awareness=2' awareness 2; main window 1, program 1
-GEO CV window (570,160)-(2159,1278) client 1573 x 1059 status 21
-CV         GEOMETRY PASS        page at (0,0) 1573 x 1038; client 1573 x 1059; status 21; window (570,160)-(2159,1278) client 1573 x 1059 status 21; before 'window (570,160)-(2159,1278) client 1573 x 1059 status 21'
+GEO CV window (570,160)-(2159,1278) client 1573 x 1059 status 21 menubar 19
+MENU CV owner-drawn bar items 0 of 4
+CV         GEOMETRY PASS        page at (0,0) 1573 x 1038; client 1573 x 1059; status 21; window (570,160)-(2159,1278) client 1573 x 1059 status 21 menubar 19; before 'window (570,160)-(2159,1278) client 1573 x 1059 status 21 menubar 19'
 CV         DPICHANGED PASS        sent ok; wanted (610,190)-(1999,1208), window (610,190)-(1999,1208); page at (0,0) 1373 x 938; client 1373 x 959; status 21
 MD         AWARE  PASS        viewer 2, controller 2; browsers 1 '--embedded-browser-webview-dpi-awareness=2' awareness 2; main window 1, program 1
-GEO MD window (398,40)-(2108,1330) client 1694 x 1231 status 0
-MD         GEOMETRY PASS        page at (0,0) 1694 x 1231; client 1694 x 1231; status 0; window (398,40)-(2108,1330) client 1694 x 1231 status 0; before 'window (398,40)-(2108,1330) client 1694 x 1231 status 0'
+GEO MD window (398,40)-(2108,1330) client 1694 x 1231 status 0 menubar 19
+MENU MD owner-drawn bar items 0 of 4
+MD         GEOMETRY PASS        page at (0,0) 1694 x 1231; client 1694 x 1231; status 0; window (398,40)-(2108,1330) client 1694 x 1231 status 0 menubar 19; before 'window (398,40)-(2108,1330) client 1694 x 1231 status 0 menubar 19'
 MD         DPICHANGED PASS        sent ok; wanted (438,70)-(1948,1260), window (438,70)-(1948,1260); page at (0,0) 1494 x 1131; client 1494 x 1131; status 0
 RUN        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
-Registry: restored; identical=True; SHA-256 before 40177787F57FAF22D6548A415720D24B5299B3AAB18F5FD40B29714DFA4F4BEA / after 40177787F57FAF22D6548A415720D24B5299B3AAB18F5FD40B29714DFA4F4BEA
+Registry: restored; identical=True; SHA-256 before 1503ACD81636F9D131BD3D6EAF7AC359DBC0E11FF6FFFFD33C55FE97D5BCD566 / after 1503ACD81636F9D131BD3D6EAF7AC359DBC0E11FF6FFFFD33C55FE97D5BCD566
 
 Rows: PASS 7, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

@@ -24,7 +24,9 @@
   controller is still created after the context was restored.
 - Consequence: all environment creations in the process must use the same mode. The browser tree
   is shared per user data folder, and a second environment whose options differ from the running
-  tree's fails (architecture 11, feature 085). Hence one scope in the shared code, used by both
+  tree's fails (architecture 11, feature 085). Measured by the review for the DPI mode: the later
+  environment is created, but its controller fails with `0x8007139F` (`ERROR_INVALID_STATE`),
+  in both orders; two per-monitor environments work. Hence one scope in the shared code, used by both
   the host and the keeper.
 
 ## R3 - The viewer windows

@@ -56,7 +56,9 @@ scaling and is **not driven** here: changing the scaling would change the mainta
   contexts). The pure mapping lives in `src/common/saldpirect.h` with saltests. Identical rectangles
   give the identity, so at 100 % nothing changes.
 - D4: the saved window placement (`g_wndPlacement`) is read and written on the viewer thread, so it
-  is now physical. At an unchanged scaling that is the same number as before. A value saved by an
+  is now physical. On a monitor at the program's start scaling that is the same number as before.
+  A placement saved by 0.3.0 on a monitor of another scaling opens once larger or smaller by that
+  monitor's ratio (review 1, NOTE 1); `MultiMonEnsureRectVisible` keeps it on screen. A value saved by an
   older version is kept visible by the existing `MultiMonEnsureRectVisible`. No conversion, no new
   stored data.
 - D5: `WM_DPICHANGED` -> `SetWindowPos` to the suggested rectangle. The Code Viewer re-creates its
@@ -111,3 +113,52 @@ a limit).
 - Regression probes run from a copy under `%TEMP%	c424reg` (they write screenshots into their own
   folders): `copy408_probe` (clicks into the Markdown page) **19 PASS / 0 FAIL / 1 NOT DRIVEN**, as
   recorded by 408.
+
+## Review
+
+### Review 1 (refute-first, independent agent) - no MUST
+
+- **S1, measured by the reviewer** (two test hosts on one folder): a system-mode browser running,
+  then a per-monitor environment -> environment `S_OK`, controller `0x8007139F`
+  (`ERROR_INVALID_STATE`); the reverse order the same; per-monitor + per-monitor both work. In the
+  product: while 0.3.0 or older runs with its engine started, this version's F3 shows the
+  engine-unavailable message and the viewer closes, and the other way round. No data is lost. It is
+  rare (two versions at once, or the old engine still alive right after an upgrade). **Done:** the
+  wording is corrected in `webkeeper.cpp`, the contract, research R2, architecture 11 and the spec
+  edge case (the controller fails, not the environment); the limit is named in the changelog text
+  and the reply draft. A fallback (retry in system mode) would bring back the very mismatch this
+  feature removes; not done.
+- **S2 (fixed, severity 3):** the dark-theme owner-drawn menus used one font and
+  `SM_CYMENU` / `SM_CXMENUCHECK` / `SM_CYMENUCHECK` of the start scaling. Now in both
+  `darkmenu.cpp` (identical copies): a font per DPI (`SystemParametersInfoForDpi`, a table of 8
+  under an SRW lock - every viewer has its own thread; a font is never deleted while the module
+  runs, the table being full falls back to the first font), `GetSystemMetricsForDpi`,
+  `DarkMenuMeasureItem/DrawItem(…, GetDpiForWindow(HWindow))`, and on `WM_DPICHANGED`
+  `DarkMenuRemeasure` (re-sets each owner-drawn item's type so the menu measures it again) +
+  `DrawMenuBar`. At 100 % the font is the one of before (same metrics). The probe got `-Dark`, a
+  menu-bar height in its GEO line and a `MENU` line (owner-drawn bar items via
+  `GetMenuItemInfoW`; `GetMenuState` packs a popup's item count into the same bits, a first
+  version read 1 of 4 / 3 of 4 in the default theme). The remeasure at another DPI is not driven
+  here (no other DPI); the release-checklist line of two monitors names the dark menus.
+- **S3 (fixed):** the reply draft no longer claims what was not shown: "should fix it", the scaling
+  cases are checked by hand before the release, please confirm.
+- NOTE 1 (fixed in the wording): D4 holds on a monitor at the start scaling; a placement saved by
+  0.3.0 on a monitor of another scaling opens once larger or smaller; the release-checklist line 3
+  now says so.
+- NOTE 2-5: no change (the keeper's helper windows are per-monitor and call no core UI; the math
+  checked; closing documents come at the close).
+
+### Checks after review 1
+
+- Before build for the negative control: worktree of `a44dfdf4` under `%TEMP%\tc424neg`, its output
+  folder seeded from this build's runtime data, the two viewer plug-ins compiled from the old
+  sources (a first attempt reused the seeded new plug-ins - MSBuild saw newer outputs - and was
+  discarded; `OPENSAL_BUILD_DIR` needs a trailing backslash).
+- `dpi424_probe` before (`result_probe_before.txt`, `result_probe_before_dark.txt`): PASS 3 / FAIL 4
+  each (AWARE and DPICHANGED fail); after (`result_after.txt`, `result_after_dark.txt`, against
+  those baselines): **PASS 7 / FAIL 0 each**; GEO identical (CV `window (570,160)-(2159,1278) client
+  1573 x 1059 status 21 menubar 19`, MD `window (398,40)-(2108,1330) client 1694 x 1231 status 0
+  menubar 19`); MENU 0 of 4 default, 4 of 4 Dark, in both builds.
+- Regression probes from copies under `%TEMP%\tc424reg`, on the build with S2: `pw314_probe` 16 / 0
+  (as recorded), `cvtab262_probe` 16 / 0 (as recorded), `copy408_probe` 19 / 0 / 1 NOT DRIVEN (as
+  recorded).

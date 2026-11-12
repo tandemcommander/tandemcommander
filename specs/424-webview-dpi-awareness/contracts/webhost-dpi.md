@@ -8,7 +8,9 @@ host themselves.
    `CTcWebHost::Create` and `CTcWebKeeper::Arm` create theirs inside a `CTcWebPerMonitorDpiScope`
    (the keeper's holder window too). WebView2 gives the browser process the DPI mode of the thread
    that creates the environment (`--embedded-browser-webview-dpi-awareness`), and all environments
-   on one user data folder must agree. A new consumer never calls
+   on one user data folder must agree: a later environment of the other mode is created, but its
+   controller fails with `0x8007139F` (`ERROR_INVALID_STATE`, measured by the 424 review). That is
+   also why an older version (system mode) and this one cannot show their viewers at the same time. A new consumer never calls
    `CreateCoreWebView2EnvironmentWithOptions` itself (rule 11 already says so).
 2. **A window that hosts a `CTcWebHost` is per-monitor-v2 aware.** Its thread calls
    `TcWebEnterPerMonitorDpiThread()` before creating it. The thread keeps that context for its

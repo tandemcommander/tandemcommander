@@ -7,7 +7,7 @@ area: build-release
 source: manual
 who: person
 created: 2026-11-06
-updated: 2026-11-10
+updated: 2026-11-12
 verified: -
 effort: M
 feature: -
@@ -85,6 +85,9 @@ Before the release, every line below is ticked (`BL step <slug> <n> --done`). Or
 - [ ] Panel tabs on a real screen, Default and Dark theme, default configuration: the active tab is a plain rectangle that runs into the directory line (no rounded corners, no feet), as the maintainer's mockup `specs/423-square-panel-tabs/evidence/flat_tabs.png`; a real mouse over an inactive tab shows a rectangle that stops just above the directory line, in the active and the inactive panel; the feature 404 line about the rounded active tab is now checked with Tab style = Rounded (feature 423)
 - [ ] Configuration > Appearance > Tab style with a real mouse and keyboard: Rounded + OK switches both panels to the rounded look at once, Square + OK back; Tab moves Font -> Information Line -> Icon style -> Tab style -> Thumbnails, arrow keys move only between Square and Rounded; the page reads well in Czech and German (feature 423)
 - [ ] Panel tabs at 125 %, 150 % and 200 % display scale in both styles: the square active tab has straight edges and joins the directory line, the hover rectangle ends above it, nothing moves when the style is switched (feature 423)
+- [ ] Code Viewer and Markdown Viewer after a display-scaling change (GitHub #29): start Tandem Commander at 100 %, set the display scaling to 150 % in Settings without signing out, then press F3 on a text file and on a `.md` file -> the page starts at the client's top-left corner, fills the client, the text is sharp and not cut off at the right or bottom edge; repeat after returning to 100 % (feature 424)
+- [ ] The same two viewers with two monitors of different scaling: open each viewer while the main window is on the second monitor, then move an open viewer to the other monitor -> the window takes a size that fits the new scaling, the page fills the client, the Code Viewer's status bar text is not clipped, Find (Ctrl+F) and Go to line open readable on that monitor; in the Dark theme the menu bar and its pop-ups (and the Code Viewer's right-click menu) have the text size of that monitor (feature 424)
+- [ ] Both viewers at 125 % and 150 % from the start (scaling set before signing in): the viewer opens where it opened in 0.3.0 with the same size, *Save position* restores the last place, and the page fills the client; a position saved by 0.3.0 on a second monitor of another scaling opens on that monitor, at most once larger or smaller, and is then kept (feature 424)
 
 ## Log
 
@@ -109,3 +112,5 @@ Before the release, every line below is ticked (`BL step <slug> <n> --done`). Or
 - 2026-11-08 — feature 421: 5 checks added
 - 2026-11-08 — feature 422: 4 checks added
 - 2026-11-10 — feature 423 added 3 checks
+- 2026-11-12 — feature 424: 3 checks added
+- 2026-11-12 — feature 424: two checks widened (review 1)

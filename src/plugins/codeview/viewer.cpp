@@ -1225,9 +1225,14 @@ LRESULT CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         return 0;
 
     case WM_DPICHANGED:
-        // feature 424: the window is per-monitor aware - take the size Windows suggests for the
-        // new DPI, then the status bar's font and height for it (WM_SIZE lays out the page)
+        // feature 424: the window is per-monitor aware - the status bar's font and height and the
+        // dark menu for the new DPI, then the size Windows suggests (WM_SIZE lays out the page)
         CreateStatusFont();
+        if (DarkMenus)
+        {
+            DarkMenuRemeasure(GetMenu(HWindow)); // the dark menu at the new DPI
+            DrawMenuBar(HWindow);
+        }
         TcWebApplyDpiChanged(HWindow, lParam);
         LayoutChildren();
         return 0;
@@ -1360,12 +1365,12 @@ LRESULT CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         return 0;
 
     case WM_MEASUREITEM:
-        if (DarkMenus && wParam == 0 && DarkMenuMeasureItem((MEASUREITEMSTRUCT*)lParam))
+        if (DarkMenus && wParam == 0 && DarkMenuMeasureItem((MEASUREITEMSTRUCT*)lParam, GetDpiForWindow(HWindow)))
             return TRUE;
         break;
 
     case WM_DRAWITEM:
-        if (DarkMenus && wParam == 0 && DarkMenuDrawItem((const DRAWITEMSTRUCT*)lParam))
+        if (DarkMenus && wParam == 0 && DarkMenuDrawItem((const DRAWITEMSTRUCT*)lParam, GetDpiForWindow(HWindow)))
             return TRUE;
         break;
 

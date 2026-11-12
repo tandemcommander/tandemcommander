@@ -207,7 +207,9 @@ already been used in the session.
   a display-scaling change drew the page larger, offset and cut off. Every
   environment is created per-monitor v2 (`CTcWebPerMonitorDpiScope` inside
   `CTcWebHost::Create` and `CTcWebKeeper::Arm`; all environments on the folder
-  must agree). A window hosting a `CTcWebHost` runs per-monitor v2 on its
+  must agree: an environment of the other mode is created, but its controller
+  fails with `ERROR_INVALID_STATE`; so a 0.3.0-or-older instance with its
+  engine running and a newer one cannot both show a viewer). A window hosting a `CTcWebHost` runs per-monitor v2 on its
   own thread (`TcWebEnterPerMonitorDpiThread`), maps a rectangle from the core
   with `TcWebSystemRectToPerMonitor`, and handles `WM_DPICHANGED`
   (`TcWebApplyDpiChanged` + its own metrics). The core stays system aware.
