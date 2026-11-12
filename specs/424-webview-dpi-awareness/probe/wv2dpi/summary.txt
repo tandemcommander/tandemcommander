@@ -1,0 +1,18 @@
+== mode system (pid 47620)
+browser 27084: --embedded-browser-webview-dpi-awareness=1
+pid 47620 mode system window awareness 1
+environment 0x00000000
+create 0x00000000 thread awareness now 1
+controller 0x00000000
+== mode pmv2 (pid 39040)
+browser 1620: --embedded-browser-webview-dpi-awareness=2
+pid 39040 mode pmv2 window awareness 2
+environment 0x00000000
+create 0x00000000 thread awareness now 2
+controller 0x00000000
+== mode scoped (pid 12608)
+browser 11236: --embedded-browser-webview-dpi-awareness=2
+pid 12608 mode scoped window awareness 2
+environment 0x00000000
+create 0x00000000 thread awareness now 1
+controller 0x00000000

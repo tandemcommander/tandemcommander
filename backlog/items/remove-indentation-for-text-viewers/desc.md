@@ -1,16 +1,16 @@
 ---
 title: Code Viewer and Markdown Viewer show the page shifted right and down
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: webview
 source: github#29
 who: agent
 created: 2026-11-12
 updated: 2026-11-12
-verified: -
+verified: 2026-11-12 a44dfdf4
 effort: -
-feature: -
+feature: 424
 related: []
 depends-on: []
 reason: -
@@ -76,3 +76,5 @@ the page layout, but not by an offset like this one.
 - 2026-11-12 — created (source github#29)
 - 2026-11-12 — fields set from the issue text and labels
 - 2026-11-12 — moved to Next position 1
+- 2026-11-12 — verified at a44dfdf4: reachable at a44dfdf4: browser launched --embedded-browser-webview-dpi-awareness=1 (system aware, own system DPI fixed at its start; cross-process child windows); not driven at 100% here
+- 2026-11-12 — run started, feature 424

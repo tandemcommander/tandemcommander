@@ -1,0 +1,27 @@
+dpi29_probe head-a44dfdf4
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-12 12:47; registry key existed True
+
+viewer window: [CodeView - WinLib Universal Window2 '...s\pavel\AppData\Local\Temp\tc29\files\a.txt [Plain Text] - Code Viewer'] [Static id=0]  200 lines | Ln 1, Col 1 | UTF-8 | CRLF | Plain Text | 100% | [Chrome_WidgetWin_1 id=0] Code Viewer | [Chrome_RenderWidgetHostHWND id=1040] Chrome Legacy Window
+viewer rect (570,160)-(2159,1278); client 1573 x 1059; window awareness 1, dpi 96
+program  pid 44544: awareness 1 (0 unaware, 1 system, 2 per-monitor), system DPI 96
+browser processes started by the program: 1
+browser  pid 10536: awareness 1 (0 unaware, 1 system, 2 per-monitor), system DPI 96
+  DPI switches: --embedded-browser-webview-dpi-awareness=1
+  command line: "C:\Program Files (x86)\Microsoft\EdgeWebView\Application\157.0.4341.46\msedgewebview2.exe" --embedded-browser-webview=1 --webview-exe-name=tandemcommander.exe --webview-exe-version="0.3.0 (x64)" --user-data-dir="C:\Users\pavel\AppData\Local\Tandem Commander\WebView2\EBWebView" --noerrdialogs --embedded-browser-webview-dpi-awareness=1 --edge-webview-disable-crash-reporting=1 --disable-background-networking --disable-component-update --disable-features=msWebOOUI,msPdfOOUI --disable-sync --mojo-named-platform-channel-pipe=44544.860.12977851147747300913 /pfhostedapp:581fe02b5399a33033edae3fd839c83315873780
+  child 30732 --type=crashpad-handler: pid 30732: awareness 0 (0 unaware, 1 system, 2 per-monitor), system DPI 96
+  child 41736 --type=gpu-process: pid 41736: awareness 1 (0 unaware, 1 system, 2 per-monitor), system DPI 96
+  child 37088 --type=utility: pid 37088: awareness 0 (0 unaware, 1 system, 2 per-monitor), system DPI 96
+  child 31212 --type=utility: pid 31212: awareness 0 (0 unaware, 1 system, 2 per-monitor), system DPI 0
+  child 35712 --type=renderer: pid 35712: awareness 0 (0 unaware, 1 system, 2 per-monitor), system DPI 0
+  child 41768 --type=renderer: pid 41768: awareness 0 (0 unaware, 1 system, 2 per-monitor), system DPI 0
+viewer window tree:
+  0x10B9A parent 0x50B2A 'Static' pid 44544 visible True awareness 1 dpi 96 rect (578,1249)-(2151,1270)
+  0x10B9E parent 0x50B2A 'Chrome_WidgetWin_0' pid 44544 visible True awareness 1 dpi 96 rect (578,211)-(2151,1249)
+  0x10BAA parent 0x10B9E 'Chrome_WidgetWin_1' pid 10536 visible True awareness 1 dpi 96 rect (578,211)-(2151,1249)
+  0x10BAC parent 0x10BAA 'Chrome_RenderWidgetHostHWND' pid 10536 visible True awareness 1 dpi 96 rect (578,211)-(2151,1249)
+  0x10BC0 parent 0x10BAA 'Intermediate D3D Window' pid 41736 visible True awareness 1 dpi 96 rect (578,211)-(2151,1249)
+RUN        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 0066DA8D4EC8B9FEA0BCBE48DAA4800AB2530BCFE421BED816F6E7B5CDA75D14 / after 0066DA8D4EC8B9FEA0BCBE48DAA4800AB2530BCFE421BED816F6E7B5CDA75D14
+
+Left running: 0; fixture removed: True; registry restored+identical: True
