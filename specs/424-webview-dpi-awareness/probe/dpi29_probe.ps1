@@ -23,7 +23,7 @@ $Exe = (Resolve-Path -LiteralPath $Exe).Path
 $others = @(Get-Process tandemcommander -ErrorAction SilentlyContinue)
 if ($others.Count) { Write-Output 'REFUSED: tandemcommander.exe already runs'; exit 99 }
 
-. 'E:\Projects\tandemcommander\specs\098-long-path-overruns\probe\fix_probe_lib.ps1'
+. (Join-Path $PSScriptRoot '..\..\098-long-path-overruns\probe\fix_probe_lib.ps1')
 if (-not ('Dpi29' -as [type])) {
     Add-Type -TypeDefinition @'
 using System;
