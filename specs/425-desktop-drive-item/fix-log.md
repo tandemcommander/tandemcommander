@@ -28,4 +28,55 @@ Folders plug-in's virtual `fld:` view instead of the Desktop folder.
 
 ## Implementation
 
-(in progress)
+- Pure rules: `src/common/saldesktop.h` (`SalDesktopFolderUsable`, `SalShellFolderOpensAsDisk`, header-only,
+  used by the core and the plug-in) and `SalDesktopPathToU8` in `salmydocs.h`; `saltests` `TestDesktopDrive425`.
+- Core: `drvtDesktop` (21, appended); built right after Documents under `ChangeDriveShowDesktop` (value
+  `Change Drive Show Desktop`, default on, absent = on), hot key `'`, icon `OpenDesktop` / imageres 183;
+  drive bar icon-only, tooltip, no context menu; `GetDesktopPathU8` (`SHGetKnownFolderPath(FOLDERID_Desktop,
+  KF_FLAG_DONT_VERIFY)`, Debug seam `TC_PROBE_DESKTOP_FILE`); `CFilesWindow::ChangePathToDesktop`: no path ->
+  `IDS_DESKTOPNOTFOUND`; not a directory -> `IDS_PATHERRORFORMAT` with the path (heap buffer, UTF-8 pieces);
+  too long -> `IDS_TOOLONGPATH`; else `ChangePathToDisk`. Check box "Des&ktop" (6305) on the Change Drive page.
+- Plug-in: `IDS_DRIVEMENUTEXT` = "`\tShell Folders"; `ExecuteOnFS` sub-folder branch asks
+  `GetDiskPathOfShellFolder` (attributes on the current folder, `ILCombine` + `SHGetPathFromIDListEx` into a
+  32768-unit buffer, `SplWToU8` whole into `SAL_MAX_PATH_UTF8`, `SalGetFileAttributes`) and calls
+  `ChangePanelPathToDisk`; nothing of `fs` / `file` is used after it. Debug seam `TC_PROBE_FLD_DUMP` (LIST /
+  EXEC lines; only the `.pick` item is acted upon, a file is never run).
+- Build traps met: `small` is a Windows macro (rpcndr.h); a `goto ON_FATAL_ERROR` may not jump over an
+  initialized local (the probe counters are declared at the top); `sed -i` dropped the CRs of saltests.cpp
+  (restored), a Bash here-document collapsed the backslashes of the test strings (fixed with the editor).
+
+## Measurement after
+
+| Run | Build | Result |
+|---|---|---|
+| `result_before.txt` | main 472d20a8 (the probe's first version, from the scratchpad; rows FLD-DRIVE / FLD-ZIP were added after) | PASS 2 / FAIL 8 / NOT DRIVEN 3 |
+| `result_negative.txt` | this branch with the fld: fix disabled (one temporary line `free(diskPath); diskPath = NULL;`, reverted) | PASS 12 / FAIL 3 - FLD-USER, FLD-DOCS, FLD-DRIVE stay `fld:` (the old behaviour); FLD-CPL, FLD-ZIP pass |
+| `result_after.txt` | this branch, `build.cmd full` | PASS 15 / FAIL 0 / NOT DRIVEN 0; registry restored, identical |
+
+- `saltests`: 287,391 checks, 0 failed (`TestDesktopDrive425` included).
+- `python tools/check_encoding.py --strict`: TOTAL: 0 finding(s); `check_iconset.py`: 0 problem(s).
+- analyze U1: an existing but unreadable (access denied) Desktop folder passes the directory check and goes to
+  `ChangePathToDisk`, which reports the listing error as it does for a typed path and for Documents (accepted:
+  the item says "the same as typing it"; not drivable on the hidden desktop).
+- The plug-in's stored drive-menu text (`FS Cmd Name`) is replaced at the plug-in's next load: every new
+  `plugins.ver` (installer update) loads all plug-ins once (`CPlugins::ReadPluginsVer`). The probe forces it by
+  resetting `Plugins.ver Version (x64)`.
+
+## Translations
+
+- Step 0 entries: `salamand` new `IDS_DESKTOPDRIVE` (14163), `IDS_DESKTOPNOTFOUND` (14164), dialog control
+  `IDC_CHD_SHOWDESKTOP` (6305) of `IDD_CFGPAGE_CHANGEDRIVE` (9 controls of the page moved 13 DLU, the group
+  box 13 DLU taller); `folders` changed `IDS_DRIVEMENUTEXT` (`STRINGTABLE:0:1004` set to `english_fallback` in
+  the 8 enabled languages' `folders.origin`). Leftover `english_fallback` rows before: 0 (enabled languages).
+- Templates exported (`build_langs.cmd --export-templates --module salamand|folders`); dry runs: salamand 3
+  gaps / ~50 chars per language, folders 1 gap / ~16 chars; real merges `--formality prefer_more` with budgets
+  2800 / 2256: DeepL characters 392 + 8, validation failures 0.
+- Read-back: the check box and the item name fine everywhere (cs/sk "Plocha", nl "Bureaublad", fr "Bureau",
+  de/ro "Desktop", hu "Asztal", es "Escritorio"; accelerators unique on the page in every language).
+  Pinned (`ui-overrides.json`, `_feature_425` notes): `folders` `IDS_DRIVEMENUTEXT` in all 8 languages
+  (DeepL left "Shell Folders" English): cs "Složky Windows", sk "Zložky Windows", de "Windows-Ordner",
+  fr "Dossiers Windows", nl "Windows-mappen", hu "Windows-mappák", ro "Foldere Windows", es "Carpetas de
+  Windows"; `salamand` `IDS_DESKTOPNOTFOUND` in cs/sk/nl/hu (DeepL quoted the English "Desktop" instead of the
+  item's name). Merges again: 0 failures; `translate.slt --verify`: 298 files, round-trip byte-exact.
+- Layout drift: none outside the page's own re-layout (the 9 moved controls in each language).
+- `build.cmd full`: BUILD SUCCEEDED, 189 language modules.

@@ -338,7 +338,8 @@
       "IDS_UPDATE_DLI_PROGRESS": "Stahování a kontrola instalačního programu verze %s... %u %%",
       "IDS_UPDATE_DLI_FAILED": "Instalační program verze %s se nepodařilo stáhnout nebo neprošel kontrolou.\\n\\nTlačítkem Stáhnout jej získáte ve webovém prohlížeči.",
       "IDC_TABSTYLE_GROUP": " St&yl karet ",
-      "IDC_TABSTYLE_SQUARE": "&Hranaté"
+      "IDC_TABSTYLE_SQUARE": "&Hranaté",
+      "IDS_DESKTOPNOTFOUND": "Složka Plocha nebyla nalezena."
     },
     "slovak": {
       "IDS_MENU_TAB_MOVETOOTHER": "&Presunúť do druhého panelu",
@@ -389,7 +390,8 @@
       "IDS_UPDATE_HINT_PORTABLE": "Táto kópia programu Tandem Commander nebola nainštalovaná inštalačným programom, preto sa nemôže aktualizovať sama. Tlačidlo Stiahnuť otvorí inštalačný program vo webovom prehliadači; aktualizujte jeho spustením.",
       "IDS_UPDATE_DLI_PROGRESS": "Sťahuje sa a kontroluje inštalačný program verzie %s... %u %%",
       "IDS_UPDATE_DLI_FAILED": "Inštalačný program verzie %s sa nepodarilo stiahnuť alebo neprešiel kontrolou.\\n\\nTlačidlom Stiahnuť ho získate vo webovom prehliadači.",
-      "IDC_TABSTYLE_SQUARE": "&Hranaté"
+      "IDC_TABSTYLE_SQUARE": "&Hranaté",
+      "IDS_DESKTOPNOTFOUND": "Zložka Plocha sa nedá nájsť."
     },
     "german": {
       "IDS_MENU_TAB_MOVETOOTHER": "In das andere &Fenster verschieben",
@@ -557,7 +559,8 @@
       "IDS_UPDATE_BTN_CANCELDL": "Do&wnload annuleren",
       "IDS_UPDATE_HINT_DLI": "‘Download && installeren’ downloadt het installatieprogramma, controleert het en installeert de update; daarna wordt Tandem Commander opnieuw gestart en blijven uw instellingen behouden. ‘Download’ opent het in uw webbrowser.",
       "IDS_UPDATE_HINT_PORTABLE": "Dit exemplaar van Tandem Commander is niet met het installatieprogramma geïnstalleerd en kan zichzelf daarom niet bijwerken. ‘Download’ opent het installatieprogramma in uw webbrowser; voer het uit om bij te werken.",
-      "IDS_UPDATE_DLI_FAILED": "Het installatieprogramma van versie %s kon niet worden gedownload of heeft de controle niet doorstaan.\\n\\nGebruik ‘Download’ om het installatieprogramma in uw webbrowser te downloaden."
+      "IDS_UPDATE_DLI_FAILED": "Het installatieprogramma van versie %s kon niet worden gedownload of heeft de controle niet doorstaan.\\n\\nGebruik ‘Download’ om het installatieprogramma in uw webbrowser te downloaden.",
+      "IDS_DESKTOPNOTFOUND": "De map Bureaublad kan niet worden gevonden."
     },
     "hungarian": {
       "IDS_MENU_TAB_MOVETOOTHER": "Át&helyezés a másik panelre",
@@ -599,7 +602,8 @@
       "IDS_UPDATE_HINT_DLI": "A „Letöltés && telepítés” letölti a telepítőt, ellenőrzi, majd telepíti a frissítést; ezután a Tandem Commander újraindul, a beállítások megmaradnak. A „Letöltés” a webböngészőben nyitja meg a telepítőt.",
       "IDS_UPDATE_DLI_FAILED": "A(z) %s verzió telepítője nem tölthető le, vagy nem felelt meg az ellenőrzésnek.\\n\\nA telepítőt a Letöltés gombbal töltheti le a webböngészőben.",
       "IDS_UPDATE_DLI_PROGRESS": "A(z) %s verzió telepítőjének letöltése és ellenőrzése... %u %%",
-      "IDC_TABSTYLE_GROUP": " Lapok &formája "
+      "IDC_TABSTYLE_GROUP": " Lapok &formája ",
+      "IDS_DESKTOPNOTFOUND": "Az Asztal mappa nem található."
     },
     "romanian": {
       "IDS_MENU_TAB_MOVETOOTHER": "&Mutare în celălalt panou",
@@ -772,6 +776,9 @@
       "Configuration > Appearance > Tab style: tabs as the corpus names them (cs 'karty', hu 'lap', 078/312); the shape words are 'angular' where the literal 'square' reads as a square box (cs/sk 'Hranaté' - the maintainer's own word, de 'Eckig'); fr agrees with 'onglets' (masculine plural: 'Carrés').",
       "hu 'Lapok formája' (the shape of the tabs): every letter of 'Lapstílus' is an accelerator of the page already (l, p, s, u, a); 'f' is free.",
       "fr 'pixels' (key '#pixels', the only row with that English text in salamand): the Thumbnails group moved beside Tab style and its label has 62 DLU; 'éléments d'images (pixels)' (107 DLU) no longer fits."
+    ],
+    "_feature_425": [
+      "The Desktop item's error (IDS_DESKTOPNOTFOUND) names the folder as the item and Windows name it (cs/sk 'Plocha', nl 'Bureaublad', hu 'Asztal'), not the English 'Desktop' in quotes DeepL gave; de/ro (Windows says 'Desktop'), fr and es were right."
     ]
   },
   "zip": {
@@ -948,6 +955,36 @@
     },
     "romanian": {
       "#mask hints": "indicii pentru măști"
+    }
+  },
+  "folders": {
+    "_feature_425": [
+      "The Folders plug-in's drive-menu entry (hot key `, the core Desktop item has ') names what it opens - the Windows shell namespace: DeepL left 'Shell Folders' in English in every language.",
+      "Wording after the item's Czech example 'Slozky Windows'; sk 'zlozka' as the rest of the Slovak corpus."
+    ],
+    "czech": {
+      "IDS_DRIVEMENUTEXT": "`\\tSložky Windows"
+    },
+    "slovak": {
+      "IDS_DRIVEMENUTEXT": "`\\tZložky Windows"
+    },
+    "german": {
+      "IDS_DRIVEMENUTEXT": "`\\tWindows-Ordner"
+    },
+    "french": {
+      "IDS_DRIVEMENUTEXT": "`\\tDossiers Windows"
+    },
+    "dutch": {
+      "IDS_DRIVEMENUTEXT": "`\\tWindows-mappen"
+    },
+    "hungarian": {
+      "IDS_DRIVEMENUTEXT": "`\\tWindows-mappák"
+    },
+    "romanian": {
+      "IDS_DRIVEMENUTEXT": "`\\tFoldere Windows"
+    },
+    "spanish": {
+      "IDS_DRIVEMENUTEXT": "`\\tCarpetas de Windows"
     }
   }
 }
