@@ -36,7 +36,7 @@
 ## Phase 5: Polish & verification
 
 - [X] T013 Add the per-monitor rule (the contract's points 1–4) to architecture/11-webview2-integration.md section 3, citing specs/424-webview-dpi-awareness/contracts/webhost-dpi.md
-- [ ] T014 Run the encoding guard, `build.cmd`, `saltests`, the probe after (and before as the negative control on the HEAD-a44dfdf4 measurement), and record them in specs/424-webview-dpi-awareness/fix-log.md
+- [X] T014 Run the encoding guard, `build.cmd`, `saltests`, the probe after (and before as the negative control on the HEAD-a44dfdf4 measurement), and record them in specs/424-webview-dpi-awareness/fix-log.md
 
 ## Dependencies
 

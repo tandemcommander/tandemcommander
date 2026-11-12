@@ -17,7 +17,6 @@ Last triaged: 2026-11-12
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Code Viewer and Markdown Viewer show the page shifted right and down](items/remove-indentation-for-text-viewers/desc.md) | bug | 5 | webview | 424 |
 
 ## Next
 

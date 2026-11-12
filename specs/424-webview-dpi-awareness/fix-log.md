@@ -189,3 +189,22 @@ a limit).
 - `dpi424_probe` after: default **7 / 0**, Dark **7 / 0** (against the before baselines; GEO
   identical; MENU 0 of 4 / 4 of 4).
 - `probe/menutest` (hidden desktop): as above.
+
+### Review 3 (refute-first, independent agent) - no MUST, no SHOULD
+
+- Re-ran `dpi424_probe -Dark`: after 7 / 0, before 3 / 4; saltests 287267 / 0.
+- Checked: both `darkmenu.cpp` / `darkmenu.h` identical (same blobs); `menutest` mode 0 is the
+  product's function line for line.
+- The product's own `darkmenu.cpp`, compiled into a test host with a menu shaped like the Code
+  Viewer's (grayed items, separators, a radio group, checks, nested popups), ran
+  `DarkMenuRemeasure` + `DrawMenuBar` 20 times. Every item field was unchanged (type, state, id,
+  submenu, data, text, bitmap), and so were the menu info, mnemonics (`DarkMenuHandleMenuChar`),
+  the bar rectangles at the same DPI and the GDI/USER object counts. Re-measures: bar 60, popups
+  15; without the re-set, 0.
+- NOTE 1 (fixed): an item with a real bitmap is not re-measured; the comment now says so (the
+  viewers' items have none).
+- NOTE 2: undocumented behaviour; the worst case is a dark menu sized for the old DPI. In the
+  comment.
+- NOTE 3: menutest's bar-height column cannot show a re-measure (the bar height comes from the
+  window's DPI metric).
+- NOTE 4: the probe's `WM_DPICHANGED` is 96/96. A real DPI change is the release-checklist line.

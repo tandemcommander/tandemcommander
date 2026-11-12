@@ -36,7 +36,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320, 399 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
-| WebView2 viewers (Markdown, Code) | 081, 085, 262, 314, 408 |
+| WebView2 viewers (Markdown, Code) | 081, 085, 262, 314, 408, 424 |
 | Privacy and security | 083, 085, 086, 090, 123, 420, 421, 422 |
 | FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279, 288, 303, 323, 341, 345, 347, 348, 384, 385, 410 |
 | PictView | 105, 111, 120, 267 |
@@ -7050,3 +7050,44 @@ a few early ones are out of sequence).
   item `square-panel-tabs-as-the-new-default-rounded-tabs-kept-as-an`. saltests -> 287,255 checks; probe
   `tabs423_probe` **57 PASS / 0 FAIL / 2 NOT DRIVEN**; `tabs404` 29 / 0 / 1, `tabs413` 22 / 0 / 1,
   `tabs405` 7 / 0 / 1; two refute-first reviews (no MUST; SHOULDs fixed in both).
+- 424-webview-dpi-awareness: the Code Viewer and the Markdown Viewer showed their page larger,
+  shifted right and down and cut off at the right and bottom (GitHub #29). The program is system DPI
+  aware, and WebView2 started its browser process in the same mode
+  (`--embedded-browser-webview-dpi-awareness=1`). A system-aware process fixes its scaling at its
+  **own** start, and the browser starts at the first F3 of a session, so a display-scaling change
+  in between (Settings, docking, RDP) left the program and the browser in different coordinate spaces.
+  Now both viewers and their browser are per-monitor v2 aware, while the core stays system aware.
+  - WebView2 takes the browser's mode from the **calling thread's** context at
+    `CreateCoreWebView2EnvironmentWithOptions` (experiment `probe/wv2dpi`: system `=1`, per-monitor
+    `=2`, per-monitor only around the call `=2`). So `CTcWebHost::Create` and `CTcWebKeeper::Arm`
+    (with its holder window) create theirs inside `CTcWebPerMonitorDpiScope`.
+  - The viewer threads call `TcWebEnterPerMonitorDpiThread()` first. The core's rectangle is mapped
+    through its monitor (`TcWebSystemRectToPerMonitor`, pure rule `src/common/saldpirect.h`
+    `SalDpiMapRect`, `TestDpiRect424`). A stored placement is used as written by the viewer thread.
+  - `WM_DPICHANGED` takes the suggested rectangle (`TcWebApplyDpiChanged`). The Code Viewer's status
+    font and height follow the window's DPI (`CreateStatusFont`), and the dark-theme owner-drawn menus
+    of both viewers have a font per DPI (a table under an SRW lock, never deleted while the module
+    runs), `GetSystemMetricsForDpi` and `DarkMenuRemeasure`.
+  - Architecture 11 has the rule; the contract is `contracts/webhost-dpi.md`.
+
+  **Traps:**
+  - Environments of the two modes on one data folder do not mix: the later one gets its environment,
+    but its controller fails with `0x8007139F`, in both orders (review 1, measured). So while 0.3.0
+    or older runs with its engine started, this version's viewers report the engine unavailable, and
+    the other way round. That is a limit, named in the changelog text and the reply.
+  - `WM_DPICHANGED` sent from another process is marshalled by Windows: the probe's rectangle must
+    be in the sender's memory.
+  - `GetMenuState` packs a popup's item count into the owner-draw bit. Use `GetMenuItemInfoW`.
+  - A before build seeded from the new output kept the new plug-ins (MSBuild saw newer outputs).
+    `OPENSAL_BUILD_DIR` needs a trailing backslash.
+
+  **Limits:**
+  - The symptom needs a scaling other than 100 % and is not driven here. The on-screen checks
+    (scaling change, two monitors, dark menus, a placement saved by 0.3.0 on another monitor) are
+    release-checklist lines.
+  - No `## [Unreleased]` in `CHANGELOG.md`: the entry is in the closing report.
+
+  From backlog item `remove-indentation-for-text-viewers`. Probe `dpi424_probe` before 3 PASS /
+  4 FAIL (default and Dark) -> after **7 / 0** (both), geometry identical. Regression probes `pw314`
+  16 / 0, `cvtab262` 16 / 0, `copy408` 19 / 0 / 1 NOT DRIVEN. saltests -> 287,267 checks; refute-first
+  reviews: 1 (no MUST; S1 documented, S2 and S3 fixed), 2 (no MUST; its S1 - the re-measure did nothing - fixed), 3 (no MUST, no SHOULD).

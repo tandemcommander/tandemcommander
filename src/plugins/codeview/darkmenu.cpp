@@ -165,10 +165,12 @@ static void ReleaseMenu(HMENU menu)
 }
 
 // feature 424: owner-drawn items keep the size measured at the DPI they were first shown at.
-// Re-setting an item's bitmap (its own value back) makes Windows measure it again
-// (WM_MEASUREITEM) the next time the bar is drawn or the popup shown; re-setting the
-// unchanged type, its data, or toggling MFT_OWNERDRAW does NOT (measured by the 424 review 2,
-// specs/424-webview-dpi-awareness/probe/menutest).
+// Re-setting an item's bitmap (its own value back; the viewers' items have none) makes
+// Windows measure it again (WM_MEASUREITEM) the next time the bar is drawn or the popup
+// shown; re-setting the unchanged type, its data, or toggling MFT_OWNERDRAW does NOT, nor
+// does this for an item with a real bitmap (measured by the 424 reviews 2 and 3 on Windows 11,
+// specs/424-webview-dpi-awareness/probe/menutest; undocumented - at worst a dark menu keeps
+// the old DPI's sizes).
 static void RemeasureMenu(HMENU menu)
 {
     int count = GetMenuItemCount(menu);
