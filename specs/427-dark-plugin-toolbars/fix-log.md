@@ -160,3 +160,33 @@ content; both fixed before this run.)
   start state identical. Read afterwards: Theme Mode 0, Toolbar Icon Set 0, Language czech.slg; the
   Batch Rename and File Comparator menu items carry HotKey 0x352 / 0x343 - not the values this probe
   writes (0x10352 / 0x10343), told to the maintainer.
+
+## Review 2 (refute-first agent): 1 MUST, 1 SHOULD, NOTEs
+
+The reviewer confirmed review 1's fixes in every other case it drove (two viewers, the histogram
+and the PictView settings open, all opened in Default, switched Default → Dark → Default → Dark: 0 px
+both viewers; `TB_REPLACEBITMAP` swap correct; the metric's exclusions hide nothing - 47 of the 48
+remaining coloured pixels were ClearType fringes of "100 %", the separators / frames are 26/16 grey).
+
+- **M3 - File Comparator opened in Default, switched to Dark, kept a light-grey toolbar strip**
+  (3,617 px differ from a window opened in Dark). Cause: the bands keep the colours they got when
+  inserted; the rebar-level colours were set before the bands existed and never per band. Fixed:
+  `ApplyRebarColors` also sets every band's `RBBIM_COLORS` (`CLR_DEFAULT` in Default) and is called
+  after the bands are inserted. Measuring it (new probe rows LIVE-D: opened in Default, then
+  Default → Dark → Default → Dark) found one more stale part: the "Difference" combo box draws its own
+  frame with pens made once in its constructor - `RefreshThemeChrome` now calls the existing
+  `CComboBox::ChangeColors()`. LIVE-D: toolbars 0 px from a window opened in that theme each step;
+  File Comparator's top 60 rows 183 light px in Dark (as a window opened in Dark), 54,905 in Default
+  (as a window opened in Default; LIVE → Default moved from 50,711 to the same 54,905 with the combo
+  frame refreshed).
+- **S - spec, plan and tasks** did not mention the lift: FR-001/FR-002, the edge case, Key Entities,
+  the plan's summary and tasks T012/T013 updated.
+- NOTEs fixed: `themes_bitmap.h` includes `<math.h>` itself (the earlier edit had not applied); the
+  destructor comment corrected (the toolbar works from its own image-list copy); PictView's refill
+  creates the lists first and empties them only once the new bitmaps exist (a failed LoadBitmap or
+  grey/mask creation keeps what the lists hold); `WM_USER_VIEWERCFGCHNG` repaints every window of the
+  viewer's thread (`EnumThreadWindows` → `RedrawWindow(... RDW_ALLCHILDREN)`), so the histogram's
+  toolbar repaints too.
+
+Probe after (all rows): `ROWS: 0 FAIL`, registry restored identical (`3C6996DB…`). saltests 287,439
+checks, 0 failed; encoding guard TOTAL: 0.

@@ -78,9 +78,9 @@ Batch Rename against its background (contrast at least 4.5:1).
 
 ### Edge Cases
 
-- A user switches between Default and Dark while a viewer is open: the open window keeps the
-  glyphs it was built with until it is opened again (as before 427; the Default theme never gets
-  Dark glyphs).
+- A user switches between Default and Dark while a viewer or File Comparator is open: the open
+  windows follow the switch (their toolbars equal a window opened in that theme) - review 1 M1,
+  review 2 M3.
 - The magenta (or mapped background) key colour of a toolbar bitmap must stay untouched so the mask
   stays right.
 - The 16-colour and the 256-colour PictView bitmaps (the core decides which).
@@ -91,9 +91,12 @@ Batch Rename against its background (contrast at least 4.5:1).
 ### Functional Requirements
 
 - **FR-001**: In the Dark theme, PictView's viewer toolbar (normal and hot image lists, also used
-  by its histogram window) MUST show its glyphs in the Dark palette - the same colour adaptation the
-  core applies to its legacy glyphs (feature 028/029).
-- **FR-002**: In the Dark theme, File Comparator's toolbar glyphs MUST use the same Dark palette.
+  by its menus and its histogram window) MUST show its glyphs in the Dark palette - the core's
+  colour adaptation of its legacy glyphs (feature 028/029) plus, for the plug-ins only, the lift of
+  low-contrast saturated colours to 3:1 against the Dark face (review 1, M2) - and MUST follow a
+  live theme switch in both directions (review 1, M1).
+- **FR-002**: In the Dark theme, File Comparator's toolbar glyphs MUST use the same Dark palette and
+  lift, and its toolbar and chrome MUST follow a live theme switch in both directions (reviews 1-2).
 - **FR-003**: In the Dark theme, File Comparator's window chrome (rebar band background, the band
   text area, the splitter fill, the static text background, the "Difference" combo box and the
   scrollbars of the two views) MUST use the theme's colours instead of the classic light-grey
@@ -112,7 +115,8 @@ Batch Rename against its background (contrast at least 4.5:1).
 
 - **Toolbar bitmap**: a plug-in's legacy toolbar strip (16 × 16 cells, a key colour for the mask).
 - **Dark palette adaptation**: the pure per-pixel rule of `ThemeDarkAdaptColor` (neutral dark →
-  light, dark saturated → brighter hue, light colours unchanged).
+  light, dark saturated → brighter hue, light colours unchanged); for the plug-ins, then the 3:1 lift
+  of a saturated colour that stays below 3:1 on the Dark face (mixed toward white).
 
 ## Success Criteria *(mandatory)*
 
@@ -138,5 +142,5 @@ Batch Rename against its background (contrast at least 4.5:1).
   build the run changes no checkbox drawing (no fix without a reproduction) and records the part.
 - Assumption (autonomous run): the reporter's unnamed light-grey areas are the ones measured in
   File Comparator; other windows showed none in the probe.
-- A live switch of the theme while a plug-in window is open keeps the open window's glyphs (an
-  existing limit of these windows, not widened).
+- Assumption (autonomous run, review 1): the 3:1 lift applies to the plug-ins' toolbars only; the
+  core's Classic glyphs keep the 028 rule (416: Classic never restyled).

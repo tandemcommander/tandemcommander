@@ -2224,35 +2224,54 @@ CViewerWindow::GetLock()
     return Lock;
 }
 
+// feature 427: repaints a top-level window of the viewer's thread and all its children
+static BOOL CALLBACK RepaintThreadWindow427(HWND hWnd, LPARAM)
+{
+    RedrawWindow(hWnd, NULL, NULL, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);
+    return TRUE;
+}
+
 BOOL CViewerWindow::InitializeGraphics()
 {
     HBITMAP hTmpMaskBitmap;
     HBITMAP hTmpGrayBitmap;
     HBITMAP hTmpColorBitmap;
 
+    // feature 427: the lists exist from the first call on; a theme switch refills them in place (the
+    // toolbar, the menus and the histogram window hold these handles), only once the new bitmaps
+    // are made
+    if (HHotToolBarImageList == NULL)
+        HHotToolBarImageList = ImageList_Create(16, 16, ILC_MASK | ILC_COLORDDB, IDX_TB_COUNT, 1);
+    if (HGrayToolBarImageList == NULL)
+        HGrayToolBarImageList = ImageList_Create(16, 16, ILC_MASK | ILC_COLORDDB, IDX_TB_COUNT, 1);
     hTmpColorBitmap = LoadBitmap(DLLInstance, MAKEINTRESOURCE(SalamanderGeneral->CanUse256ColorsBitmap() ? IDB_TOOLBAR256 : IDB_TOOLBAR16));
     // feature 427: in the Dark theme the legacy glyphs get the core's Dark adaptation (feature 028)
     // plus the 3:1 lift of low-contrast saturated colours (the blue arrows), before the grey
     // (normal) and the mask bitmaps are made from them
+    if (hTmpColorBitmap == NULL) // 427 review 2: the lists keep what they hold
+        return FALSE;
     BOOL dark = SalamanderGeneral->IsDarkThemeActive();
     COLORREF face = SalamanderGeneral->GetThemeSysColor(COLOR_BTNFACE);
     if (dark)
         ThemeDarkAdaptBitmapLift(hTmpColorBitmap, RGB(255, 0, 255), face);
+    hTmpGrayBitmap = NULL;
+    hTmpMaskBitmap = NULL;
     SalamanderGUI->CreateGrayscaleAndMaskBitmaps(hTmpColorBitmap, RGB(255, 0, 255),
                                                  hTmpGrayBitmap, hTmpMaskBitmap);
+    if (hTmpGrayBitmap == NULL || hTmpMaskBitmap == NULL) // 427 review 2: keep what the lists hold
+    {
+        if (hTmpGrayBitmap != NULL)
+            DeleteObject(hTmpGrayBitmap);
+        if (hTmpMaskBitmap != NULL)
+            DeleteObject(hTmpMaskBitmap);
+        DeleteObject(hTmpColorBitmap);
+        return FALSE;
+    }
     // feature 427: the grey copy too (a saturated colour turns into a dark grey there)
     if (dark)
         ThemeDarkAdaptBitmapLift(hTmpGrayBitmap, RGB(255, 0, 255), face);
-    // feature 427: a theme switch refills the existing lists in place - the toolbar, the menus and
-    // the histogram window hold these handles
-    if (HHotToolBarImageList == NULL)
-        HHotToolBarImageList = ImageList_Create(16, 16, ILC_MASK | ILC_COLORDDB, IDX_TB_COUNT, 1);
-    else
-        ImageList_Remove(HHotToolBarImageList, -1);
-    if (HGrayToolBarImageList == NULL)
-        HGrayToolBarImageList = ImageList_Create(16, 16, ILC_MASK | ILC_COLORDDB, IDX_TB_COUNT, 1);
-    else
-        ImageList_Remove(HGrayToolBarImageList, -1);
+    ImageList_Remove(HHotToolBarImageList, -1);
+    ImageList_Remove(HGrayToolBarImageList, -1);
     ImageList_Add(HHotToolBarImageList, hTmpColorBitmap, hTmpMaskBitmap);
     ImageList_Add(HGrayToolBarImageList, hTmpGrayBitmap, hTmpMaskBitmap);
     DeleteObject(hTmpMaskBitmap);
@@ -3161,8 +3180,9 @@ CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (HHotToolBarImageList != NULL && HGrayToolBarImageList != NULL)
         {
             InitializeGraphics();
-            if (ToolBar != NULL && ToolBar->GetHWND() != NULL)
-                InvalidateRect(ToolBar->GetHWND(), NULL, TRUE);
+            // every window of this viewer's thread (the toolbar, the histogram window and its
+            // toolbar) repaints with the refilled lists (427 review 2)
+            EnumThreadWindows(GetCurrentThreadId(), RepaintThreadWindow427, 0);
         }
         if (Renderer.HWindow != NULL)
             SendMessage(Renderer.HWindow, uMsg, wParam, lParam);

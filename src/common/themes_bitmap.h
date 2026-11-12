@@ -14,8 +14,15 @@
 // without alpha (`key`) and fully transparent pixels of a bitmap with alpha; partially transparent
 // (premultiplied) pixels are un-premultiplied, adapted and premultiplied again. The caller decides
 // whether the theme is Dark; this function always adapts.
+//
+// ThemeDarkAdaptBitmapLift (plug-in toolbars, 427 review M2): the same, then every saturated pixel
+// (channel spread >= 32) whose contrast to `face` stays below 3:1 (WCAG 1.4.11, non-text UI) is
+// mixed toward white in 5 % steps until it reaches 3:1 - the 029 rule keeps a blue such as
+// (0,0,128) or (0,51,153) as it is (about 1.2:1 on the Dark face). The core's own Classic glyphs
+// do not use it (never restyled beyond 028, feature 416).
 
 #include <windows.h>
+#include <math.h> // pow (ThemeDarkLiftLuminance)
 #include <stdlib.h>
 #include <string.h>
 

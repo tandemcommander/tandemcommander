@@ -16,7 +16,10 @@ the theme's brushes and colours (`GetThemeSysColor` / `GetThemeSysColorBrush`, i
 system ones in Default), its rebar gets the Dark background / text / colour scheme, and its combo
 box and views get the core's control theming (`ThemeApplyToDialog` on the main window, already in
 the interface). The checkbox labels do not reproduce (research R1): nothing in their drawing
-changes; the probe guards them.
+changes; the probe guards them. After review 1/2: the plug-ins use `ThemeDarkAdaptBitmapLift`
+(028 + a 3:1 lift of low-contrast saturated colours), and both windows follow a live theme switch
+(PictView refills its image lists in place on `WM_USER_VIEWERCFGCHNG`; File Comparator
+`RefreshThemeChrome` on `CC_COLORS`: `TB_REPLACEBITMAP`, rebar and band colours, control theming).
 
 ## Technical Context
 

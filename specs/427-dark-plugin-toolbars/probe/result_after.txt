@@ -67,10 +67,19 @@ DEFAULT    FC-LIGHT INFO        light neutral pixels (white or face grey) outsid
 DEFAULT    FC-GREY INFO        light-grey pixels outside the text views: 72316 (in the views 0; views: SFC File View Window Class, SFC File View Window Class)
 LIVE       PV->DEFAULT PASS        pv toolbar after the switch to DEFAULT: 0 pixels differ from a window opened in DEFAULT
 LIVE       FC->DEFAULT PASS        fc toolbar after the switch to DEFAULT: 0 pixels differ from a window opened in DEFAULT
-LIVE       FC-TOP->DEFAULT PASS        light neutral pixels in File Comparator's top 60 rows: 50711 (light chrome again)
+LIVE       FC-TOP->DEFAULT PASS        light neutral pixels in File Comparator's top 60 rows: 54905 (light chrome again)
 LIVE       PV->DARK PASS        pv toolbar after the switch to DARK: 0 pixels differ from a window opened in DARK
 LIVE       FC->DARK PASS        fc toolbar after the switch to DARK: 0 pixels differ from a window opened in DARK
 LIVE       FC-TOP->DARK PASS        light neutral pixels in File Comparator's top 60 rows: 183 (the top 60 rows nearly free of light pixels)
+LIVE-D     PV->DARK PASS        pv toolbar after the switch to DARK: 0 pixels differ from a window opened in DARK
+LIVE-D     FC->DARK PASS        fc toolbar after the switch to DARK: 0 pixels differ from a window opened in DARK
+LIVE-D     FC-TOP->DARK PASS        light neutral pixels in File Comparator's top 60 rows: 183 (the top 60 rows nearly free of light pixels)
+LIVE-D     PV->DEFAULT PASS        pv toolbar after the switch to DEFAULT: 0 pixels differ from a window opened in DEFAULT
+LIVE-D     FC->DEFAULT PASS        fc toolbar after the switch to DEFAULT: 0 pixels differ from a window opened in DEFAULT
+LIVE-D     FC-TOP->DEFAULT PASS        light neutral pixels in File Comparator's top 60 rows: 54905 (light chrome again)
+LIVE-D     PV->DARK PASS        pv toolbar after the switch to DARK: 0 pixels differ from a window opened in DARK
+LIVE-D     FC->DARK PASS        fc toolbar after the switch to DARK: 0 pixels differ from a window opened in DARK
+LIVE-D     FC-TOP->DARK PASS        light neutral pixels in File Comparator's top 60 rows: 183 (the top 60 rows nearly free of light pixels)
   before PV: 696 neutral, 52 saturated, 218 coloured below 1.6:1
   before FC: 1346 neutral, 54 saturated, 0 coloured below 1.6:1
   before FC-GREY DARK: 68099, FC-LIGHT DARK: 109871
@@ -82,7 +91,7 @@ DARK       FC-GREY PASS        68099 -> 77 light-grey pixels (needs <= 1 %)
 DARK       FC-LIGHT PASS        109871 -> 167 light neutral pixels outside the text (needs <= 1 % + 200 for glyph highlights)
 DEFAULT    DEFAULT-SAME PASS        pv_toolbar_DEFAULT.png: 0 pixels differ from the before run
 DEFAULT    DEFAULT-SAME PASS        fc_toolbar_DEFAULT.png: 0 pixels differ from the before run
-DEFAULT    DEFAULT-SAME INFO        fc_window_DEFAULT.png: 69 pixels differ (the views' scroll positions may vary)
+DEFAULT    DEFAULT-SAME INFO        fc_window_DEFAULT.png: 118 pixels differ (the views' scroll positions may vary)
 Registry: restored; identical=True; SHA-256 before 3C6996DB1178A1D67C80C829C0A5A9B5808824D171DE9472B24C0AE4B230DC10 / after 3C6996DB1178A1D67C80C829C0A5A9B5808824D171DE9472B24C0AE4B230DC10
 registry restored+identical: True
 NUM FC-GREY DEFAULT 72316

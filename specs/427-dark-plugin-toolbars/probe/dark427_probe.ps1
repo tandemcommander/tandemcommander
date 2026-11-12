@@ -15,7 +15,8 @@
 #   PV-LABELS   PictView settings, all five pages: every checkbox label contrast >= 4.5
 #   RN-LABELS   Batch Rename: every checkbox label contrast >= 4.5
 #   PV-COLOR / FC-COLOR coloured glyph pixels below 1.6:1 on the strip (Dark: < 10 % of before)
-#   LIVE        Dark -> Default -> Dark with both windows open: the toolbars equal a window opened in
+#   LIVE        Dark -> Default -> Dark with both windows open (LIVE-D: opened in Default, then
+#               Default -> Dark -> Default -> Dark): the toolbars equal a window opened in
 #               that theme, File Comparator's top rows light / dark accordingly
 #   DEFAULT-SAME (after only) the Default theme's toolbar and File Comparator captures equal the
 #               before run's
@@ -336,8 +337,9 @@ function Run-Theme([int]$Theme) {
 
 # 427 review M1: a live theme switch with a viewer and File Comparator open - the toolbars must equal
 # this run's captures of the theme switched to (Dark -> Default -> Dark)
-function Run-Live {
-    & reg.exe add $CfgKey /v 'Theme Mode' /t REG_DWORD /d 1 /f | Out-Null
+function Run-Live([int]$StartTheme) {
+    & reg.exe add $CfgKey /v 'Theme Mode' /t REG_DWORD /d $StartTheme /f | Out-Null
+    $tag = if ($StartTheme -eq 1) { 'LIVE' } else { 'LIVE-D' }
     $id = Start-Tc $Left
     [void](Serve $id 6)
     try {
@@ -345,9 +347,10 @@ function Run-Live {
         Post-Cmd (Get-Main $id) 842; Start-Sleep -Milliseconds 800
         $fc = Open-ByKey $id 0x43
         if ($fc -ne [IntPtr]::Zero -and [Drv098f]::Cls($fc) -eq '#32770') { $known = Get-Tops $id; Click-Ok $fc; $fc = Wait-NewWin $id $known 20 }
-        if ($viewer -eq [IntPtr]::Zero -or $fc -eq [IntPtr]::Zero) { Row 'LIVE' 'OPEN' 'FAIL' 'the viewer or File Comparator did not open'; return }
+        if ($viewer -eq [IntPtr]::Zero -or $fc -eq [IntPtr]::Zero) { Row $tag 'OPEN' 'FAIL' 'the viewer or File Comparator did not open'; return }
         Start-Sleep -Milliseconds 3000
-        foreach ($step in @(@(2943, 'DEFAULT'), @(2944, 'DARK'))) {
+        $steps = if ($StartTheme -eq 1) { @(@(2943, 'DEFAULT'), @(2944, 'DARK')) } else { @(@(2944, 'DARK'), @(2943, 'DEFAULT'), @(2944, 'DARK')) }
+        foreach ($step in $steps) {
             Post-Cmd (Get-Main $id) $step[0]
             Start-Sleep -Milliseconds 3000
             [void][Drv098f]::Send((Get-Main $id), 0, 0, 0, 10000); [void][Drv098f]::Send($viewer, 0, 0, 0, 10000); [void][Drv098f]::Send($fc, 0, 0, 0, 10000)
@@ -364,13 +367,13 @@ function Run-Live {
                 if ((Test-Path $a) -and (Test-Path $b)) {
                     $x = New-Object Drawing.Bitmap $a; $y = New-Object Drawing.Bitmap $b
                     $d = [Cap416]::Diff($x, $y); $x.Dispose(); $y.Dispose()
-                    Row 'LIVE' ("{0}->{1}" -f $n.ToUpper(), $step[1]) (V ($d -eq 0)) ("{0} toolbar after the switch to {1}: {2} pixels differ from a window opened in {1}" -f $n, $step[1], $d)
+                    Row $tag ("{0}->{1}" -f $n.ToUpper(), $step[1]) (V ($d -eq 0)) ("{0} toolbar after the switch to {1}: {2} pixels differ from a window opened in {1}" -f $n, $step[1], $d)
                 }
-                else { Row 'LIVE' ("{0}->{1}" -f $n.ToUpper(), $step[1]) 'FAIL' 'capture missing' }
+                else { Row $tag ("{0}->{1}" -f $n.ToUpper(), $step[1]) 'FAIL' 'capture missing' }
             }
             $want = if ($step[1] -eq 'DARK') { 'the top 60 rows nearly free of light pixels' } else { 'light chrome again' }
             $ok = if ($step[1] -eq 'DARK') { $light -le 300 } else { $light -ge 20000 }
-            Row 'LIVE' ("FC-TOP->{0}" -f $step[1]) (V $ok) ("light neutral pixels in File Comparator's top 60 rows: {0} ({1})" -f $light, $want)
+            Row $tag ("FC-TOP->{0}" -f $step[1]) (V $ok) ("light neutral pixels in File Comparator's top 60 rows: {0} ({1})" -f $light, $want)
         }
     }
     finally { Stop-Tc $id }
@@ -391,7 +394,8 @@ try {
     Out ("dark427_probe {0} on {1}; hot keys: {2}; OS {3}" -f $Label, $Exe, (Set-HotKeys), [Environment]::OSVersion.Version)
     Run-Theme 1
     Run-Theme 0
-    Run-Live
+    Run-Live 1
+    Run-Live 0
     # compare with the before run
     if ($Label -ne 'before' -and (Test-Path $BeforeDir)) {
         # the before values: the same measurement on the captures the before run saved

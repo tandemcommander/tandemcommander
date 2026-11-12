@@ -72,7 +72,7 @@ CMainWindow::~CMainWindow()
     MainWindowQueue.Remove(HWindow);
     ::Configuration.ViewMode = ViewMode;
     ::Configuration.ShowWhiteSpace = ShowWhiteSpace;
-    if (HToolbarBitmap != NULL) // feature 427: the window and its toolbar are gone by now
+    if (HToolbarBitmap != NULL) // feature 427: the toolbar works from its own image-list copy
         DeleteObject(HToolbarBitmap);
     //::Configuration.DetailedDifferences = DetailedDifferences;
 }
@@ -201,7 +201,6 @@ BOOL CMainWindow::Init()
         style |= WS_BORDER;
         SetWindowLong(Rebar->HWindow, GWL_STYLE, style);
     }
-    ApplyRebarColors(FALSE); // feature 427: the Dark palette for the unthemed rebar (Dark only here)
 
     // Initialize and send the REBARINFO structure.
     REBARINFO rbi;
@@ -241,6 +240,7 @@ BOOL CMainWindow::Init()
     Rebar->InsertBand(-1, &rbbi);
 
     RestoreRebarLayout();
+    ApplyRebarColors(FALSE); // feature 427: the Dark palette for the rebar and its bands (Dark only here)
 
     RebarHeight = LONG(SendMessage(Rebar->HWindow, RB_GETBARHEIGHT, 0, 0)) + 4 + REBAR_BORDER;
 
@@ -388,6 +388,20 @@ void CMainWindow::ApplyRebarColors(BOOL resetInDefault)
     cs.clrBtnShadow = dark ? SG->GetThemeSysColor(COLOR_BTNSHADOW) : CLR_DEFAULT;
     SendMessage(Rebar->HWindow, RB_SETCOLORSCHEME, 0, (LPARAM)&cs);
     SendMessage(HToolbar, TB_SETCOLORSCHEME, 0, (LPARAM)&cs);
+    // 427 review M3: every band keeps the colours it got when it was inserted - set them too, or a
+    // window opened in Default kept a light-grey strip after a switch to Dark
+    int bands = (int)SendMessage(Rebar->HWindow, RB_GETBANDCOUNT, 0, 0);
+    for (int i = 0; i < bands; i++)
+    {
+        REBARBANDINFO rbbi;
+        memset(&rbbi, 0, sizeof(rbbi));
+        rbbi.cbSize = sizeof(REBARBANDINFO);
+        rbbi.fMask = RBBIM_COLORS;
+        rbbi.clrFore = dark ? SG->GetThemeSysColor(COLOR_BTNTEXT) : CLR_DEFAULT;
+        rbbi.clrBack = dark ? SG->GetThemeSysColor(COLOR_BTNFACE) : CLR_DEFAULT;
+        SendMessage(Rebar->HWindow, RB_SETBANDINFO, i, (LPARAM)&rbbi);
+    }
+    InvalidateRect(Rebar->HWindow, NULL, TRUE);
 }
 
 void CMainWindow::RefreshThemeChrome()
@@ -417,6 +431,8 @@ void CMainWindow::RefreshThemeChrome()
     }
     if (Rebar != NULL && Rebar->HWindow != NULL)
         ApplyRebarColors(TRUE);
+    if (ComboBox != NULL)
+        ComboBox->ChangeColors(); // its own frame pens (427 review 2: light frame after Default -> Dark)
     SG->ThemeApplyToDialog(HWindow); // undoes itself in Default (THEME_DARKENED_PROP)
     RedrawWindow(HWindow, NULL, NULL, RDW_INVALIDATE | RDW_ERASE | RDW_FRAME | RDW_ALLCHILDREN);
 }

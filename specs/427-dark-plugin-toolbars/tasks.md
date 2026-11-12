@@ -30,6 +30,8 @@
 ## Phase 6: Polish
 
 - [X] T010 Build, saltests, encoding guard; the probe `-Label after`; before / after in the fix-log
+- [X] T012 Review 1: the live theme switch (PictView refill, File Comparator RefreshThemeChrome), the 3:1 lift (`ThemeDarkAdaptBitmapLift`, saltests), probe rows PV-COLOR / FC-COLOR / LIVE
+- [X] T013 Review 2: the band colours (RBBIM_COLORS) for a window opened in Default, the refill only with new bitmaps, the repaint of every window of the viewer's thread, `math.h`; probe rows LIVE-D
 - [ ] T011 FEATURE-HISTORY, CHANGELOG, closing report (step 8 of the run)
 
 ## Dependencies
