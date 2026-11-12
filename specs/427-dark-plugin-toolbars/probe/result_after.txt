@@ -1,5 +1,6 @@
 dark427_probe after on E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe; hot keys: renamer.spl, filecomp.spl; OS 10.0.26300.0
-DARK       PV-TOOLBAR INFO        class WinLib Universal Window2; strip #2D2D2D; neutral glyph pixels darker than the strip: 0 (saturated, kept by the palette rule: 52)
+DARK       PV-COLOR INFO        coloured glyph pixels below 1.6:1 on the strip: 1
+DARK       PV-TOOLBAR INFO        class WinLib Universal Window2; strip #2D2D2D; neutral glyph pixels darker than the strip: 0 (saturated, kept by the palette rule: 0)
   pv_page0_DARK: id 2030 'Show image file &path in titlebar' bg #2D2D2D ink #FFFFFF contrast 13,77
   pv_page3_DARK: id 2078 'Pipette picks colors in he&xadecimal' bg #2D2D2D ink #FFFFFF contrast 13,77
   pv_page4_DARK: id 2050 '...nails stored in image files (slower)' bg #2D2D2D ink #FFFFFF contrast 13,77
@@ -16,6 +17,7 @@ DARK       PV-LABELS PASS        6 checkboxes on 5 pages, lowest label contrast 
   renamer_DARK: id 123 'Exclu&de extension' bg #2D2D2D ink #FFFFFF contrast 13,77
   renamer_DARK: id 118 'Incl&ude path part' bg #2D2D2D ink #FFFFFF contrast 13,77
 DARK       RN-LABELS PASS        8 checkboxes, lowest label contrast 13,77
+DARK       FC-COLOR INFO        coloured glyph pixels below 1.6:1 on the strip: 0
 DARK       FC-TOOLBAR INFO        strip #2D2D2D; neutral glyph pixels darker than the strip: 18 (saturated: 0)
   fc child ReBarWindow32 id 100: 0,0-1650,23
   fc child ComboBox id 102: 272,0-1650,23
@@ -30,6 +32,7 @@ DARK       FC-TOOLBAR INFO        strip #2D2D2D; neutral glyph pixels darker tha
   view client 828,51-1632,1040 of 1650x1058
 DARK       FC-LIGHT INFO        light neutral pixels (white or face grey) outside the text views: 167
 DARK       FC-GREY INFO        light-grey pixels outside the text views: 77 (in the views 2682; views: SFC File View Window Class, SFC File View Window Class)
+DEFAULT    PV-COLOR INFO        coloured glyph pixels below 1.6:1 on the strip: 524
 DEFAULT    PV-TOOLBAR INFO        class WinLib Universal Window2; strip #F0F0F0; neutral glyph pixels darker than the strip: 1177 (saturated, kept by the palette rule: 714)
   pv_page0_DEFAULT: id 2030 'Show image file &path in titlebar' bg #F9F9F9 ink #000000 contrast 19,95
   pv_page3_DEFAULT: id 2078 'Pipette picks colors in he&xadecimal' bg #F9F9F9 ink #000000 contrast 19,95
@@ -47,6 +50,7 @@ DEFAULT    PV-LABELS INFO        6 checkboxes on 5 pages, lowest label contrast 
   renamer_DEFAULT: id 123 'Exclu&de extension' bg #F0F0F0 ink #000000 contrast 18,43
   renamer_DEFAULT: id 118 'Incl&ude path part' bg #F0F0F0 ink #000000 contrast 18,43
 DEFAULT    RN-LABELS INFO        8 checkboxes, lowest label contrast 18,43
+DEFAULT    FC-COLOR INFO        coloured glyph pixels below 1.6:1 on the strip: 0
 DEFAULT    FC-TOOLBAR INFO        strip #F0F0F0; neutral glyph pixels darker than the strip: 437 (saturated: 54)
   fc child ReBarWindow32 id 100: 0,0-1650,23
   fc child ComboBox id 102: 272,0-1650,23
@@ -61,24 +65,36 @@ DEFAULT    FC-TOOLBAR INFO        strip #F0F0F0; neutral glyph pixels darker tha
   view client 828,51-1632,1040 of 1650x1058
 DEFAULT    FC-LIGHT INFO        light neutral pixels (white or face grey) outside the text views: 115484
 DEFAULT    FC-GREY INFO        light-grey pixels outside the text views: 72316 (in the views 0; views: SFC File View Window Class, SFC File View Window Class)
-  before PV-TOOLBAR DARK: 696 neutral, 52 saturated
-  before FC-TOOLBAR DARK: 1346 neutral, 54 saturated
+LIVE       PV->DEFAULT PASS        pv toolbar after the switch to DEFAULT: 0 pixels differ from a window opened in DEFAULT
+LIVE       FC->DEFAULT PASS        fc toolbar after the switch to DEFAULT: 0 pixels differ from a window opened in DEFAULT
+LIVE       FC-TOP->DEFAULT PASS        light neutral pixels in File Comparator's top 60 rows: 50711 (light chrome again)
+LIVE       PV->DARK PASS        pv toolbar after the switch to DARK: 0 pixels differ from a window opened in DARK
+LIVE       FC->DARK PASS        fc toolbar after the switch to DARK: 0 pixels differ from a window opened in DARK
+LIVE       FC-TOP->DARK PASS        light neutral pixels in File Comparator's top 60 rows: 183 (the top 60 rows nearly free of light pixels)
+  before PV: 696 neutral, 52 saturated, 218 coloured below 1.6:1
+  before FC: 1346 neutral, 54 saturated, 0 coloured below 1.6:1
   before FC-GREY DARK: 68099, FC-LIGHT DARK: 109871
+DARK       PV-COLOR PASS        218 -> 1 coloured glyph pixels below 1.6:1 (needs <= 10 %, at least 5 allowed)
+DARK       FC-COLOR PASS        0 -> 0 coloured glyph pixels below 1.6:1 (needs <= 10 %, at least 5 allowed)
 DARK       PV-TOOLBAR PASS        696 -> 0 neutral glyph pixels darker than the strip (needs <= 10 %)
 DARK       FC-TOOLBAR PASS        1346 -> 18 neutral glyph pixels darker than the strip (needs <= 10 %)
 DARK       FC-GREY PASS        68099 -> 77 light-grey pixels (needs <= 1 %)
 DARK       FC-LIGHT PASS        109871 -> 167 light neutral pixels outside the text (needs <= 1 % + 200 for glyph highlights)
 DEFAULT    DEFAULT-SAME PASS        pv_toolbar_DEFAULT.png: 0 pixels differ from the before run
 DEFAULT    DEFAULT-SAME PASS        fc_toolbar_DEFAULT.png: 0 pixels differ from the before run
-DEFAULT    DEFAULT-SAME INFO        fc_window_DEFAULT.png: 137 pixels differ (the views' scroll positions may vary)
-Registry: restored; identical=True; SHA-256 before B94D4679FDE3D64A25B4DFE3AAEFB0F13E93982989A34F1D87C63FAA94CAAE46 / after B94D4679FDE3D64A25B4DFE3AAEFB0F13E93982989A34F1D87C63FAA94CAAE46
+DEFAULT    DEFAULT-SAME INFO        fc_window_DEFAULT.png: 69 pixels differ (the views' scroll positions may vary)
+Registry: restored; identical=True; SHA-256 before 3C6996DB1178A1D67C80C829C0A5A9B5808824D171DE9472B24C0AE4B230DC10 / after 3C6996DB1178A1D67C80C829C0A5A9B5808824D171DE9472B24C0AE4B230DC10
 registry restored+identical: True
 NUM FC-GREY DEFAULT 72316
 NUM FC-LIGHT DARK 167
-NUM PV-TOOLBAR DEFAULT 1177
+NUM PV-COLOR DARK 1
+NUM FC-COLOR DEFAULT 0
+NUM PV-COLOR DEFAULT 524
 NUM FC-TOOLBAR DEFAULT 437
+NUM FC-GREY DARK 77
+NUM PV-TOOLBAR DEFAULT 1177
 NUM PV-TOOLBAR DARK 0
 NUM FC-LIGHT DEFAULT 115484
-NUM FC-GREY DARK 77
+NUM FC-COLOR DARK 0
 NUM FC-TOOLBAR DARK 18
 ROWS: 0 FAIL

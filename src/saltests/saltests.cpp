@@ -20555,6 +20555,33 @@ static void TestDarkAdaptBitmap427()
         DeleteObject(h);
     }
 
+    // the plug-in variant (427 review M2): low-contrast saturated colours are lifted to 3:1 against
+    // the Dark face; the core variant keeps them (the 029 rule: brightest channel >= 120)
+    const COLORREF face427 = RGB(45, 45, 45); // THEME_DARK_SYSCOLORS COLOR_BTNFACE
+    const DWORD blues[6] = {0x000080, 0x003399, 0xFF00FF, 0x000000, 0xFFE080, 0x00A0FF};
+    HBITMAP core = Bitmap427(blues, 6);
+    HBITMAP lift = Bitmap427(blues, 6);
+    CHECK(core != NULL && lift != NULL);
+    if (core != NULL && lift != NULL)
+    {
+        ThemeDarkAdaptBitmap(core, RGB(255, 0, 255));
+        ThemeDarkAdaptBitmapLift(lift, RGB(255, 0, 255), face427);
+        CHECK(Px427(core, 0) == 0x000080); // the core keeps navy
+        for (int i = 0; i < 2; i++)
+        {
+            DWORD c = Px427(lift, i);
+            CHECK(ThemeDarkLiftContrast((c >> 16) & 0xFF, (c >> 8) & 0xFF, c & 0xFF, face427) >= 3.0);
+            CHECK((c & 0xFF) >= ((c >> 16) & 0xFF)); // still blue: blue the largest channel
+        }
+        CHECK(Px427(lift, 2) == 0xFF00FF); // the key survives
+        CHECK(Px427(lift, 3) == 0xDCDCDC); // neutral: the 028 rule only
+        CHECK(Px427(lift, 4) == 0xFFE080); // light: untouched
+        CHECK(Px427(lift, 5) == Px427(core, 5)); // a saturated colour already at 3:1 is not lifted
+        CHECK(ThemeDarkLiftContrast(0, 0xA0, 0xFF, face427) >= 3.0);
+        DeleteObject(core);
+        DeleteObject(lift);
+    }
+
     // a NULL bitmap is ignored
     ThemeDarkAdaptBitmap(NULL, RGB(255, 0, 255));
 }

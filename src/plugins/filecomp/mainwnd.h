@@ -65,6 +65,7 @@ protected:
     LONG RebarHeight; // height of the rebar plus the gap below it
     CComboBox* ComboBox;
     HWND HToolbar;
+    HBITMAP HToolbarBitmap; // feature 427: the toolbar's bitmap, replaced on a theme switch
     CIntIndexes LinesToChanges;
     CIntIndexes ChangesToLines[2]; // fvmStandard, fvmOnlyDifferences
     CIntIndexes ChangesLengths;
@@ -101,6 +102,10 @@ public:
     CMainWindow(char* path1, char* path2, CCompareOptions* options, UINT showCmd);
     virtual ~CMainWindow();
     BOOL Init();
+    // feature 427: the theme-dependent chrome (toolbar glyphs, rebar colours, control theming)
+    HBITMAP CreateToolbarBitmap();
+    void ApplyRebarColors(BOOL resetInDefault);
+    void RefreshThemeChrome();
     void EnableInput(BOOL enable);
     void LayoutChilds();
     void SelectDifference(int i, int cmd = 0, BOOL setSel = TRUE, BOOL center = TRUE);

@@ -2231,18 +2231,28 @@ BOOL CViewerWindow::InitializeGraphics()
     HBITMAP hTmpColorBitmap;
 
     hTmpColorBitmap = LoadBitmap(DLLInstance, MAKEINTRESOURCE(SalamanderGeneral->CanUse256ColorsBitmap() ? IDB_TOOLBAR256 : IDB_TOOLBAR16));
-    // feature 427: in the Dark theme the legacy glyphs get the core's Dark adaptation (as its own
-    // Classic glyphs, feature 028) before the grey (normal) and the mask bitmaps are made from them
-    if (SalamanderGeneral->IsDarkThemeActive())
-        ThemeDarkAdaptBitmap(hTmpColorBitmap, RGB(255, 0, 255));
+    // feature 427: in the Dark theme the legacy glyphs get the core's Dark adaptation (feature 028)
+    // plus the 3:1 lift of low-contrast saturated colours (the blue arrows), before the grey
+    // (normal) and the mask bitmaps are made from them
+    BOOL dark = SalamanderGeneral->IsDarkThemeActive();
+    COLORREF face = SalamanderGeneral->GetThemeSysColor(COLOR_BTNFACE);
+    if (dark)
+        ThemeDarkAdaptBitmapLift(hTmpColorBitmap, RGB(255, 0, 255), face);
     SalamanderGUI->CreateGrayscaleAndMaskBitmaps(hTmpColorBitmap, RGB(255, 0, 255),
                                                  hTmpGrayBitmap, hTmpMaskBitmap);
-    // feature 427: the grey (normal state) glyphs too - a saturated colour the rule leaves alone
-    // (its brightest channel >= 120, e.g. the blue arrows) turns into a dark grey here
-    if (SalamanderGeneral->IsDarkThemeActive())
-        ThemeDarkAdaptBitmap(hTmpGrayBitmap, RGB(255, 0, 255));
-    HHotToolBarImageList = ImageList_Create(16, 16, ILC_MASK | ILC_COLORDDB, IDX_TB_COUNT, 1);
-    HGrayToolBarImageList = ImageList_Create(16, 16, ILC_MASK | ILC_COLORDDB, IDX_TB_COUNT, 1);
+    // feature 427: the grey copy too (a saturated colour turns into a dark grey there)
+    if (dark)
+        ThemeDarkAdaptBitmapLift(hTmpGrayBitmap, RGB(255, 0, 255), face);
+    // feature 427: a theme switch refills the existing lists in place - the toolbar, the menus and
+    // the histogram window hold these handles
+    if (HHotToolBarImageList == NULL)
+        HHotToolBarImageList = ImageList_Create(16, 16, ILC_MASK | ILC_COLORDDB, IDX_TB_COUNT, 1);
+    else
+        ImageList_Remove(HHotToolBarImageList, -1);
+    if (HGrayToolBarImageList == NULL)
+        HGrayToolBarImageList = ImageList_Create(16, 16, ILC_MASK | ILC_COLORDDB, IDX_TB_COUNT, 1);
+    else
+        ImageList_Remove(HGrayToolBarImageList, -1);
     ImageList_Add(HHotToolBarImageList, hTmpColorBitmap, hTmpMaskBitmap);
     ImageList_Add(HGrayToolBarImageList, hTmpGrayBitmap, hTmpMaskBitmap);
     DeleteObject(hTmpMaskBitmap);
@@ -2257,6 +2267,8 @@ BOOL CViewerWindow::ReleaseGraphics()
         ImageList_Destroy(HHotToolBarImageList);
     if (HGrayToolBarImageList != NULL)
         ImageList_Destroy(HGrayToolBarImageList);
+    HHotToolBarImageList = NULL; // feature 427: a later colours change must not refill freed lists
+    HGrayToolBarImageList = NULL;
     return TRUE;
 }
 
@@ -3144,6 +3156,14 @@ CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     case WM_USER_VIEWERCFGCHNG:
     {
+        // feature 427: the colours or the theme changed - the toolbar glyphs follow the theme
+        // (Dark adaptation, or the original glyphs again in Default)
+        if (HHotToolBarImageList != NULL && HGrayToolBarImageList != NULL)
+        {
+            InitializeGraphics();
+            if (ToolBar != NULL && ToolBar->GetHWND() != NULL)
+                InvalidateRect(ToolBar->GetHWND(), NULL, TRUE);
+        }
         if (Renderer.HWindow != NULL)
             SendMessage(Renderer.HWindow, uMsg, wParam, lParam);
         return 0;

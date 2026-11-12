@@ -14,6 +14,9 @@
 #               (Dark: < 1 % of before + 200 for the glyphs' own highlights)
 #   PV-LABELS   PictView settings, all five pages: every checkbox label contrast >= 4.5
 #   RN-LABELS   Batch Rename: every checkbox label contrast >= 4.5
+#   PV-COLOR / FC-COLOR coloured glyph pixels below 1.6:1 on the strip (Dark: < 10 % of before)
+#   LIVE        Dark -> Default -> Dark with both windows open: the toolbars equal a window opened in
+#               that theme, File Comparator's top rows light / dark accordingly
 #   DEFAULT-SAME (after only) the Default theme's toolbar and File Comparator captures equal the
 #               before run's
 [CmdletBinding()]
@@ -118,6 +121,25 @@ public static class Px427
             }
         return n;
     }
+    // coloured glyph pixels (channel spread >= 32) nearly invisible on the strip: contrast < 1.6
+    // (427 review M2: the blue arrows of PictView, ~1.2:1 before)
+    public static int LowContrastColour(Bitmap b, out int bg)
+    {
+        int[] px = Px(b);
+        bg = Mode(px, 0, b.Width, b.Height, b.Width);
+        int n = 0;
+        foreach (int c in px)
+        {
+            if (c == bg) continue;
+            int r = (c >> 16) & 255, g = (c >> 8) & 255, bb = c & 255;
+            int mx = Math.Max(r, Math.Max(g, bb)), mn = Math.Min(r, Math.Min(g, bb));
+            // ClearType fringes of the zoom text ("100 %"): the strip's colour in two channels exactly
+            int same = (r == ((bg >> 16) & 255) ? 1 : 0) + (g == ((bg >> 8) & 255) ? 1 : 0) + (bb == (bg & 255) ? 1 : 0);
+            if (same >= 2) continue;
+            if (mx - mn >= 32 && Contrast(c, bg) < 1.6) n++;
+        }
+        return n;
+    }
     public static int Grey(Bitmap b, int x0, int y0, int x1, int y1)
     {
         int[] px = Px(b); int n = 0;
@@ -173,8 +195,9 @@ function Toolbar-Dark([IntPtr]$Top, [IntPtr]$Tb, [string]$Tag) {
     $crop = [Cap416]::Crop($cap, $Top, $Tb)
     Save-Png $crop (Join-Path $CapDir ("{0}.png" -f $Tag))
     $bg = 0; $sat = 0; $n = [Px427]::DarkerThanStrip($crop, [ref]$bg, [ref]$sat)
+    $bg2 = 0; $low = [Px427]::LowContrastColour($crop, [ref]$bg2)
     $crop.Dispose(); $cap.Dispose()
-    return @{ N = $n; Bg = $bg; Sat = $sat }
+    return @{ N = $n; Bg = $bg; Sat = $sat; Low = $low }
 }
 function Same-As-Before([string]$Name) {
     $a = Join-Path $BeforeDir $Name; $b = Join-Path $CapDir $Name
@@ -237,6 +260,8 @@ function Run-Theme([int]$Theme) {
         else {
             $r = Toolbar-Dark $viewer $tbs[0] ("pv_toolbar_{0}" -f $t)
             $script:Num["PV-TOOLBAR $t"] = $r.N
+            $script:Num["PV-COLOR $t"] = $r.Low
+            Row $t 'PV-COLOR' 'INFO' ("coloured glyph pixels below 1.6:1 on the strip: {0}" -f $r.Low)
             Row $t 'PV-TOOLBAR' 'INFO' ("class {0}; strip #{1:X6}; neutral glyph pixels darker than the strip: {2} (saturated, kept by the palette rule: {3})" -f [Cap416]::Cls($tbs[0]), $r.Bg, $r.N, $r.Sat)
         }
         # PictView settings (CMD_CFG 112 in the viewer), five pages
@@ -277,6 +302,8 @@ function Run-Theme([int]$Theme) {
         if ($tb) {
             $r = Toolbar-Dark $fc $tb ("fc_toolbar_{0}" -f $t)
             $script:Num["FC-TOOLBAR $t"] = $r.N
+            $script:Num["FC-COLOR $t"] = $r.Low
+            Row $t 'FC-COLOR' 'INFO' ("coloured glyph pixels below 1.6:1 on the strip: {0}" -f $r.Low)
             Row $t 'FC-TOOLBAR' 'INFO' ("strip #{0:X6}; neutral glyph pixels darker than the strip: {1} (saturated: {2})" -f $r.Bg, $r.N, $r.Sat)
         }
         else { Row $t 'FC-TOOLBAR' 'FAIL' 'no toolbar' }
@@ -307,6 +334,48 @@ function Run-Theme([int]$Theme) {
     finally { Stop-Tc $id }
 }
 
+# 427 review M1: a live theme switch with a viewer and File Comparator open - the toolbars must equal
+# this run's captures of the theme switched to (Dark -> Default -> Dark)
+function Run-Live {
+    & reg.exe add $CfgKey /v 'Theme Mode' /t REG_DWORD /d 1 /f | Out-Null
+    $id = Start-Tc $Left
+    [void](Serve $id 6)
+    try {
+        $viewer = Open-Viewer $id
+        Post-Cmd (Get-Main $id) 842; Start-Sleep -Milliseconds 800
+        $fc = Open-ByKey $id 0x43
+        if ($fc -ne [IntPtr]::Zero -and [Drv098f]::Cls($fc) -eq '#32770') { $known = Get-Tops $id; Click-Ok $fc; $fc = Wait-NewWin $id $known 20 }
+        if ($viewer -eq [IntPtr]::Zero -or $fc -eq [IntPtr]::Zero) { Row 'LIVE' 'OPEN' 'FAIL' 'the viewer or File Comparator did not open'; return }
+        Start-Sleep -Milliseconds 3000
+        foreach ($step in @(@(2943, 'DEFAULT'), @(2944, 'DARK'))) {
+            Post-Cmd (Get-Main $id) $step[0]
+            Start-Sleep -Milliseconds 3000
+            [void][Drv098f]::Send((Get-Main $id), 0, 0, 0, 10000); [void][Drv098f]::Send($viewer, 0, 0, 0, 10000); [void][Drv098f]::Send($fc, 0, 0, 0, 10000)
+            Start-Sleep -Milliseconds 1500
+            $rb = @(Get-Desc $viewer 'ReBarWindow32') | Select-Object -First 1
+            $bars = @(); if ($rb) { $bars = @(Get-Desc $rb 'WinLib Universal Window2') }
+            if ($bars.Count -ge 2) { [void](Toolbar-Dark $viewer $bars[$bars.Count - 1] ("live_pv_toolbar_{0}" -f $step[1])) }
+            $tb = @(Get-Desc $fc 'ToolbarWindow32') | Select-Object -First 1
+            if ($tb) { [void](Toolbar-Dark $fc $tb ("live_fc_toolbar_{0}" -f $step[1])) }
+            $cap = [Cap416]::Capture($fc, $true); Save-Png $cap (Join-Path $CapDir ("live_fc_window_{0}.png" -f $step[1]))
+            $light = [Px427]::Light($cap, 0, 0, $cap.Width, 60); $cap.Dispose()
+            foreach ($n in @('pv', 'fc')) {
+                $a = Join-Path $CapDir ("live_{0}_toolbar_{1}.png" -f $n, $step[1]); $b = Join-Path $CapDir ("{0}_toolbar_{1}.png" -f $n, $step[1])
+                if ((Test-Path $a) -and (Test-Path $b)) {
+                    $x = New-Object Drawing.Bitmap $a; $y = New-Object Drawing.Bitmap $b
+                    $d = [Cap416]::Diff($x, $y); $x.Dispose(); $y.Dispose()
+                    Row 'LIVE' ("{0}->{1}" -f $n.ToUpper(), $step[1]) (V ($d -eq 0)) ("{0} toolbar after the switch to {1}: {2} pixels differ from a window opened in {1}" -f $n, $step[1], $d)
+                }
+                else { Row 'LIVE' ("{0}->{1}" -f $n.ToUpper(), $step[1]) 'FAIL' 'capture missing' }
+            }
+            $want = if ($step[1] -eq 'DARK') { 'the top 60 rows nearly free of light pixels' } else { 'light chrome again' }
+            $ok = if ($step[1] -eq 'DARK') { $light -le 300 } else { $light -ge 20000 }
+            Row 'LIVE' ("FC-TOP->{0}" -f $step[1]) (V $ok) ("light neutral pixels in File Comparator's top 60 rows: {0} ({1})" -f $light, $want)
+        }
+    }
+    finally { Stop-Tc $id }
+}
+
 $backup = Join-Path $env:TEMP 'tc427_backup.reg'
 $existed = Backup-Reg $backup
 $restored = $false
@@ -322,13 +391,20 @@ try {
     Out ("dark427_probe {0} on {1}; hot keys: {2}; OS {3}" -f $Label, $Exe, (Set-HotKeys), [Environment]::OSVersion.Version)
     Run-Theme 1
     Run-Theme 0
+    Run-Live
     # compare with the before run
     if ($Label -ne 'before' -and (Test-Path $BeforeDir)) {
         # the before values: the same measurement on the captures the before run saved
         $old = @{}
-        foreach ($pair in @(@('PV-TOOLBAR DARK', 'pv_toolbar_DARK.png'), @('FC-TOOLBAR DARK', 'fc_toolbar_DARK.png'))) {
+        foreach ($pair in @(@('PV', 'pv_toolbar_DARK.png'), @('FC', 'fc_toolbar_DARK.png'))) {
             $f = Join-Path $BeforeDir $pair[1]
-            if (Test-Path $f) { $bm = New-Object Drawing.Bitmap $f; $bg = 0; $sat = 0; $old[$pair[0]] = [Px427]::DarkerThanStrip($bm, [ref]$bg, [ref]$sat); $bm.Dispose(); Out ("  before {0}: {1} neutral, {2} saturated" -f $pair[0], $old[$pair[0]], $sat) }
+            if (Test-Path $f) {
+                $bm = New-Object Drawing.Bitmap $f; $bg = 0; $sat = 0
+                $old[$pair[0] + '-TOOLBAR DARK'] = [Px427]::DarkerThanStrip($bm, [ref]$bg, [ref]$sat)
+                $old[$pair[0] + '-COLOR DARK'] = [Px427]::LowContrastColour($bm, [ref]$bg)
+                $bm.Dispose()
+                Out ("  before {0}: {1} neutral, {2} saturated, {3} coloured below 1.6:1" -f $pair[0], $old[$pair[0] + '-TOOLBAR DARK'], $sat, $old[$pair[0] + '-COLOR DARK'])
+            }
         }
         $f = Join-Path $BeforeDir 'fc_window_DARK.png'
         if ((Test-Path $f) -and $script:Views.ContainsKey('DARK')) {
@@ -340,6 +416,9 @@ try {
             foreach ($v in $script:Views['DARK']) { $l -= [Px427]::Light($bm, $v.X0, $v.Y0, $v.X1, $v.Y1) }
             $old['FC-LIGHT DARK'] = $l
             $bm.Dispose(); Out ("  before FC-GREY DARK: {0}, FC-LIGHT DARK: {1}" -f $g, $l)
+        }
+        foreach ($k in @('PV-COLOR DARK', 'FC-COLOR DARK')) {
+            if ($old.ContainsKey($k) -and $script:Num.ContainsKey($k)) { Row 'DARK' ($k -replace ' DARK') (V ($script:Num[$k] -le [Math]::Max(5, [Math]::Floor($old[$k] * 0.1)))) ("{0} -> {1} coloured glyph pixels below 1.6:1 (needs <= 10 %, at least 5 allowed)" -f $old[$k], $script:Num[$k]) }
         }
         foreach ($k in @('PV-TOOLBAR DARK', 'FC-TOOLBAR DARK')) {
             if ($old.ContainsKey($k) -and $script:Num.ContainsKey($k)) { Row 'DARK' ($k -replace ' DARK') (V ($script:Num[$k] -le [Math]::Floor($old[$k] * 0.1))) ("{0} -> {1} neutral glyph pixels darker than the strip (needs <= 10 %)" -f $old[$k], $script:Num[$k]) }

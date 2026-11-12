@@ -121,3 +121,42 @@ content; both fixed before this run.)
 - Not driven (a person): the toolbars and File Comparator on a real screen (the probe captures via
   `PrintWindow`), and a live theme switch while a viewer / File Comparator is open (the open window
   keeps its glyphs until it is opened again - an existing limit).
+
+## Review 1 (refute-first agent): 2 MUST, 1 SHOULD, NOTEs
+
+- **M1 - a live theme switch left plug-in windows half-dark** (reproduced by the reviewer with its own
+  hidden-desktop probe: a PictView viewer opened in Dark and switched to Default kept the lightened
+  glyphs on the light toolbar; File Comparator kept a dark rebar and toolbar next to a white combo).
+  Fixed: PictView `WM_USER_VIEWERCFGCHNG` (sent on `PLUGINEVENT_COLORSCHANGED`, which `SetThemeMode`
+  raises) refills the existing image lists in place by `InitializeGraphics` (the toolbar, the menus
+  and the histogram window keep their handles; `ReleaseGraphics` now NULLs them) and invalidates the
+  toolbar; File Comparator `CC_COLORS` → `RefreshThemeChrome`: a new toolbar bitmap by
+  `TB_REPLACEBITMAP` (the old one deleted after the swap; the current one now deleted in the
+  destructor - before, it was never freed), `ApplyRebarColors(TRUE)` (`CLR_DEFAULT` in Default),
+  `ThemeApplyToDialog` again (it undoes itself in Default), `RedrawWindow(... RDW_FRAME |
+  RDW_ALLCHILDREN)` (the static edges repaint). Probe rows LIVE (Dark → Default → Dark with both
+  windows open): the toolbars equal a window opened in that theme, 0 px differ, both ways; File
+  Comparator's top 60 rows 50,711 light pixels after → Default, 183 after → Dark.
+- **M2 - the blue PictView glyphs stayed nearly invisible and the probe could not see it** (the
+  neutral-only metric). Fixed in the plug-in path only: `ThemeDarkAdaptBitmapLift` in
+  `themes_bitmap.h` = the 028 adaptation, then every saturated pixel below 3:1 to the Dark face is
+  mixed toward white in 5 % steps until 3:1 (WCAG 1.4.11); the core keeps `ThemeDarkAdaptBitmap`
+  (Classic never restyled, 416). New probe rows PV-COLOR / FC-COLOR (coloured glyph pixels below
+  1.6:1, the reviewer's measure; ClearType fringes of the zoom text "100 %" - the strip's colour in
+  two channels - excluded on both sides): PictView 218 → **1**, File Comparator 0 → 0. saltests
+  +11 checks (navy and (0,51,153) lifted to >= 3:1 and still blue; the key, neutral and light
+  pixels as before; the core variant keeps navy): 287,439 checks, 0 failed.
+- **S1 - which list the toolbar shows**: the viewer's toolbar shows the colour (hot) list in its
+  normal state in these captures; the "grey bitmap 857 → 213 → 0" line above came from a capture of
+  that colour list, so it measured the colour bitmap's adaptation, not the grey list. Both lists
+  are adapted and lifted now; the menus (`MainMenu->LoadFromTemplate`, the histogram menu) use the
+  same handles. Hover is not driven separately (it shows the same colour list).
+- NOTEs: Default unchanged (re-diffed by the reviewer); the band text now `GetSysColor(COLOR_BTNTEXT)`
+  in Default - identical with the standard scheme, a visible change only under custom / High
+  Contrast colours (black before, the scheme's text colour now - accepted as a correction); no GDI
+  leaks; ABI unchanged; the checkbox part handled honestly.
+- The registry key's hash before the after-runs changed from `B94D…` (all runs before the review) to
+  `3C69…` (the runs after it): the reviewer's own probe ran in between. Each run restored its own
+  start state identical. Read afterwards: Theme Mode 0, Toolbar Icon Set 0, Language czech.slg; the
+  Batch Rename and File Comparator menu items carry HotKey 0x352 / 0x343 - not the values this probe
+  writes (0x10352 / 0x10343), told to the maintainer.

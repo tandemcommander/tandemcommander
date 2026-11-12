@@ -60,6 +60,7 @@ CMainWindow::CMainWindow(char* path1, char* path2, CCompareOptions* options, UIN
     OutOfRange = FALSE; // Used only in binary/hex view
     ShowCmd = showCmd;
     bOptionsChangedBeingHandled = FALSE;
+    HToolbarBitmap = NULL; // feature 427
 }
 
 CMainWindow::~CMainWindow()
@@ -71,6 +72,8 @@ CMainWindow::~CMainWindow()
     MainWindowQueue.Remove(HWindow);
     ::Configuration.ViewMode = ViewMode;
     ::Configuration.ShowWhiteSpace = ShowWhiteSpace;
+    if (HToolbarBitmap != NULL) // feature 427: the window and its toolbar are gone by now
+        DeleteObject(HToolbarBitmap);
     //::Configuration.DetailedDifferences = DetailedDifferences;
 }
 
@@ -112,18 +115,7 @@ BOOL CMainWindow::Init()
         buttons[i].fsState = TBSTATE_ENABLED;
         buttons[i].iString = 0;
     }
-    COLORMAP cm;
-    cm.from = 0x00FF00FF;
-    // feature 427: the background is mapped to the SYSTEM face colour - the toolbar takes that
-    // colour of a TB_ADDBITMAP bitmap as transparent (with the Dark face colour the disabled glyphs
-    // came out as solid squares); the dark strip of the rebar shows through. The Default theme is
-    // unchanged (there both colours are the same).
-    cm.to = GetSysColor(COLOR_BTNFACE);
-    HBITMAP hToolbarBitmap = CreateMappedBitmap(DLLInstance, IDB_TOOLBAR, 0, &cm, 1);
-    // feature 427: in the Dark theme the legacy glyphs get the core's Dark adaptation (as its own
-    // Classic glyphs, feature 028); the mapped background stays as it is (the key)
-    if (hToolbarBitmap != NULL && SG->IsDarkThemeActive())
-        ThemeDarkAdaptBitmap(hToolbarBitmap, cm.to);
+    HToolbarBitmap = CreateToolbarBitmap();
     HToolbar = CreateToolbarEx(HWindow,
                                WS_VISIBLE | WS_CHILD |
                                    WS_CLIPCHILDREN | WS_CLIPSIBLINGS |
@@ -132,7 +124,7 @@ BOOL CMainWindow::Init()
                                IDC_TOOLBAR,
                                8,
                                0, //DLLInstance,
-                               (UINT_PTR)hToolbarBitmap,
+                               (UINT_PTR)HToolbarBitmap,
                                buttons,
                                SizeOf(buttons),
                                16,
@@ -209,20 +201,7 @@ BOOL CMainWindow::Init()
         style |= WS_BORDER;
         SetWindowLong(Rebar->HWindow, GWL_STYLE, style);
     }
-    // feature 427: the unthemed rebar paints its background, band text and borders with the
-    // classic system colours (the light-grey strip of GitHub #25) - give it the Dark palette, as
-    // the core gives its own top rebar; the Default theme keeps the defaults
-    if (SG->IsDarkThemeActive())
-    {
-        SendMessage(Rebar->HWindow, RB_SETBKCOLOR, 0, (LPARAM)SG->GetThemeSysColor(COLOR_BTNFACE));
-        SendMessage(Rebar->HWindow, RB_SETTEXTCOLOR, 0, (LPARAM)SG->GetThemeSysColor(COLOR_BTNTEXT));
-        COLORSCHEME cs;
-        cs.dwSize = sizeof(cs);
-        cs.clrBtnHighlight = SG->GetThemeSysColor(COLOR_BTNHIGHLIGHT);
-        cs.clrBtnShadow = SG->GetThemeSysColor(COLOR_BTNSHADOW);
-        SendMessage(Rebar->HWindow, RB_SETCOLORSCHEME, 0, (LPARAM)&cs);
-        SendMessage(HToolbar, TB_SETCOLORSCHEME, 0, (LPARAM)&cs);
-    }
+    ApplyRebarColors(FALSE); // feature 427: the Dark palette for the unthemed rebar (Dark only here)
 
     // Initialize and send the REBARINFO structure.
     REBARINFO rbi;
@@ -371,6 +350,75 @@ BOOL CMainWindow::Init()
     PostMessage(HWindow, WM_USER_ACTIVATEWINDOW, 0, 0);
 
     return TRUE;
+}
+
+HBITMAP
+CMainWindow::CreateToolbarBitmap()
+{
+    CALL_STACK_MESSAGE1("CMainWindow::CreateToolbarBitmap()");
+    COLORMAP cm;
+    cm.from = 0x00FF00FF;
+    // feature 427: the background is mapped to the SYSTEM face colour - the toolbar takes that
+    // colour of a TB_ADDBITMAP bitmap as transparent (with the Dark face colour the disabled glyphs
+    // came out as solid squares); the dark strip of the rebar shows through. The Default theme is
+    // unchanged (there both colours are the same).
+    cm.to = GetSysColor(COLOR_BTNFACE);
+    HBITMAP bmp = CreateMappedBitmap(DLLInstance, IDB_TOOLBAR, 0, &cm, 1);
+    // feature 427: in the Dark theme the legacy glyphs get the core's Dark adaptation (feature 028)
+    // and the 3:1 lift of low-contrast colours; the mapped background stays as it is (the key)
+    if (bmp != NULL && SG->IsDarkThemeActive())
+        ThemeDarkAdaptBitmapLift(bmp, cm.to, SG->GetThemeSysColor(COLOR_BTNFACE));
+    return bmp;
+}
+
+void CMainWindow::ApplyRebarColors(BOOL resetInDefault)
+{
+    CALL_STACK_MESSAGE2("CMainWindow::ApplyRebarColors(%d)", resetInDefault);
+    // feature 427: the unthemed rebar paints its background, band text and borders with the
+    // classic system colours (the light-grey strip of GitHub #25) - the Dark palette, as the core
+    // gives its own top rebar; back to the defaults after a switch to the Default theme
+    BOOL dark = SG->IsDarkThemeActive();
+    if (!dark && !resetInDefault)
+        return;
+    SendMessage(Rebar->HWindow, RB_SETBKCOLOR, 0, (LPARAM)(dark ? SG->GetThemeSysColor(COLOR_BTNFACE) : CLR_DEFAULT));
+    SendMessage(Rebar->HWindow, RB_SETTEXTCOLOR, 0, (LPARAM)(dark ? SG->GetThemeSysColor(COLOR_BTNTEXT) : CLR_DEFAULT));
+    COLORSCHEME cs;
+    cs.dwSize = sizeof(cs);
+    cs.clrBtnHighlight = dark ? SG->GetThemeSysColor(COLOR_BTNHIGHLIGHT) : CLR_DEFAULT;
+    cs.clrBtnShadow = dark ? SG->GetThemeSysColor(COLOR_BTNSHADOW) : CLR_DEFAULT;
+    SendMessage(Rebar->HWindow, RB_SETCOLORSCHEME, 0, (LPARAM)&cs);
+    SendMessage(HToolbar, TB_SETCOLORSCHEME, 0, (LPARAM)&cs);
+}
+
+void CMainWindow::RefreshThemeChrome()
+{
+    CALL_STACK_MESSAGE1("CMainWindow::RefreshThemeChrome()");
+    // feature 427: a live theme switch (PLUGINEVENT_COLORSCHANGED -> CC_COLORS) - the glyphs, the
+    // rebar colours and the control theming follow it, so no Dark part stays in Default and back
+    if (HToolbar != NULL)
+    {
+        HBITMAP fresh = CreateToolbarBitmap();
+        if (fresh != NULL)
+        {
+            TBREPLACEBITMAP rb;
+            rb.hInstOld = NULL;
+            rb.nIDOld = (UINT_PTR)HToolbarBitmap;
+            rb.hInstNew = NULL;
+            rb.nIDNew = (UINT_PTR)fresh;
+            rb.nButtons = 8;
+            if (HToolbarBitmap != NULL && SendMessage(HToolbar, TB_REPLACEBITMAP, 0, (LPARAM)&rb))
+            {
+                DeleteObject(HToolbarBitmap);
+                HToolbarBitmap = fresh;
+            }
+            else
+                DeleteObject(fresh);
+        }
+    }
+    if (Rebar != NULL && Rebar->HWindow != NULL)
+        ApplyRebarColors(TRUE);
+    SG->ThemeApplyToDialog(HWindow); // undoes itself in Default (THEME_DARKENED_PROP)
+    RedrawWindow(HWindow, NULL, NULL, RDW_INVALIDATE | RDW_ERASE | RDW_FRAME | RDW_ALLCHILDREN);
 }
 
 void CMainWindow::EnableInput(BOOL enable)
@@ -2308,6 +2356,8 @@ CMainWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         if (wParam & CC_COLORS)
         {
+            if (Initialized)
+                RefreshThemeChrome(); // feature 427: the theme may have changed
             UpdateDefaultColors(Colors, Palette);
             if (UsePalette)
             {

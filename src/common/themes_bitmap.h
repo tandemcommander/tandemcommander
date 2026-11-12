@@ -21,7 +21,42 @@
 
 #include "themes_palette.h"
 
-inline void ThemeDarkAdaptBitmap(HBITMAP hBitmap, COLORREF key)
+// WCAG relative luminance of an sRGB colour (0..1)
+inline double ThemeDarkLiftLuminance(int r, int g, int b)
+{
+    double c[3] = {r / 255.0, g / 255.0, b / 255.0};
+    for (int i = 0; i < 3; i++)
+        c[i] = c[i] <= 0.03928 ? c[i] / 12.92 : pow((c[i] + 0.055) / 1.055, 2.4);
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+}
+
+inline double ThemeDarkLiftContrast(int r, int g, int b, COLORREF face)
+{
+    double a = ThemeDarkLiftLuminance(r, g, b);
+    double f = ThemeDarkLiftLuminance(GetRValue(face), GetGValue(face), GetBValue(face));
+    return a > f ? (a + 0.05) / (f + 0.05) : (f + 0.05) / (a + 0.05);
+}
+
+// a saturated colour below 3:1 to `face` mixed toward white until it reaches 3:1 (same hue family)
+inline void ThemeDarkLiftColor(int* r, int* g, int* b, COLORREF face)
+{
+    int maxc = *r > *g ? (*r > *b ? *r : *b) : (*g > *b ? *g : *b);
+    int minc = *r < *g ? (*r < *b ? *r : *b) : (*g < *b ? *g : *b);
+    if (maxc - minc < 32 || ThemeDarkLiftContrast(*r, *g, *b, face) >= 3.0)
+        return;
+    int r0 = *r, g0 = *g, b0 = *b;
+    for (int t = 1; t <= 20; t++)
+    {
+        *r = r0 + ThemeDarkAdaptMulDivRound(255 - r0, t, 20);
+        *g = g0 + ThemeDarkAdaptMulDivRound(255 - g0, t, 20);
+        *b = b0 + ThemeDarkAdaptMulDivRound(255 - b0, t, 20);
+        if (ThemeDarkLiftContrast(*r, *g, *b, face) >= 3.0)
+            return;
+    }
+}
+
+// the walk; face == CLR_INVALID: the 028 adaptation only
+inline void ThemeDarkAdaptBitmapImpl(HBITMAP hBitmap, COLORREF key, COLORREF face)
 {
     if (hBitmap == NULL)
         return;
@@ -89,6 +124,8 @@ inline void ThemeDarkAdaptBitmap(HBITMAP hBitmap, COLORREF key)
             // feature 029: shared per-color rules (also applied to SVG toolbar
             // glyphs in svg.cpp and unit-tested from saltests)
             ThemeDarkAdaptColor(&r, &g, &b);
+            if (face != CLR_INVALID)
+                ThemeDarkLiftColor(&r, &g, &b, face);
 
             if (hasAlpha && a > 0 && a < 255)
             {
@@ -103,4 +140,16 @@ inline void ThemeDarkAdaptBitmap(HBITMAP hBitmap, COLORREF key)
     if (hDC != NULL)
         ReleaseDC(NULL, hDC);
     free(pixels);
+}
+
+// the core's legacy glyphs and anything that must look exactly like them (feature 028)
+inline void ThemeDarkAdaptBitmap(HBITMAP hBitmap, COLORREF key)
+{
+    ThemeDarkAdaptBitmapImpl(hBitmap, key, CLR_INVALID);
+}
+
+// plug-in toolbars: 028 plus the 3:1 lift of low-contrast saturated colours against `face` (427)
+inline void ThemeDarkAdaptBitmapLift(HBITMAP hBitmap, COLORREF key, COLORREF face)
+{
+    ThemeDarkAdaptBitmapImpl(hBitmap, key, face);
 }
