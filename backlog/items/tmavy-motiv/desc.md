@@ -1,7 +1,7 @@
 ---
 title: Dark theme: black checkbox labels and old toolbar icons in plug-in windows
 type: bug
-status: open
+status: blocked
 severity: 4
 area: other-plugins
 source: github#25
@@ -13,7 +13,7 @@ effort: M
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: the independent review found MUST findings three times (M1-M2, M3, M4: a dark stripe in File Comparator after Dark -> Default); finished work and the open M4, S2-S4 on the branch, fix-log Review 3 (feature 427, branch 427-dark-plugin-toolbars)
 ---
 
 # Dark theme: black checkbox labels and old toolbar icons in plug-in windows
@@ -55,3 +55,4 @@ Severity 4: a function does not work (labels hardly readable, the setting still 
 - 2026-11-12 — created (source github#25)
 - 2026-11-12 — fields set from the issue text and labels
 - 2026-11-12 — moved to Next position 3
+- 2026-11-12 — blocked: the independent review found MUST findings three times (M1-M2, M3, M4: a dark stripe in File Comparator after Dark -> Default); finished work and the open M4, S2-S4 on the branch, fix-log Review 3 (feature 427, branch 427-dark-plugin-toolbars)
