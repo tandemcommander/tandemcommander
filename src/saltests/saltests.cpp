@@ -82,6 +82,7 @@
 #include "salinfolinebuf.h"   // feature 276
 #include "salgrowpair.h"      // feature 293
 #include "salcodetable.h"     // feature 262
+#include "saldpirect.h"       // feature 424
 #include "salregroot.h"       // feature 263
 #include "salcfgmigrate.h"    // feature 343
 #include "salexiforient.h"    // feature 267
@@ -28614,6 +28615,54 @@ static void TestIconSet416()
 // program does at 16 / 20 / 24 / 32 px with the legibility rules of 416.
 //
 
+// feature 424 (GitHub #29): a rectangle the core computed in system coordinates, moved into a
+// per-monitor viewer's coordinates through the monitor rectangle seen from both
+static bool SameRect424(const RECT& a, LONG l, LONG t, LONG r, LONG b)
+{
+    return a.left == l && a.top == t && a.right == r && a.bottom == b;
+}
+
+static void TestDpiRect424()
+{
+    RECT r = {570, 160, 2159, 1278};
+    // unchanged scaling: both views of the monitor equal -> the identity (nothing changes at 100 %)
+    RECT mon = {0, 0, 2560, 1440};
+    CHECK(SameRect424(SalDpiMapRect(r, mon, mon), 570, 160, 2159, 1278));
+    // the program started at 100 %, the monitor is now 150 %: logical 1707 x 960 -> physical 2560 x 1440
+    RECT log150 = {0, 0, 1707, 960};
+    RECT o = SalDpiMapRect(RECT{100, 50, 1100, 650}, log150, mon);
+    CHECK(o.left == 150 && o.top == 75);
+    CHECK(o.right - o.left == 1500 && o.bottom - o.top == 900);
+    // and back (the inverse direction of the same monitor) returns the original
+    RECT back = SalDpiMapRect(o, mon, log150);
+    CHECK(SameRect424(back, 100, 50, 1100, 650));
+    // a second monitor left of the primary, at negative coordinates, 125 %: logical 1536 x 864 at
+    // -1536, physical 1920 x 1080 at -1920
+    RECT logL = {-1536, 0, 0, 864};
+    RECT phyL = {-1920, 0, 0, 1080};
+    o = SalDpiMapRect(RECT{-1436, 100, -436, 700}, logL, phyL);
+    CHECK(SameRect424(o, -1795, 125, -545, 875));
+    // a rectangle reaching past the monitor keeps its size ratio (no clipping here)
+    o = SalDpiMapRect(RECT{1600, 900, 1900, 1100}, log150, mon);
+    CHECK(o.left == 2400 && o.top == 1350 && o.right - o.left == 450 && o.bottom - o.top == 300);
+    // rounding to the nearest pixel: 1 px at 125 % -> 1.25 -> 1; 2 px -> 2.5 -> 3 (halves away from 0)
+    RECT m100 = {0, 0, 4, 4};
+    RECT m125 = {0, 0, 5, 5};
+    CHECK(SameRect424(SalDpiMapRect(RECT{1, 1, 2, 3}, m100, m125), 1, 1, 2, 4));
+    CHECK(SalDpiScaleRound(-5, 1, 2) == -3 && SalDpiScaleRound(5, 1, 2) == 3 && SalDpiScaleRound(4, 1, 2) == 2);
+    // an empty monitor rectangle on either side: the mapping is unknown, the rectangle stays as it is
+    RECT empty = {10, 10, 10, 500};
+    CHECK(SameRect424(SalDpiMapRect(r, empty, mon), 570, 160, 2159, 1278));
+    CHECK(SameRect424(SalDpiMapRect(r, mon, empty), 570, 160, 2159, 1278));
+    RECT inverted = {100, 100, 0, 0};
+    CHECK(SameRect424(SalDpiMapRect(r, inverted, mon), 570, 160, 2159, 1278));
+    // large coordinates do not overflow (64-bit intermediate)
+    RECT big = {0, 0, 2000000, 2000000};
+    RECT big2 = {0, 0, 3000000, 3000000};
+    o = SalDpiMapRect(RECT{1000000, 1000000, 2000000, 2000000}, big, big2);
+    CHECK(SameRect424(o, 1500000, 1500000, 3000000, 3000000));
+}
+
 static void TestPluginIcons417()
 {
     // --- the id from the DLL name: exactly "<id>\<id>.spl", a known id, ASCII case ignored
@@ -29061,6 +29110,7 @@ int main(int argc, char** argv)
     TestFtpRootMatch410();
     TestIconSet416();
     TestPluginIcons417();
+    TestDpiRect424();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

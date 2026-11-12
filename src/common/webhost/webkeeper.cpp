@@ -189,6 +189,10 @@ void CTcWebKeeper::Arm(const TcWebKeeperConfig& config)
             return; // silent; the next view tries again
         s->classRegistered = true;
     }
+    // feature 424: the holder window and the environment per-monitor v2 aware, as every
+    // viewer's (webhost.h): the browser takes the DPI mode of the thread creating the first
+    // environment, and all environments on the shared folder must agree
+    CTcWebPerMonitorDpiScope dpiScope;
     s->hwnd = CreateWindowExW(WS_EX_TOOLWINDOW, config.ClassName, L"", WS_POPUP,
                               0, 0, 1, 1, NULL, NULL, config.Instance, this);
     if (s->hwnd == NULL)

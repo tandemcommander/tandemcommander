@@ -130,3 +130,44 @@ std::wstring TcWebUserDataFolder();
 // and nowhere else. Contract:
 // specs/081-mdview-shared-webhost/contracts/browser-arguments-single-source.md.
 const wchar_t* TcWebBrowserArguments();
+
+// --- DPI mode of the WebView2 surfaces (feature 424, GitHub #29) ------------
+//
+// The program is system DPI aware; a system-aware process fixes its scaling at
+// its OWN start. WebView2 gives the browser process the DPI mode of the thread
+// that creates the environment (--embedded-browser-webview-dpi-awareness), so a
+// system-aware browser started after a display-scaling change worked in other
+// coordinates than the program: the page came out larger, offset and cut off.
+// Contract: specs/424-webview-dpi-awareness/contracts/webhost-dpi.md.
+//
+// 1. Every environment is created inside this scope (CTcWebHost::Create and
+//    CTcWebKeeper::Arm do it), so the browser runs per-monitor v2 aware.
+// 2. A window hosting a CTcWebHost runs per-monitor v2 aware: its thread calls
+//    TcWebEnterPerMonitorDpiThread() before creating it.
+// 3. A rectangle from the core (system coordinates) goes through
+//    TcWebSystemRectToPerMonitor() before a window is created at it.
+// 4. WM_DPICHANGED: TcWebApplyDpiChanged(), then re-derive the window's own
+//    DPI-dependent metrics.
+class CTcWebPerMonitorDpiScope
+{
+public:
+    CTcWebPerMonitorDpiScope();
+    ~CTcWebPerMonitorDpiScope();
+
+private:
+    DPI_AWARENESS_CONTEXT Old;
+    CTcWebPerMonitorDpiScope(const CTcWebPerMonitorDpiScope&) = delete;
+    CTcWebPerMonitorDpiScope& operator=(const CTcWebPerMonitorDpiScope&) = delete;
+};
+
+// Per-monitor v2 for the rest of the calling thread (a viewer thread, at its
+// start): code outside the window procedure then sees the window's coordinates.
+void TcWebEnterPerMonitorDpiThread();
+
+// 'rc' given in the program's system coordinates, in per-monitor (physical)
+// coordinates: mapped through the monitor nearest to it (src/common/saldpirect.h).
+// The identity at an unchanged display scaling.
+RECT TcWebSystemRectToPerMonitor(const RECT& rc);
+
+// WM_DPICHANGED: moves 'hwnd' to the rectangle Windows suggests (lParam).
+void TcWebApplyDpiChanged(HWND hwnd, LPARAM lParam);

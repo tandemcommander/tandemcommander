@@ -5,37 +5,37 @@
 
 ## Phase 1: Setup
 
-- [ ] T001 Make the measurement probe path-relative (dot-source `..\..\098-long-path-overruns\probe\fix_probe_lib.ps1` from `$PSScriptRoot`) in specs/424-webview-dpi-awareness/probe/dpi29_probe.ps1
+- [X] T001 Make the measurement probe path-relative (dot-source `..\..\098-long-path-overruns\probe\fix_probe_lib.ps1` from `$PSScriptRoot`) in specs/424-webview-dpi-awareness/probe/dpi29_probe.ps1
 
 ## Phase 2: Foundational (blocks both stories)
 
-- [ ] T002 [P] Write the pure rule `SalDpiMapRect(const RECT& r, const RECT& from, const RECT& to)` (linear map between two monitor rectangles, rounded to the nearest pixel; an empty `from` or `to` returns `r` unchanged) in src/common/saldpirect.h (UTF-8 BOM, header-only)
-- [ ] T003 [P] Add `TestDpiRect424` (identity, 150 % and 125 % cases, an offset monitor at negative coordinates, the empty-monitor refusal, rounding) and call it from main in src/saltests/saltests.cpp
-- [ ] T004 Declare `CTcWebPerMonitorDpiScope`, `TcWebEnterPerMonitorDpiThread`, `TcWebSystemRectToPerMonitor`, `TcWebApplyDpiChanged` (COM-free) in src/common/webhost/webhost.h
-- [ ] T005 Implement them, and create the environment of `CTcWebHost::Create` inside a `CTcWebPerMonitorDpiScope`, in src/common/webhost/webhost.cpp
-- [ ] T006 Create the keeper's holder window and its environment inside a `CTcWebPerMonitorDpiScope` in src/common/webhost/webkeeper.cpp
+- [X] T002 [P] Write the pure rule `SalDpiMapRect(const RECT& r, const RECT& from, const RECT& to)` (linear map between two monitor rectangles, rounded to the nearest pixel; an empty `from` or `to` returns `r` unchanged) in src/common/saldpirect.h (UTF-8 BOM, header-only)
+- [X] T003 [P] Add `TestDpiRect424` (identity, 150 % and 125 % cases, an offset monitor at negative coordinates, the empty-monitor refusal, rounding) and call it from main in src/saltests/saltests.cpp
+- [X] T004 Declare `CTcWebPerMonitorDpiScope`, `TcWebEnterPerMonitorDpiThread`, `TcWebSystemRectToPerMonitor`, `TcWebApplyDpiChanged` (COM-free) in src/common/webhost/webhost.h
+- [X] T005 Implement them, and create the environment of `CTcWebHost::Create` inside a `CTcWebPerMonitorDpiScope`, in src/common/webhost/webhost.cpp
+- [X] T006 Create the keeper's holder window and its environment inside a `CTcWebPerMonitorDpiScope` in src/common/webhost/webkeeper.cpp
 
 ## Phase 3: User Story 1 - the page fills the window after a scaling change (P1)
 
 **Goal**: the browser and both viewer windows are per-monitor aware; nothing changes at an unchanged scaling.
 **Independent test**: `dpi424_probe.ps1` rows AWARE and GEOMETRY for both viewers (quickstart.md).
 
-- [ ] T007 [US1] At the top of `CViewerThread::Body` call `TcWebEnterPerMonitorDpiThread()`. Map the core's `Left/Top/Width/Height` with `TcWebSystemRectToPerMonitor` when no saved placement is used, in src/plugins/codeview/viewer.cpp
-- [ ] T008 [P] [US1] The same in src/plugins/mdview/viewer.cpp
-- [ ] T009 [US1] Write the probe specs/424-webview-dpi-awareness/probe/dpi424_probe.ps1: for a `.txt` (Code Viewer) and a `.md` (Markdown Viewer) record the awareness of the program, the browser (switch + `GetDpiAwarenessContextForProcess`), the viewer and controller windows, the window and client geometry and the page window's rectangle relative to the client. Rows AWARE / GEOMETRY. Registry backup / restore.
+- [X] T007 [US1] At the top of `CViewerThread::Body` call `TcWebEnterPerMonitorDpiThread()`. Map the core's `Left/Top/Width/Height` with `TcWebSystemRectToPerMonitor` when no saved placement is used, in src/plugins/codeview/viewer.cpp
+- [X] T008 [P] [US1] The same in src/plugins/mdview/viewer.cpp
+- [X] T009 [US1] Write the probe specs/424-webview-dpi-awareness/probe/dpi424_probe.ps1: for a `.txt` (Code Viewer) and a `.md` (Markdown Viewer) record the awareness of the program, the browser (switch + `GetDpiAwarenessContextForProcess`), the viewer and controller windows, the window and client geometry and the page window's rectangle relative to the client. Rows AWARE / GEOMETRY. Registry backup / restore.
 
 ## Phase 4: User Story 2 - another monitor's DPI, moving between monitors (P2)
 
 **Goal**: a DPI change resizes the viewer to the suggested rectangle and re-lays out the page and the status bar.
 **Independent test**: probe row DPICHANGED (synthetic `WM_DPICHANGED`).
 
-- [ ] T010 [US2] Code Viewer: a `CreateStatusFont()` from `SystemParametersInfoForDpi(SPI_GETNONCLIENTMETRICS, …, GetDpiForWindow)` that sets `StatusHeight`, used in `WM_CREATE`. `WM_DPICHANGED` → `TcWebApplyDpiChanged`, `CreateStatusFont`, `LayoutChildren`, in src/plugins/codeview/viewer.cpp and src/plugins/codeview/viewer.h
-- [ ] T011 [P] [US2] Markdown Viewer: `WM_DPICHANGED` → `TcWebApplyDpiChanged` in src/plugins/mdview/viewer.cpp
-- [ ] T012 [US2] Add row DPICHANGED to specs/424-webview-dpi-awareness/probe/dpi424_probe.ps1
+- [X] T010 [US2] Code Viewer: a `CreateStatusFont()` from `SystemParametersInfoForDpi(SPI_GETNONCLIENTMETRICS, …, GetDpiForWindow)` that sets `StatusHeight`, used in `WM_CREATE`. `WM_DPICHANGED` → `TcWebApplyDpiChanged`, `CreateStatusFont`, `LayoutChildren`, in src/plugins/codeview/viewer.cpp and src/plugins/codeview/viewer.h
+- [X] T011 [P] [US2] Markdown Viewer: `WM_DPICHANGED` → `TcWebApplyDpiChanged` in src/plugins/mdview/viewer.cpp
+- [X] T012 [US2] Add row DPICHANGED to specs/424-webview-dpi-awareness/probe/dpi424_probe.ps1
 
 ## Phase 5: Polish & verification
 
-- [ ] T013 Add the per-monitor rule (the contract's points 1–4) to architecture/11-webview2-integration.md section 3, citing specs/424-webview-dpi-awareness/contracts/webhost-dpi.md
+- [X] T013 Add the per-monitor rule (the contract's points 1–4) to architecture/11-webview2-integration.md section 3, citing specs/424-webview-dpi-awareness/contracts/webhost-dpi.md
 - [ ] T014 Run the encoding guard, `build.cmd`, `saltests`, the probe after (and before as the negative control on the HEAD-a44dfdf4 measurement), and record them in specs/424-webview-dpi-awareness/fix-log.md
 
 ## Dependencies

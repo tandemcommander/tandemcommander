@@ -169,6 +169,9 @@ public:
 unsigned CViewerThread::Body()
 {
     CALL_STACK_MESSAGE1("CViewerThread::Body()");
+    // feature 424 (GitHub #29): the window and its WebView2 page in one per-monitor coordinate
+    // space, whatever display scaling the program or the browser started at
+    TcWebEnterPerMonitorDpiThread();
     CViewerWindow* window = new CViewerWindow(EnumFilesSourceUID, EnumFilesCurrentIndex);
     if (window != NULL)
     {
@@ -191,6 +194,17 @@ unsigned CViewerThread::Body()
                 Width = place.rcNormalPosition.right - place.rcNormalPosition.left;
                 Height = place.rcNormalPosition.bottom - place.rcNormalPosition.top;
                 ShowCmd = place.showCmd;
+            }
+            else if (Left != CW_USEDEFAULT && Width > 0 && Height > 0)
+            {
+                // the core's rectangle is in its system coordinates (feature 424); a stored
+                // placement above was written by this thread and is used as it is
+                RECT rc = {Left, Top, Left + Width, Top + Height};
+                rc = TcWebSystemRectToPerMonitor(rc);
+                Left = rc.left;
+                Top = rc.top;
+                Width = rc.right - rc.left;
+                Height = rc.bottom - rc.top;
             }
             if (window->CreateEx(AlwaysOnTop ? WS_EX_TOPMOST : 0, CWINDOW_CLASSNAME2, "Markdown Viewer",
                                  WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, Left, Top, Width, Height,
@@ -1144,6 +1158,12 @@ LRESULT CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         }
         break;
     }
+
+    case WM_DPICHANGED:
+        // feature 424: the window is per-monitor aware - take the size Windows suggests for the
+        // new DPI (WM_SIZE resizes the page; the copy notice measures its DPI when shown)
+        TcWebApplyDpiChanged(HWindow, lParam);
+        return 0;
 
     case WM_SETFOCUS:
         // forward frame focus into the WebView2 content so keyboard scrolling

@@ -24,11 +24,63 @@
 #pragma pop_macro("new")
 
 #include "webhost.h"
-#include "webenvopts.h" // feature 085
+#include "webenvopts.h"    // feature 085
+#include "../saldpirect.h" // feature 424
 
 #include <memory>
 
 using namespace Microsoft::WRL;
+
+// ==========================================================================
+// DPI mode of the WebView2 surfaces (feature 424, see webhost.h)
+// ==========================================================================
+
+CTcWebPerMonitorDpiScope::CTcWebPerMonitorDpiScope()
+{
+    // NULL when the context cannot be set: the destructor then restores nothing
+    Old = SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+}
+
+CTcWebPerMonitorDpiScope::~CTcWebPerMonitorDpiScope()
+{
+    if (Old != NULL)
+        SetThreadDpiAwarenessContext(Old);
+}
+
+void TcWebEnterPerMonitorDpiThread()
+{
+    if (SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) == NULL)
+        TRACE_E("webhost: per-monitor DPI context refused, error " << GetLastError());
+}
+
+RECT TcWebSystemRectToPerMonitor(const RECT& rc)
+{
+    // The same monitor seen from both modes; HMONITOR handles do not depend on
+    // the DPI mode, the rectangles GetMonitorInfo reports do.
+    MONITORINFO sys = {sizeof(sys)};
+    MONITORINFO phy = {sizeof(phy)};
+    HMONITOR mon = NULL;
+    DPI_AWARENESS_CONTEXT old = SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_SYSTEM_AWARE);
+    if (old != NULL)
+    {
+        mon = MonitorFromRect(&rc, MONITOR_DEFAULTTONEAREST);
+        BOOL ok = mon != NULL && GetMonitorInfoW(mon, &sys);
+        SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+        ok = ok && GetMonitorInfoW(mon, &phy);
+        SetThreadDpiAwarenessContext(old);
+        if (ok)
+            return SalDpiMapRect(rc, sys.rcMonitor, phy.rcMonitor);
+    }
+    return rc; // unknown mapping: unchanged (the window still opens, maybe off its place)
+}
+
+void TcWebApplyDpiChanged(HWND hwnd, LPARAM lParam)
+{
+    const RECT* s = (const RECT*)lParam;
+    if (s != NULL)
+        SetWindowPos(hwnd, NULL, s->left, s->top, s->right - s->left, s->bottom - s->top,
+                     SWP_NOZORDER | SWP_NOACTIVATE);
+}
 
 // ==========================================================================
 // the one browser-arguments set (contract S2.2)
@@ -538,6 +590,9 @@ bool CTcWebHost::Create(HWND parent, const std::wstring& userDataFolder,
     CTcWebHostImpl* impl = p;
     p->alive = std::make_shared<bool>(true);
     std::shared_ptr<bool> alive = p->alive; // copied into the callbacks, outlives impl
+    // feature 424: the browser takes this thread's DPI mode at this call - per-monitor v2,
+    // as the keeper's (webkeeper.cpp); a viewer thread is per-monitor already
+    CTcWebPerMonitorDpiScope dpiScope;
     HRESULT hr = CreateCoreWebView2EnvironmentWithOptions(
         NULL, userDataFolder.empty() ? NULL : userDataFolder.c_str(), options.Get(),
         Callback<ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>(

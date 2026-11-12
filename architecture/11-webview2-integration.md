@@ -200,6 +200,18 @@ already been used in the session.
   message pump; all calls on that thread. Viewer-style windows may each own
   a thread (mdview's thread-per-window); the keeper lives on the main
   thread.
+- **DPI mode** (feature 424, GitHub #29): WebView2 starts the browser in the
+  DPI mode of the thread that creates the environment
+  (`--embedded-browser-webview-dpi-awareness`), and a system-aware process
+  fixes its scaling at its own start, so a system-aware browser started after
+  a display-scaling change drew the page larger, offset and cut off. Every
+  environment is created per-monitor v2 (`CTcWebPerMonitorDpiScope` inside
+  `CTcWebHost::Create` and `CTcWebKeeper::Arm`; all environments on the folder
+  must agree). A window hosting a `CTcWebHost` runs per-monitor v2 on its
+  own thread (`TcWebEnterPerMonitorDpiThread`), maps a rectangle from the core
+  with `TcWebSystemRectToPerMonitor`, and handles `WM_DPICHANGED`
+  (`TcWebApplyDpiChanged` + its own metrics). The core stays system aware.
+  Contract: `specs/424-webview-dpi-awareness/contracts/webhost-dpi.md`.
 - **Displaying local content**: prefer mdview's pattern — private virtual
   host + `WebResourceRequested` default-deny interception, navigation
   cancelled except for the document (see

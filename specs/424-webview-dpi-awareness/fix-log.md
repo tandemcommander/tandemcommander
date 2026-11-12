@@ -70,3 +70,44 @@ fixed: compared with the same probe run on the before build. Accepted: C1 (an ol
 holding the browser in system mode makes the new environment fail -> the existing
 engine-unavailable path, feature 085; not driven); C2 (dark menu font on a monitor of another DPI,
 a limit).
+
+## Implementation
+
+- `src/common/saldpirect.h` (new, header-only): `SalDpiMapRect` - a rectangle from one view of a
+  monitor to the other (linear, nearest pixel, the size scaled on its own; an empty or inverted
+  monitor rectangle -> unchanged). saltests `TestDpiRect424`: identity, 150 % there and back, a
+  125 % monitor at negative coordinates, a rectangle past the monitor, rounding, empty/inverted
+  monitor, 64-bit intermediate.
+- `src/common/webhost/webhost.{h,cpp}`: `CTcWebPerMonitorDpiScope`,
+  `TcWebEnterPerMonitorDpiThread`, `TcWebSystemRectToPerMonitor` (monitor nearest to the rectangle,
+  `GetMonitorInfoW` under a system-aware and a per-monitor context), `TcWebApplyDpiChanged`.
+  `CTcWebHost::Create` creates its environment inside the scope.
+- `src/common/webhost/webkeeper.cpp`: holder window + environment inside the scope.
+- `src/plugins/codeview/viewer.{h,cpp}`, `src/plugins/mdview/viewer.cpp`: `Body` enters
+  per-monitor v2 first; the core's rectangle is mapped when no stored placement is used;
+  `WM_DPICHANGED`. Code Viewer: `CreateStatusFont()` (`SystemParametersInfoForDpi` with
+  `GetDpiForWindow`, releases the previous font after the control took the new one), used at
+  `WM_CREATE` and on `WM_DPICHANGED`.
+- `architecture/11-webview2-integration.md` section 3: the DPI-mode rule.
+
+## Checks after the change
+
+- `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.
+- `.uild.cmd` -> `BUILD SUCCEEDED`.
+- `saltests.exe` -> `saltests: 287267 checks, 0 failed`.
+- Probe `dpi424_probe.ps1` (hidden desktop):
+  - before (HEAD build, `probe/result_probe_before.txt`): PASS 3, FAIL 4. AWARE CV/MD: viewer 1,
+    controller 1, browser `=1` awareness 1. DPICHANGED CV/MD: `sent ok`, the window kept its
+    rectangle. That is the negative control.
+  - after (`probe/result_after.txt`, `-Before` baseline): **PASS 7, FAIL 0**. AWARE: viewer 2,
+    controller 2, browser `=2` awareness 2, main window and program 1. GEOMETRY identical to
+    before: CV `window (570,160)-(2159,1278) client 1573 x 1059 status 21`, MD
+    `window (398,40)-(2108,1330) client 1694 x 1231 status 0`; the page at (0,0) covering the
+    client. DPICHANGED: the window takes exactly the suggested rectangle, the page still covers
+    the client.
+  - Probe trap: `WM_DPICHANGED` sent from another process is marshalled by Windows. A pointer into
+    the program's memory is refused (`SendMessageTimeout` fails), so the rectangle must be in the
+    sender's memory.
+- Regression probes run from a copy under `%TEMP%	c424reg` (they write screenshots into their own
+  folders): `copy408_probe` (clicks into the Markdown page) **19 PASS / 0 FAIL / 1 NOT DRIVEN**, as
+  recorded by 408.

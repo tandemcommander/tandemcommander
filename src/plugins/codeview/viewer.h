@@ -22,7 +22,7 @@ public:
 
     HWND HStatus;     // native status bar (STATIC)
     HFONT HStatusFont; // status-bar font (NONCLIENTMETRICS lfStatusFont); owned
-    int StatusHeight; // derived from the font at creation (DPI-correct)
+    int StatusHeight; // derived from the font for the window's DPI (CreateStatusFont)
     HBRUSH BgBrush;  // scheme background for WM_ERASEBKGND - the shared WinLib
                      // class brush is white and would flash before the page paints
 
@@ -74,6 +74,7 @@ protected:
     void BuildMenu();
     void RefreshChecks();
     void LayoutChildren();
+    void CreateStatusFont(); // feature 424: the status font and height for the window's current DPI
     void ApplyScheme(BOOL rebuildBrush);
     void SelectScheme(int idx);
     void CycleScheme(int dir);

@@ -128,6 +128,9 @@ public:
 unsigned CViewerThread::Body()
 {
     CALL_STACK_MESSAGE1("CViewerThread::Body()");
+    // feature 424 (GitHub #29): the window and its WebView2 page in one per-monitor coordinate
+    // space, whatever display scaling the program or the browser started at
+    TcWebEnterPerMonitorDpiThread();
     CViewerWindow* window = new CViewerWindow(EnumFilesSourceUID, EnumFilesCurrentIndex);
     if (window != NULL)
     {
@@ -150,6 +153,17 @@ unsigned CViewerThread::Body()
                 Width = place.rcNormalPosition.right - place.rcNormalPosition.left;
                 Height = place.rcNormalPosition.bottom - place.rcNormalPosition.top;
                 ShowCmd = place.showCmd;
+            }
+            else if (Left != CW_USEDEFAULT && Width > 0 && Height > 0)
+            {
+                // the core's rectangle is in its system coordinates (feature 424); a stored
+                // placement above was written by this thread and is used as it is
+                RECT rc = {Left, Top, Left + Width, Top + Height};
+                rc = TcWebSystemRectToPerMonitor(rc);
+                Left = rc.left;
+                Top = rc.top;
+                Width = rc.right - rc.left;
+                Height = rc.bottom - rc.top;
             }
             if (window->CreateEx(AlwaysOnTop ? WS_EX_TOPMOST : 0, CWINDOW_CLASSNAME2, "Code Viewer",
                                  WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, Left, Top, Width, Height,
@@ -672,6 +686,39 @@ int CViewerWindow::RememberedTable() const
     return TableNames.empty() ? -1 : SalCodeTableFindName(TableNames.data(), TableCount(), name);
 }
 
+// Real status font + a height derived from it (the previous fixed 20 px with the
+// stock raster font clipped on high-DPI monitors), for the window's CURRENT DPI:
+// the window is per-monitor aware (feature 424), so after WM_DPICHANGED it is
+// called again. The old font is released only after the control took the new one.
+void CViewerWindow::CreateStatusFont()
+{
+    if (HStatus == NULL)
+        return;
+    UINT dpi = GetDpiForWindow(HWindow);
+    NONCLIENTMETRICSW ncm;
+    ZeroMemory(&ncm, sizeof(ncm));
+    ncm.cbSize = sizeof(ncm);
+    HFONT font = NULL;
+    if (dpi != 0 && SystemParametersInfoForDpi(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0, dpi))
+        font = CreateFontIndirectW(&ncm.lfStatusFont);
+    if (font == NULL)
+        return; // keep what the window has
+    SendMessage(HStatus, WM_SETFONT, (WPARAM)font, TRUE);
+    if (HStatusFont != NULL)
+        DeleteObject(HStatusFont);
+    HStatusFont = font;
+    HDC dc = GetDC(HWindow);
+    if (dc != NULL)
+    {
+        HFONT old = (HFONT)SelectObject(dc, HStatusFont);
+        TEXTMETRICW tm;
+        if (GetTextMetricsW(dc, &tm))
+            StatusHeight = tm.tmHeight + 6;
+        SelectObject(dc, old);
+        ReleaseDC(HWindow, dc);
+    }
+}
+
 void CViewerWindow::LayoutChildren()
 {
     RECT rc;
@@ -1082,29 +1129,7 @@ LRESULT CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                                   WS_CHILD | WS_VISIBLE | SS_LEFTNOWORDWRAP | SS_NOPREFIX | SS_CENTERIMAGE,
                                   0, 0, 0, 0, HWindow, NULL, DLLInstance, NULL);
         if (HStatus != NULL)
-        {
-            // Real status font + a height derived from it: the previous fixed
-            // 20 px with the stock raster font clipped on high-DPI monitors.
-            NONCLIENTMETRICSW ncm;
-            ZeroMemory(&ncm, sizeof(ncm));
-            ncm.cbSize = sizeof(ncm);
-            if (SystemParametersInfoW(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0))
-                HStatusFont = CreateFontIndirectW(&ncm.lfStatusFont);
-            if (HStatusFont != NULL)
-            {
-                SendMessage(HStatus, WM_SETFONT, (WPARAM)HStatusFont, TRUE);
-                HDC dc = GetDC(HWindow);
-                if (dc != NULL)
-                {
-                    HFONT old = (HFONT)SelectObject(dc, HStatusFont);
-                    TEXTMETRICW tm;
-                    if (GetTextMetricsW(dc, &tm))
-                        StatusHeight = tm.tmHeight + 6;
-                    SelectObject(dc, old);
-                    ReleaseDC(HWindow, dc);
-                }
-            }
-        }
+            CreateStatusFont();
 
         if (!CTcWebHost::RuntimeAvailable())
         {
@@ -1196,6 +1221,14 @@ LRESULT CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
     }
 
     case WM_SIZE:
+        LayoutChildren();
+        return 0;
+
+    case WM_DPICHANGED:
+        // feature 424: the window is per-monitor aware - take the size Windows suggests for the
+        // new DPI, then the status bar's font and height for it (WM_SIZE lays out the page)
+        CreateStatusFont();
+        TcWebApplyDpiChanged(HWindow, lParam);
         LayoutChildren();
         return 0;
 
