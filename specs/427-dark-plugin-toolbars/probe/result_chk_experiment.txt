@@ -1,0 +1,8 @@
+main_dwm_explorer: bg #202020 ink #FFFFFF contrast 16,29 LIGHT label
+main_nodwm_explorer: bg #202020 ink #FFFFFF contrast 16,29 LIGHT label
+main_dwm_child_explorer: bg #202020 ink #FFFFFF contrast 16,29 LIGHT label
+main_dwm_default: bg #202020 ink #000000 contrast 1,29 DARK label
+main_dwm_classic: bg #202020 ink #000000 contrast 1,29 DARK label
+thread_dwm_explorer: bg #202020 ink #FFFFFF contrast 16,29 LIGHT label
+thread_dwm_child_explorer: bg #202020 ink #FFFFFF contrast 16,29 LIGHT label
+OS 10.0.26300.0

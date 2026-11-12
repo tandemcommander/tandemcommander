@@ -1,16 +1,16 @@
 ---
 title: Dark theme: black checkbox labels and old toolbar icons in plug-in windows
 type: bug
-status: open
+status: in-progress
 severity: 4
 area: other-plugins
 source: github#25
 who: agent
 created: 2026-11-12
 updated: 2026-11-12
-verified: -
+verified: 2026-11-12 b3770fa5
 effort: M
-feature: -
+feature: 427
 related: []
 depends-on: []
 reason: -
@@ -55,3 +55,5 @@ Severity 4: a function does not work (labels hardly readable, the setting still 
 - 2026-11-12 — created (source github#25)
 - 2026-11-12 — fields set from the issue text and labels
 - 2026-11-12 — moved to Next position 3
+- 2026-11-12 — verified at b3770fa5: at b3770fa5 on Windows 10.0.26300, Dark: plug-in checkbox labels light (PictView 6/6, Batch Rename 8/8) - not reproduced; PictView and File Comparator toolbars keep old glyphs; File Comparator rebar/toolbar strip and fills light grey (70781 px F0F0F0)
+- 2026-11-12 — run started, feature 427

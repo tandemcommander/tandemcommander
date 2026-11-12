@@ -1,0 +1,42 @@
+hot keys: renamer.spl id 1: 1; filecomp.spl id 1: 1
+dark_measure on E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe, Theme Mode 1, OS 10.0.26300.0
+core_config: id 366 type 3 'Su&bmenu' -> bg #2D2D2D ink #CCCCCC contrast 8,58 light-on-dark inkpx 194
+core_config: id 364 type 3 '&Separator' -> bg #2D2D2D ink #CCCCCC contrast 8,58 light-on-dark inkpx 197
+core_config: id 353 type 3 'E&xecute through shell' -> bg #2D2D2D ink #CCCCCC contrast 8,58 light-on-dark inkpx 434
+core_config: id 355 type 3 '&Open shell window' -> bg #2D2D2D ink #CCCCCC contrast 8,58 light-on-dark inkpx 376
+core_config: id 354 type 3 'Close shell &window' -> bg #2D2D2D ink #CCCCCC contrast 8,58 light-on-dark inkpx 375
+core_config: id 363 type 3 'Show item in &User Menu bar' -> bg #2D2D2D ink #CCCCCC contrast 8,58 light-on-dark inkpx 535
+core_config: 6 checkbox/radio labels, 0 dark ink on a dark background
+tops before View: [TandemCommanderMainWindowVer01 'T098 - left - Tandem Commander 0.3.0 (x64) ST'] 
+tops after View: [PICTVIEW - WinLib Universal Window2 '...measure\left\image.png (424 x 345 x 16777216 colors - 100%) - PictView']  | [TandemCommanderMainWindowVer01 'T098 - left - Tandem Commander 0.3.0 (x64) ST'] 
+viewer: [PICTVIEW - WinLib Universal Window2 '...measure\left\image.png (424 x 345 x 16777216 colors - 100%) - PictView'] 
+pictview settings: [#32770 'PictView Configuration'] [#32770 id=0] Appearance | [Button id=3000] Window size | [Button id=2021] Sa&me as of Tandem Commander | [Button id=2022] &Larger if needed but not smaller | [Button id=2023] As &needed | [Button id=3001] Default zoom | [Button id=2024] &Fit whole (no scrollbars) | [Button id=2025] Fit to &width (no horizontal scrollbar) | [Button id=2026] &Original size | [Button id=2027] Full &screen | [Button id=2030] Show image file &path in titlebar | [Button id=1] OK | [Button id=2] Zru\u0161it | [Button id=9] N\u00E1pov\u011Bda
+pictview_page0: id 2030 type 3 'Show image file &path in titlebar' -> bg #2D2D2D ink #FFFFFF contrast 13,77 light-on-dark inkpx 632
+pictview_page0: 1 checkbox/radio labels, 0 dark ink on a dark background
+pictview_page1: 0 checkbox/radio labels, 0 dark ink on a dark background
+pictview_page2: 0 checkbox/radio labels, 0 dark ink on a dark background
+pictview_page3: id 2078 type 3 'Pipette picks colors in he&xadecimal' -> bg #2D2D2D ink #FFFFFF contrast 13,77 light-on-dark inkpx 684
+pictview_page3: 1 checkbox/radio labels, 0 dark ink on a dark background
+pictview_page4: id 2050 type 3 '...humbnails stored in image files (slower)' -> bg #2D2D2D ink #FFFFFF contrast 13,77 light-on-dark inkpx 1666
+pictview_page4: id 2052 type 3 '...IF JPEG images (digital camera pictures)' -> bg #2D2D2D ink #FFFFFF contrast 13,77 light-on-dark inkpx 1089
+pictview_page4: id 2053 type 3 '...Show message box on successful file save' -> bg #2D2D2D ink #FFFFFF contrast 13,77 light-on-dark inkpx 786
+pictview_page4: id 2054 type 3 '...ing screenshots, scans, clipboard pastes' -> bg #2D2D2D ink #FFFFFF contrast 13,77 light-on-dark inkpx 1286
+pictview_page4: 4 checkbox/radio labels, 0 dark ink on a dark background
+Ctrl+Shift+R: ok, window [#32770 'Batch Rename'] [Static id=300] &Mask: | [Button id=102] Include su&bdirectories | [Button id=1] &Rename | [Button id=105] Manua&l mode | [Static id=126] &New name: | [Static id=127] Replace | [Static id=128] &Search for: | [Static id=129] Replace w&ith: | [Button id=112] Case sensi&tive | [Button id=114] Onl&y onc ...(1)...  in each name | [Button id=113] &Whole words | [Button id=115] Re&gular expression | [Button id=123] Exclu&de extension | [Static id=130] Change case | [Static id=131] File n&ame: | [Static id=132] E&xtension: | [Button id=118] Incl&ude path part | [Static id=103] &Preview: | [Static id=122] 2 files
+renamer: id 102 type 3 'Include su&bdirectories' -> bg #2D2D2D ink #FFFFFF contrast 13,77 light-on-dark inkpx 441
+renamer: id 105 type 3 'Manua&l mode' -> bg #2D2D2D ink #FFFFFF contrast 13,77 light-on-dark inkpx 271
+renamer: id 112 type 3 'Case sensi&tive' -> bg #2D2D2D ink #FFFFFF contrast 13,77 light-on-dark inkpx 258
+renamer: id 114 type 3 'Onl&y once in each name' -> bg #2D2D2D ink #FFFFFF contrast 13,77 light-on-dark inkpx 435
+renamer: id 113 type 3 '&Whole words' -> bg #2D2D2D ink #FFFFFF contrast 13,77 light-on-dark inkpx 266
+renamer: id 115 type 3 'Re&gular expression' -> bg #2D2D2D ink #FFFFFF contrast 13,77 light-on-dark inkpx 374
+renamer: id 123 type 3 'Exclu&de extension' -> bg #2D2D2D ink #FFFFFF contrast 13,77 light-on-dark inkpx 353
+renamer: id 118 type 3 'Incl&ude path part' -> bg #2D2D2D ink #FFFFFF contrast 13,77 light-on-dark inkpx 347
+renamer: 8 checkbox/radio labels, 0 dark ink on a dark background
+renamer_full: 800x625 colours 414 top 48,8%; light-grey F0F0F0 px 623
+Ctrl+Shift+C: ok, window [#32770 'Compare Files'] [Static id=300] &Compare file: | [Button id=104] ... | [Static id=301] &With file: | [Button id=105] ... | [Button id=1] OK | [Button id=2] Cancel | [Button id=103] &Advanced...
+filecomp_dialog: 0 checkbox/radio labels, 0 dark ink on a dark background
+filecomp_dialog_full: 341x151 colours 207 top 64,8%; light-grey F0F0F0 px 231
+filecomp window: [SFC Window Class 'image.png : image2.png  - File Comparator - Computing Differences'] 
+filecomp_window: 1650x1058 colours 207 top 68,5%; light-grey F0F0F0 px 70781
+Registry: restored; identical=True; SHA-256 before B94D4679FDE3D64A25B4DFE3AAEFB0F13E93982989A34F1D87C63FAA94CAAE46 / after B94D4679FDE3D64A25B4DFE3AAEFB0F13E93982989A34F1D87C63FAA94CAAE46
+registry restored+identical: True
