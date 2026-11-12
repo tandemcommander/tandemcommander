@@ -1,16 +1,16 @@
 ---
 title: Desktop in the drive menu opens a virtual fld: view, not the Desktop folder
 type: bug
-status: open
+status: in-progress
 severity: 4
 area: other-plugins
 source: github#31
 who: agent
 created: 2026-11-12
 updated: 2026-11-12
-verified: -
+verified: 2026-11-12 472d20a8
 effort: -
-feature: -
+feature: 425
 related: []
 depends-on: []
 reason: -
@@ -118,3 +118,5 @@ Related: 248 (Folders column names, GitHub #13). No earlier feature names #31.
 - 2026-11-12 — maintainer decision 2026-11-12: do all three - a core Desktop entry, the Folders entry renamed, real folders inside fld: open as disk paths; a readable fld: path left out
 - 2026-11-12 — Problem, Evidence, Expected, Approach and Notes rewritten for the decision
 - 2026-11-12 — moved to Next position 1
+- 2026-11-12 — verified at 472d20a8: still present at 472d20a8: probe on the HEAD build - no core Desktop item in Alt+F1 or the drive bar, plug-in item reads Desktop with hot key quote; by reading ExecuteOnFS keeps every folder in fld:
+- 2026-11-12 — run started, feature 425
