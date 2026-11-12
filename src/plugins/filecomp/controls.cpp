@@ -130,6 +130,39 @@ void CFileHeaderWindow::SetText(const char* text)
     UpdateWindow(HWindow);
 }
 
+void PaintDarkStaticEdge(HWND hWnd)
+{
+    if (!SG->IsDarkThemeActive() || (GetWindowLongPtr(hWnd, GWL_EXSTYLE) & WS_EX_STATICEDGE) == 0)
+        return;
+    RECT r;
+    GetWindowRect(hWnd, &r);
+    OffsetRect(&r, -r.left, -r.top);
+    HDC dc = GetWindowDC(hWnd);
+    if (dc == NULL)
+        return;
+    // the system draws the static edge with the light theme's shadow (top, left) and highlight
+    // (bottom, right) - the white lines around the views in Dark; the core's Dark bevel pair
+    HPEN shadow = CreatePen(PS_SOLID, 1, SG->GetThemeSysColor(COLOR_BTNSHADOW));
+    HPEN light = CreatePen(PS_SOLID, 1, SG->GetThemeSysColor(COLOR_BTNHIGHLIGHT));
+    if (shadow != NULL && light != NULL)
+    {
+        HPEN old = (HPEN)SelectObject(dc, shadow);
+        MoveToEx(dc, 0, r.bottom - 1, NULL);
+        LineTo(dc, 0, 0);
+        LineTo(dc, r.right, 0);
+        SelectObject(dc, light);
+        MoveToEx(dc, r.right - 1, 0, NULL);
+        LineTo(dc, r.right - 1, r.bottom - 1);
+        LineTo(dc, -1, r.bottom - 1);
+        SelectObject(dc, old);
+    }
+    if (shadow != NULL)
+        DeleteObject(shadow);
+    if (light != NULL)
+        DeleteObject(light);
+    ReleaseDC(hWnd, dc);
+}
+
 LRESULT
 CFileHeaderWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -137,6 +170,13 @@ CFileHeaderWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                         wParam, lParam);
     switch (uMsg)
     {
+    case WM_NCPAINT:
+    {
+        LRESULT ret = CWindow::WindowProc(uMsg, wParam, lParam);
+        PaintDarkStaticEdge(HWindow); // feature 427
+        return ret;
+    }
+
     case WM_CREATE:
     {
         BkColor = SG->GetCurrentColor(SALCOL_INACTIVE_CAPTION_BK);
@@ -449,7 +489,7 @@ CSplitBarWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             SetTextColor(dc, oldText);
         }
         else
-            FillRect(dc, &r, (HBRUSH)(COLOR_BTNFACE + 1));
+            FillRect(dc, &r, SG->GetThemeSysColorBrush(COLOR_BTNFACE) /* feature 427 */);
         EndPaint(HWindow, &ps);
         return 0;
     }
@@ -687,7 +727,7 @@ CComboBox::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         SetBkColor((HDC)wParam, SG->GetThemeSysColor(COLOR_WINDOW));
         SetTextColor((HDC)wParam, SG->GetThemeSysColor(COLOR_WINDOWTEXT));
-        return (LRESULT)GetSysColorBrush(COLOR_WINDOW);
+        return (LRESULT)SG->GetThemeSysColorBrush(COLOR_WINDOW) /* feature 427 */;
     }
 
     case WM_PAINT:
@@ -939,17 +979,18 @@ CRebar::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 HDC hdc = GetDC(HWindow);
                 HFONT oldFont = (HFONT)SelectObject(hdc, (HFONT)EnvFont);
                 SetBkColor(hdc, SG->GetThemeSysColor(COLOR_BTNFACE));
+                SetTextColor(hdc, SG->GetThemeSysColor(COLOR_BTNTEXT)); // feature 427: light in Dark
                 DrawText(hdc, text, -1, &r, DT_SINGLELINE | DT_TOP);
 
                 // line under the text
                 r.top += EnvFontHeight;
-                FillRect(hdc, &r, (HBRUSH)(COLOR_BTNFACE + 1));
+                FillRect(hdc, &r, SG->GetThemeSysColorBrush(COLOR_BTNFACE) /* feature 427 */);
                 r.top -= EnvFontHeight;
 
                 // area behind the text
                 r.left = r.right;
                 r.right += 13;
-                FillRect(hdc, &r, (HBRUSH)(COLOR_BTNFACE + 1));
+                FillRect(hdc, &r, SG->GetThemeSysColorBrush(COLOR_BTNFACE) /* feature 427 */);
 
                 SelectObject(hdc, oldFont);
                 ReleaseDC(HWindow, hdc);
@@ -964,7 +1005,7 @@ CRebar::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         //SetBkColor((HDC)wParam, SG->GetThemeSysColor(COLOR_WINDOW));
         SetTextColor((HDC)wParam, SG->GetThemeSysColor(COLOR_WINDOWTEXT));
         //return 0;
-        return (LRESULT)GetSysColorBrush(COLOR_WINDOW);
+        return (LRESULT)SG->GetThemeSysColorBrush(COLOR_WINDOW) /* feature 427 */;
     }
     }
 

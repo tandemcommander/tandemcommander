@@ -7,6 +7,10 @@ extern HFONT EnvFont;     // environment font (edit, toolbar, header, status)
 extern int EnvFontHeight; // font height
 extern HBRUSH HDitheredBrush;
 
+// feature 427: repaints a WS_EX_STATICEDGE border with the Dark palette's bevel colours (after
+// the default WM_NCPAINT); nothing in the Default theme
+void PaintDarkStaticEdge(HWND hWnd);
+
 // ****************************************************************************
 //
 // CFileHeaderWindow

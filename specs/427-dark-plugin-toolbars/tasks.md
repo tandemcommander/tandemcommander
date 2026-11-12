@@ -5,31 +5,31 @@
 
 ## Phase 1: Setup
 
-- [ ] T001 Start `specs/427-dark-plugin-toolbars/fix-log.md` with the measurement of step 3 (`probe/result_measure_before.txt`, the checkbox experiment)
+- [X] T001 Start `specs/427-dark-plugin-toolbars/fix-log.md` with the measurement of step 3 (`probe/result_measure_before.txt`, the checkbox experiment)
 
 ## Phase 2: Foundational
 
-- [ ] T002 Write the feature probe `specs/427-dark-plugin-toolbars/probe/dark427_probe.ps1` (Dark and Default; rows PV-TOOLBAR, FC-TOOLBAR, FC-GREY, PV-LABELS, RN-LABELS, DEFAULT-SAME; registry backup / restore) and run it on the unchanged build (`-Label before`); record in the fix-log
-- [ ] T003 Move the bitmap walk of `ThemeAdjustBitmapForDarkMode` (`src/themes.cpp`) into the header-only `src/common/themes_bitmap.h` (`ThemeDarkAdaptBitmap`); the core function calls it
-- [ ] T004 Add a saltests check of `ThemeDarkAdaptBitmap` (a small 32-bit bitmap: black, key magenta, white, dark blue, a transparent pixel) in `src/saltests/`
+- [X] T002 Write the feature probe `specs/427-dark-plugin-toolbars/probe/dark427_probe.ps1` (Dark and Default; rows PV-TOOLBAR, FC-TOOLBAR, FC-GREY, PV-LABELS, RN-LABELS, DEFAULT-SAME; registry backup / restore) and run it on the unchanged build (`-Label before`); record in the fix-log
+- [X] T003 Move the bitmap walk of `ThemeAdjustBitmapForDarkMode` (`src/themes.cpp`) into the header-only `src/common/themes_bitmap.h` (`ThemeDarkAdaptBitmap`); the core function calls it
+- [X] T004 Add a saltests check of `ThemeDarkAdaptBitmap` (a small 32-bit bitmap: black, key magenta, white, dark blue, a transparent pixel) in `src/saltests/`
 
 ## Phase 3: User Story 1 - toolbar glyphs (P1)
 
-- [ ] T005 [US1] PictView: `CViewerWindow::InitializeGraphics` (`src/plugins/pictview/pictview.cpp`) adapts the colour bitmap in Dark before the grey and mask bitmaps
-- [ ] T006 [US1] File Comparator: the toolbar bitmap (`src/plugins/filecomp/mainwnd.cpp`) adapted in Dark with the mapped background as the key
+- [X] T005 [US1] PictView: `CViewerWindow::InitializeGraphics` (`src/plugins/pictview/pictview.cpp`) adapts the colour bitmap in Dark before the grey and mask bitmaps
+- [X] T006 [US1] File Comparator: the toolbar bitmap (`src/plugins/filecomp/mainwnd.cpp`) adapted in Dark with the mapped background as the key
 
 ## Phase 4: User Story 2 - File Comparator chrome (P1)
 
-- [ ] T007 [US2] Rebar background, text and colour scheme in Dark (`src/plugins/filecomp/mainwnd.cpp`); `ThemeApplyToDialog` on the main window after its children exist
-- [ ] T008 [US2] Theme brushes / colours instead of the system ones in `src/plugins/filecomp/controls.cpp` (splitter fill, band text area and text colour, the two `WM_CTLCOLORSTATIC` brushes)
+- [X] T007 [US2] Rebar background, text and colour scheme in Dark (`src/plugins/filecomp/mainwnd.cpp`); `ThemeApplyToDialog` on the main window after its children exist
+- [X] T008 [US2] Theme brushes / colours instead of the system ones in `src/plugins/filecomp/controls.cpp` (splitter fill, band text area and text colour, the two `WM_CTLCOLORSTATIC` brushes)
 
 ## Phase 5: User Story 3 - checkbox labels (P2)
 
-- [ ] T009 [US3] Draft `reply.md` for GitHub #25 asking for the Windows build; an Inbox item (leftover:427) for the black checkbox labels with the measurement
+- [X] T009 [US3] Draft `reply.md` for GitHub #25 asking for the Windows build; an Inbox item (leftover:427) for the black checkbox labels with the measurement
 
 ## Phase 6: Polish
 
-- [ ] T010 Build, saltests, encoding guard; the probe `-Label after`; before / after in the fix-log
+- [X] T010 Build, saltests, encoding guard; the probe `-Label after`; before / after in the fix-log
 - [ ] T011 FEATURE-HISTORY, CHANGELOG, closing report (step 8 of the run)
 
 ## Dependencies

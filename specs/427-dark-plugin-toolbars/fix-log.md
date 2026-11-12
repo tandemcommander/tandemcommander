@@ -46,3 +46,78 @@ Dark theme, Fluent 2 icon set, English core (`Set-Config`), registry restored id
 (The first version of the probe found no PictView toolbar - it is a core GUI toolbar, class
 `WinLib Universal Window2` in the viewer's rebar - and counted the views' scrollbars as view
 content; both fixed before this run.)
+
+## Implementation (T003-T008)
+
+- `src/common/themes_bitmap.h` (new, header-only): `ThemeDarkAdaptBitmap(HBITMAP, COLORREF key)` -
+  the loop of `ThemeAdjustBitmapForDarkMode` moved verbatim (32-bit read, key colour and transparent
+  pixels skipped, premultiplied pixels handled, `ThemeDarkAdaptColor` per pixel); plain
+  `GetDC`/`ReleaseDC` (no `HANDLES`) and a NULL-DC check. `src/themes.cpp`:
+  `ThemeAdjustBitmapForDarkMode` = the Dark check + the call (behaviour unchanged).
+- saltests `TestDarkAdaptBitmap427` (+14 checks): a legacy strip (black → 220 grey, key kept,
+  white kept, dark blue 0x60 → 0xAA, light colour kept, grey 128 → 147, the bitmap path equals the
+  pure rule), an alpha strip (transparent kept, opaque black → 220, half-transparent black →
+  premultiplied 220), NULL ignored. saltests: 287,428 checks, 0 failed (was 287,414).
+- PictView `CViewerWindow::InitializeGraphics`: in Dark the colour bitmap is adapted before the grey
+  and mask bitmaps are made, and the grey bitmap too (a saturated colour the rule keeps - e.g. a blue
+  with a channel >= 120 - becomes a dark grey in the grey copy; measured: 857 → 213 without, → 0 with).
+- File Comparator:
+  - toolbar bitmap: magenta mapped to the SYSTEM face colour (the toolbar treats that colour of a
+    `TB_ADDBITMAP` bitmap as transparent; mapped to the Dark face the disabled glyphs were solid
+    squares), adapted in Dark with that colour as the key; identical in Default (both colours equal);
+  - rebar `RB_SETBKCOLOR` / `RB_SETTEXTCOLOR` / `RB_SETCOLORSCHEME`, toolbar `TB_SETCOLORSCHEME`,
+    in Dark only;
+  - `SG->ThemeApplyToDialog(HWindow)` at the end of `CMainWindow::Init` (combo `DarkMode_CFD`, the
+    views' scrollbars `DarkMode_Explorer`; a no-op in Default);
+  - `controls.cpp` / `mainwnd.cpp`: `(HBRUSH)(COLOR_BTNFACE + 1)` and `GetSysColorBrush(COLOR_WINDOW)`
+    → `SG->GetThemeSysColorBrush(...)` (identical in Default); the band text gets
+    `GetThemeSysColor(COLOR_BTNTEXT)` (it was drawn in the DC's default black - a black block
+    behind "Difference" in Dark);
+  - in Dark the main window also fills the rows between the auto-sized rebar's real bottom and the
+    gap (RebarHeight assumes 4 px more than the rebar takes; nothing painted those 4 rows - white);
+  - `PaintDarkStaticEdge` (controls.cpp): after the default `WM_NCPAINT` of the caption windows and
+    the views, the `WS_EX_STATICEDGE` 1-px edge is redrawn with the Dark bevel pair (system white /
+    grey lines around the views in Dark).
+- Tried and dropped: a `WM_ERASEBKGND` fill of the rebar - the white rows were not the rebar's (the
+  rebar is 23 px, `fc child ReBarWindow32 0,0-1650,23`), the measurement did not change.
+
+## Probe after (T010) - `probe/dark427_probe.ps1 -Label after`, `probe/result_after_rows.txt`
+
+`ROWS: 0 FAIL`, registry restored identical:
+
+| Row | before | after |
+|---|---|---|
+| PV-TOOLBAR neutral glyph px darker than the strip (Dark) | 696 | **0** |
+| FC-TOOLBAR (Dark) | 1346 | **18** |
+| FC-GREY `#F0F0F0` px outside the views' text (Dark) | 68,099 | **77** |
+| FC-LIGHT light neutral px outside the text (Dark) | 109,871 | **167** (glyph highlights) |
+| PV-LABELS / RN-LABELS lowest contrast (Dark) | 13.77 / 13.77 | 13.77 / 13.77 |
+| DEFAULT-SAME toolbars (Default) | - | 0 / 0 px differ |
+
+- The metric (refined during the run, recorded): only NEUTRAL glyph pixels are counted (the outlines
+  and shading the Dark palette turns light); saturated colours with a channel >= 120 are kept by the
+  029 rule exactly as the core's own Classic glyphs in Dark (52 such pixels in PictView, INFO), and
+  the toolbar's chrome colours (Dark `COLOR_BTNSHADOW` 26,26,26 and `COLOR_3DDKSHADOW` 16,16,16 -
+  separators and button frames, 161 px) are not glyphs. The before values are computed by the probe
+  from the before run's saved captures with the same function.
+- FC-LIGHT was added after the first passing FC-GREY: the 4 white rows below the rebar and the white
+  static edges are not `#F0F0F0` and were missed by FC-GREY.
+- Default `fc_window_DEFAULT.png` differs by 69-137 px between runs: all inside the right view's hex
+  text (a byte drawn in one capture and not yet in the other while the comparison paints) - content
+  timing, not chrome (bounding box 1110,1000-1285,1023).
+
+## Deviation (stop-rules rule 14)
+
+- The black checkbox labels do not reproduce on Windows 10.0.26300 (all light, before and after);
+  no checkbox drawing was changed. Inbox item `dark-checkbox-labels-other-windows-builds`
+  (leftover:427); the draft reply asks the reporter for the Windows build.
+- Fluent 2 artwork for the plug-in toolbars was not made: the item's Expected allows "at least the
+  Dark palette applied", which is what the core does for its legacy glyphs.
+
+## Checks
+
+- `build.cmd`: BUILD SUCCEEDED; saltests 287,428 checks, 0 failed; `check_encoding.py --strict`:
+  TOTAL: 0 finding(s) (rerun before the commit of the close).
+- Not driven (a person): the toolbars and File Comparator on a real screen (the probe captures via
+  `PrintWindow`), and a live theme switch while a viewer / File Comparator is open (the open window
+  keeps its glyphs until it is opened again - an existing limit).

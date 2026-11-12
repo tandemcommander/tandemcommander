@@ -1,0 +1,84 @@
+dark427_probe after on E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe; hot keys: renamer.spl, filecomp.spl; OS 10.0.26300.0
+DARK       PV-TOOLBAR INFO        class WinLib Universal Window2; strip #2D2D2D; neutral glyph pixels darker than the strip: 0 (saturated, kept by the palette rule: 52)
+  pv_page0_DARK: id 2030 'Show image file &path in titlebar' bg #2D2D2D ink #FFFFFF contrast 13,77
+  pv_page3_DARK: id 2078 'Pipette picks colors in he&xadecimal' bg #2D2D2D ink #FFFFFF contrast 13,77
+  pv_page4_DARK: id 2050 '...nails stored in image files (slower)' bg #2D2D2D ink #FFFFFF contrast 13,77
+  pv_page4_DARK: id 2052 '...PEG images (digital camera pictures)' bg #2D2D2D ink #FFFFFF contrast 13,77
+  pv_page4_DARK: id 2053 '... message box on successful file save' bg #2D2D2D ink #FFFFFF contrast 13,77
+  pv_page4_DARK: id 2054 '...screenshots, scans, clipboard pastes' bg #2D2D2D ink #FFFFFF contrast 13,77
+DARK       PV-LABELS PASS        6 checkboxes on 5 pages, lowest label contrast 13,77
+  renamer_DARK: id 102 'Include su&bdirectories' bg #2D2D2D ink #FFFFFF contrast 13,77
+  renamer_DARK: id 105 'Manua&l mode' bg #2D2D2D ink #FFFFFF contrast 13,77
+  renamer_DARK: id 112 'Case sensi&tive' bg #2D2D2D ink #FFFFFF contrast 13,77
+  renamer_DARK: id 114 'Onl&y once in each name' bg #2D2D2D ink #FFFFFF contrast 13,77
+  renamer_DARK: id 113 '&Whole words' bg #2D2D2D ink #FFFFFF contrast 13,77
+  renamer_DARK: id 115 'Re&gular expression' bg #2D2D2D ink #FFFFFF contrast 13,77
+  renamer_DARK: id 123 'Exclu&de extension' bg #2D2D2D ink #FFFFFF contrast 13,77
+  renamer_DARK: id 118 'Incl&ude path part' bg #2D2D2D ink #FFFFFF contrast 13,77
+DARK       RN-LABELS PASS        8 checkboxes, lowest label contrast 13,77
+DARK       FC-TOOLBAR INFO        strip #2D2D2D; neutral glyph pixels darker than the strip: 18 (saturated: 0)
+  fc child ReBarWindow32 id 100: 0,0-1650,23
+  fc child ComboBox id 102: 272,0-1650,23
+  fc child Edit id 1001: 275,3-1630,20
+  fc child ToolbarWindow32 id 101: 9,0-199,22
+  fc child FILECOMP - WinLib Universal Window id 0: 0,29-824,48
+  fc child FILECOMP - WinLib Universal Window id 0: 827,29-1650,48
+  fc child SFC File View Window Class id 103: 0,50-824,1058
+  fc child SFC File View Window Class id 104: 827,50-1650,1058
+  fc child SFC Split Bar Class id 0: 824,29-827,1058
+  view client 1,51-806,1040 of 1650x1058
+  view client 828,51-1632,1040 of 1650x1058
+DARK       FC-LIGHT INFO        light neutral pixels (white or face grey) outside the text views: 167
+DARK       FC-GREY INFO        light-grey pixels outside the text views: 77 (in the views 2682; views: SFC File View Window Class, SFC File View Window Class)
+DEFAULT    PV-TOOLBAR INFO        class WinLib Universal Window2; strip #F0F0F0; neutral glyph pixels darker than the strip: 1177 (saturated, kept by the palette rule: 714)
+  pv_page0_DEFAULT: id 2030 'Show image file &path in titlebar' bg #F9F9F9 ink #000000 contrast 19,95
+  pv_page3_DEFAULT: id 2078 'Pipette picks colors in he&xadecimal' bg #F9F9F9 ink #000000 contrast 19,95
+  pv_page4_DEFAULT: id 2050 '...nails stored in image files (slower)' bg #F9F9F9 ink #000000 contrast 19,95
+  pv_page4_DEFAULT: id 2052 '...PEG images (digital camera pictures)' bg #F9F9F9 ink #000000 contrast 19,95
+  pv_page4_DEFAULT: id 2053 '... message box on successful file save' bg #F9F9F9 ink #000000 contrast 19,95
+  pv_page4_DEFAULT: id 2054 '...screenshots, scans, clipboard pastes' bg #F9F9F9 ink #000000 contrast 19,95
+DEFAULT    PV-LABELS INFO        6 checkboxes on 5 pages, lowest label contrast 19,95
+  renamer_DEFAULT: id 102 'Include su&bdirectories' bg #F0F0F0 ink #000000 contrast 18,43
+  renamer_DEFAULT: id 105 'Manua&l mode' bg #F0F0F0 ink #000000 contrast 18,43
+  renamer_DEFAULT: id 112 'Case sensi&tive' bg #F0F0F0 ink #000000 contrast 18,43
+  renamer_DEFAULT: id 114 'Onl&y once in each name' bg #F0F0F0 ink #000000 contrast 18,43
+  renamer_DEFAULT: id 113 '&Whole words' bg #F0F0F0 ink #000000 contrast 18,43
+  renamer_DEFAULT: id 115 'Re&gular expression' bg #F0F0F0 ink #000000 contrast 18,43
+  renamer_DEFAULT: id 123 'Exclu&de extension' bg #F0F0F0 ink #000000 contrast 18,43
+  renamer_DEFAULT: id 118 'Incl&ude path part' bg #F0F0F0 ink #000000 contrast 18,43
+DEFAULT    RN-LABELS INFO        8 checkboxes, lowest label contrast 18,43
+DEFAULT    FC-TOOLBAR INFO        strip #F0F0F0; neutral glyph pixels darker than the strip: 437 (saturated: 54)
+  fc child ReBarWindow32 id 100: 0,0-1650,23
+  fc child ComboBox id 102: 272,0-1650,23
+  fc child Edit id 1001: 275,3-1630,20
+  fc child ToolbarWindow32 id 101: 9,0-199,22
+  fc child FILECOMP - WinLib Universal Window id 0: 0,29-824,48
+  fc child FILECOMP - WinLib Universal Window id 0: 827,29-1650,48
+  fc child SFC File View Window Class id 103: 0,50-824,1058
+  fc child SFC File View Window Class id 104: 827,50-1650,1058
+  fc child SFC Split Bar Class id 0: 824,29-827,1058
+  view client 1,51-806,1040 of 1650x1058
+  view client 828,51-1632,1040 of 1650x1058
+DEFAULT    FC-LIGHT INFO        light neutral pixels (white or face grey) outside the text views: 115484
+DEFAULT    FC-GREY INFO        light-grey pixels outside the text views: 72316 (in the views 0; views: SFC File View Window Class, SFC File View Window Class)
+  before PV-TOOLBAR DARK: 696 neutral, 52 saturated
+  before FC-TOOLBAR DARK: 1346 neutral, 54 saturated
+  before FC-GREY DARK: 68099, FC-LIGHT DARK: 109871
+DARK       PV-TOOLBAR PASS        696 -> 0 neutral glyph pixels darker than the strip (needs <= 10 %)
+DARK       FC-TOOLBAR PASS        1346 -> 18 neutral glyph pixels darker than the strip (needs <= 10 %)
+DARK       FC-GREY PASS        68099 -> 77 light-grey pixels (needs <= 1 %)
+DARK       FC-LIGHT PASS        109871 -> 167 light neutral pixels outside the text (needs <= 1 % + 200 for glyph highlights)
+DEFAULT    DEFAULT-SAME PASS        pv_toolbar_DEFAULT.png: 0 pixels differ from the before run
+DEFAULT    DEFAULT-SAME PASS        fc_toolbar_DEFAULT.png: 0 pixels differ from the before run
+DEFAULT    DEFAULT-SAME INFO        fc_window_DEFAULT.png: 137 pixels differ (the views' scroll positions may vary)
+Registry: restored; identical=True; SHA-256 before B94D4679FDE3D64A25B4DFE3AAEFB0F13E93982989A34F1D87C63FAA94CAAE46 / after B94D4679FDE3D64A25B4DFE3AAEFB0F13E93982989A34F1D87C63FAA94CAAE46
+registry restored+identical: True
+NUM FC-GREY DEFAULT 72316
+NUM FC-LIGHT DARK 167
+NUM PV-TOOLBAR DEFAULT 1177
+NUM FC-TOOLBAR DEFAULT 437
+NUM PV-TOOLBAR DARK 0
+NUM FC-LIGHT DEFAULT 115484
+NUM FC-GREY DARK 77
+NUM FC-TOOLBAR DARK 18
+ROWS: 0 FAIL

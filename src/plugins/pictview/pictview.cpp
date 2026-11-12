@@ -21,6 +21,7 @@
 #include "wicengine.h"
 #include "PixelAccess.h"
 #include "splloadstru8.h" // feature 130: LoadStrU8
+#include "../../common/themes_bitmap.h" // feature 427: Dark adaptation of the toolbar glyphs
 
 // plugin interface object; its methods are called from Salamander
 CPluginInterface PluginInterface;
@@ -2230,8 +2231,16 @@ BOOL CViewerWindow::InitializeGraphics()
     HBITMAP hTmpColorBitmap;
 
     hTmpColorBitmap = LoadBitmap(DLLInstance, MAKEINTRESOURCE(SalamanderGeneral->CanUse256ColorsBitmap() ? IDB_TOOLBAR256 : IDB_TOOLBAR16));
+    // feature 427: in the Dark theme the legacy glyphs get the core's Dark adaptation (as its own
+    // Classic glyphs, feature 028) before the grey (normal) and the mask bitmaps are made from them
+    if (SalamanderGeneral->IsDarkThemeActive())
+        ThemeDarkAdaptBitmap(hTmpColorBitmap, RGB(255, 0, 255));
     SalamanderGUI->CreateGrayscaleAndMaskBitmaps(hTmpColorBitmap, RGB(255, 0, 255),
                                                  hTmpGrayBitmap, hTmpMaskBitmap);
+    // feature 427: the grey (normal state) glyphs too - a saturated colour the rule leaves alone
+    // (its brightest channel >= 120, e.g. the blue arrows) turns into a dark grey here
+    if (SalamanderGeneral->IsDarkThemeActive())
+        ThemeDarkAdaptBitmap(hTmpGrayBitmap, RGB(255, 0, 255));
     HHotToolBarImageList = ImageList_Create(16, 16, ILC_MASK | ILC_COLORDDB, IDX_TB_COUNT, 1);
     HGrayToolBarImageList = ImageList_Create(16, 16, ILC_MASK | ILC_COLORDDB, IDX_TB_COUNT, 1);
     ImageList_Add(HHotToolBarImageList, hTmpColorBitmap, hTmpMaskBitmap);

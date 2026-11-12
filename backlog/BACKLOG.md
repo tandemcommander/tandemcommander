@@ -275,6 +275,7 @@ Last triaged: 2026-11-12
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Dark theme: black checkbox labels in plug-in windows on some Windows builds](items/dark-checkbox-labels-other-windows-builds/desc.md) | bug | 4 | other-plugins | leftover:427 | 2026-11-12 |
 
 ## Parked
 

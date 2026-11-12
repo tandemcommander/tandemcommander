@@ -195,6 +195,13 @@ CFileViewWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         return 0;
     switch (uMsg)
     {
+    case WM_NCPAINT:
+    {
+        LRESULT ret = CWindow::WindowProc(uMsg, wParam, lParam);
+        PaintDarkStaticEdge(HWindow); // feature 427
+        return ret;
+    }
+
     case WM_USER_CREATE:
     {
         RECT cr;

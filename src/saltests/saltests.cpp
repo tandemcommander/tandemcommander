@@ -14,6 +14,7 @@
 #include "salfileio.h"
 #include "salclip.h"
 #include "themes_palette.h"
+#include "themes_bitmap.h" // feature 427
 #include "salshell.h" // feature 071
 #include "saltabs.h"  // feature 078
 #include "salbugreport.h" // feature 079
@@ -20475,6 +20476,89 @@ static BOOL OldDocumentsPath386(const WCHAR* docsW, const WCHAR* desktopW, char*
 
 // feature 425 (GitHub #31): the Desktop drive item and fld: folders opened as disk paths
 // (saldesktop.h, SalDesktopPathToU8 of salmydocs.h)
+// ---------------------------------------------------------------------------
+// Feature 427: ThemeDarkAdaptBitmap (src/common/themes_bitmap.h) - the Dark adaptation of a
+// legacy toolbar bitmap the core and the plug-ins (PictView, File Comparator) share
+
+static DWORD Px427(HBITMAP h, int x)
+{
+    DWORD px[8] = {0};
+    BITMAPINFO bi;
+    memset(&bi, 0, sizeof(bi));
+    bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    bi.bmiHeader.biWidth = 8;
+    bi.bmiHeader.biHeight = -1;
+    bi.bmiHeader.biPlanes = 1;
+    bi.bmiHeader.biBitCount = 32;
+    bi.bmiHeader.biCompression = BI_RGB;
+    HDC dc = GetDC(NULL);
+    GetDIBits(dc, h, 0, 1, px, &bi, DIB_RGB_COLORS);
+    ReleaseDC(NULL, dc);
+    return px[x];
+}
+
+static HBITMAP Bitmap427(const DWORD* px, int n)
+{
+    BITMAPINFO bi;
+    memset(&bi, 0, sizeof(bi));
+    bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    bi.bmiHeader.biWidth = n;
+    bi.bmiHeader.biHeight = -1;
+    bi.bmiHeader.biPlanes = 1;
+    bi.bmiHeader.biBitCount = 32;
+    bi.bmiHeader.biCompression = BI_RGB;
+    void* bits = NULL;
+    HBITMAP h = CreateDIBSection(NULL, &bi, DIB_RGB_COLORS, &bits, NULL, 0);
+    if (h != NULL && bits != NULL)
+        memcpy(bits, px, n * sizeof(DWORD));
+    return h;
+}
+
+static void TestDarkAdaptBitmap427()
+{
+    // a legacy 24-bit-style strip (alpha byte zero everywhere): black outline, the magenta mask key,
+    // white, dark blue, a light colour, mid grey; 0x00RRGGBB
+    const DWORD legacy[8] = {0x000000, 0xFF00FF, 0xFFFFFF, 0x000060, 0xFFE080, 0x808080, 0x202020, 0xFF00FF};
+    HBITMAP h = Bitmap427(legacy, 8);
+    CHECK(h != NULL);
+    if (h != NULL)
+    {
+        ThemeDarkAdaptBitmap(h, RGB(255, 0, 255));
+        CHECK(Px427(h, 0) == 0xDCDCDC);            // black -> the lightest adapted grey (220)
+        CHECK(Px427(h, 1) == 0xFF00FF);            // the mask key survives
+        CHECK(Px427(h, 7) == 0xFF00FF);
+        CHECK(Px427(h, 2) == 0xFFFFFF);            // white unchanged
+        CHECK(Px427(h, 3) == 0x0000AA);            // dark blue brightened toward the same hue (170)
+        CHECK(Px427(h, 4) == 0xFFE080);            // a light colour unchanged
+        DWORD grey = Px427(h, 5);                  // 128 -> 220 - 128*80/140 = 147 (rounded)
+        CHECK(grey == 0x939393);
+        // a dark neutral: the bitmap path gives exactly what the pure rule gives (no drift)
+        int r = 32, g = 32, b = 32;
+        ThemeDarkAdaptColor(&r, &g, &b);
+        CHECK(Px427(h, 6) == (DWORD)((r << 16) | (g << 8) | b));
+        DeleteObject(h);
+    }
+
+    // an alpha strip: a fully transparent pixel is left alone, an opaque black one adapted, a
+    // half-transparent black one adapted in its un-premultiplied colour
+    const DWORD alpha[3] = {0x00000000, 0xFF000000, 0x80000000};
+    h = Bitmap427(alpha, 3);
+    CHECK(h != NULL);
+    if (h != NULL)
+    {
+        ThemeDarkAdaptBitmap(h, RGB(255, 0, 255));
+        CHECK(Px427(h, 0) == 0x00000000);
+        CHECK(Px427(h, 1) == 0xFFDCDCDC);
+        DWORD half = Px427(h, 2);
+        CHECK((half >> 24) == 0x80);
+        CHECK((half & 0xFF) == (DWORD)MulDiv(220, 0x80, 255)); // 220 premultiplied by 128/255
+        DeleteObject(h);
+    }
+
+    // a NULL bitmap is ignored
+    ThemeDarkAdaptBitmap(NULL, RGB(255, 0, 255));
+}
+
 static void TestDesktopDrive425()
 {
     // the Desktop path: whole or refused, never another folder or a prefix
@@ -29131,6 +29215,7 @@ int main(int argc, char** argv)
     TestSubstTarget301();
     TestDocumentsPath386();
     TestDesktopDrive425();
+    TestDarkAdaptBitmap427();
     TestFtpCaseOnlyName303();
     TestPaxHeader306();
     TestListingName321();

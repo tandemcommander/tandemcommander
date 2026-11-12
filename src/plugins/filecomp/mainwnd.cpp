@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "precomp.h"
+#include "../../common/themes_bitmap.h" // feature 427: Dark adaptation of the toolbar glyphs
 
 using namespace std;
 
@@ -113,7 +114,16 @@ BOOL CMainWindow::Init()
     }
     COLORMAP cm;
     cm.from = 0x00FF00FF;
-    cm.to = SG->GetThemeSysColor(COLOR_BTNFACE);
+    // feature 427: the background is mapped to the SYSTEM face colour - the toolbar takes that
+    // colour of a TB_ADDBITMAP bitmap as transparent (with the Dark face colour the disabled glyphs
+    // came out as solid squares); the dark strip of the rebar shows through. The Default theme is
+    // unchanged (there both colours are the same).
+    cm.to = GetSysColor(COLOR_BTNFACE);
+    HBITMAP hToolbarBitmap = CreateMappedBitmap(DLLInstance, IDB_TOOLBAR, 0, &cm, 1);
+    // feature 427: in the Dark theme the legacy glyphs get the core's Dark adaptation (as its own
+    // Classic glyphs, feature 028); the mapped background stays as it is (the key)
+    if (hToolbarBitmap != NULL && SG->IsDarkThemeActive())
+        ThemeDarkAdaptBitmap(hToolbarBitmap, cm.to);
     HToolbar = CreateToolbarEx(HWindow,
                                WS_VISIBLE | WS_CHILD |
                                    WS_CLIPCHILDREN | WS_CLIPSIBLINGS |
@@ -122,7 +132,7 @@ BOOL CMainWindow::Init()
                                IDC_TOOLBAR,
                                8,
                                0, //DLLInstance,
-                               (UINT_PTR)CreateMappedBitmap(DLLInstance, IDB_TOOLBAR, 0, &cm, 1),
+                               (UINT_PTR)hToolbarBitmap,
                                buttons,
                                SizeOf(buttons),
                                16,
@@ -198,6 +208,20 @@ BOOL CMainWindow::Init()
         DWORD style = GetWindowLong(Rebar->HWindow, GWL_STYLE);
         style |= WS_BORDER;
         SetWindowLong(Rebar->HWindow, GWL_STYLE, style);
+    }
+    // feature 427: the unthemed rebar paints its background, band text and borders with the
+    // classic system colours (the light-grey strip of GitHub #25) - give it the Dark palette, as
+    // the core gives its own top rebar; the Default theme keeps the defaults
+    if (SG->IsDarkThemeActive())
+    {
+        SendMessage(Rebar->HWindow, RB_SETBKCOLOR, 0, (LPARAM)SG->GetThemeSysColor(COLOR_BTNFACE));
+        SendMessage(Rebar->HWindow, RB_SETTEXTCOLOR, 0, (LPARAM)SG->GetThemeSysColor(COLOR_BTNTEXT));
+        COLORSCHEME cs;
+        cs.dwSize = sizeof(cs);
+        cs.clrBtnHighlight = SG->GetThemeSysColor(COLOR_BTNHIGHLIGHT);
+        cs.clrBtnShadow = SG->GetThemeSysColor(COLOR_BTNSHADOW);
+        SendMessage(Rebar->HWindow, RB_SETCOLORSCHEME, 0, (LPARAM)&cs);
+        SendMessage(HToolbar, TB_SETCOLORSCHEME, 0, (LPARAM)&cs);
     }
 
     // Initialize and send the REBARINFO structure.
@@ -327,6 +351,11 @@ BOOL CMainWindow::Init()
         TRACE_E("CreateWindowEx has failed; last error: " << GetLastError());
         return FALSE;
     }
+
+    // feature 427: the core's control theming for the children - the "Difference" combo box
+    // (DarkMode_CFD) and the views' scrollbars (DarkMode_Explorer) stayed light in Dark; a strict
+    // no-op in the Default theme
+    SG->ThemeApplyToDialog(HWindow);
 
     UpdateToolbarButtons(UTB_ALL);
 
@@ -1089,14 +1118,25 @@ CMainWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         GetClientRect(LeftHeader->HWindow, &r2);
         // draw the gap between the rebar and the header
         r3.top = RebarHeight - REBAR_BORDER;
+        // feature 427: the auto-sized rebar is shorter than RebarHeight; in Dark the rows between
+        // its real bottom and the gap are filled too (nothing painted them: white in Dark)
+        if (SG->IsDarkThemeActive())
+        {
+            RECT rr;
+            GetWindowRect(Rebar->HWindow, &rr);
+            POINT pt = {0, rr.bottom};
+            ScreenToClient(HWindow, &pt);
+            if (pt.y >= 0 && pt.y < r3.top)
+                r3.top = pt.y;
+        }
         r3.bottom = RebarHeight;
         r3.left = 0;
         r3.right = r1.right;
-        FillRect(dc, &r3, (HBRUSH)(COLOR_BTNFACE + 1));
+        FillRect(dc, &r3, SG->GetThemeSysColorBrush(COLOR_BTNFACE)); // feature 427: dark in Dark
         // draw the gap between the header and the text window
         r3.top = RebarHeight + r2.bottom + 2;
         r3.bottom = r3.top + 2;
-        FillRect(dc, &r3, (HBRUSH)(COLOR_BTNFACE + 1));
+        FillRect(dc, &r3, SG->GetThemeSysColorBrush(COLOR_BTNFACE)); // feature 427: dark in Dark
 
         EndPaint(HWindow, &ps);
         return 0;

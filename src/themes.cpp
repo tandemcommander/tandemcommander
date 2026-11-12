@@ -15,6 +15,7 @@
 #include "mainwnd.h"
 #include "themes.h"
 #include "themes_palette.h"
+#include "themes_bitmap.h" // feature 427: ThemeDarkAdaptBitmap
 #include "salsortarrow.h" // feature 407: the sort arrow of a dark header
 
 // theme-aware checkbox state glyphs for listviews (declared in gui.h, which
@@ -1409,80 +1410,9 @@ void ThemeAdjustBitmapForDarkMode(HBITMAP hBitmap, COLORREF transparent)
 {
     if (!IsDarkThemeActive() || hBitmap == NULL)
         return;
-
-    BITMAP bmp;
-    if (GetObject(hBitmap, sizeof(bmp), &bmp) == 0 || bmp.bmWidth <= 0 || bmp.bmHeight <= 0)
-        return;
-
-    int width = bmp.bmWidth;
-    int height = bmp.bmHeight;
-    DWORD* pixels = (DWORD*)malloc((size_t)width * height * sizeof(DWORD));
-    if (pixels == NULL)
-        return;
-
-    BITMAPINFO bi;
-    memset(&bi, 0, sizeof(bi));
-    bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-    bi.bmiHeader.biWidth = width;
-    bi.bmiHeader.biHeight = -height; // top-down
-    bi.bmiHeader.biPlanes = 1;
-    bi.bmiHeader.biBitCount = 32;
-    bi.bmiHeader.biCompression = BI_RGB;
-
-    HDC hDC = HANDLES(GetDC(NULL));
-    if (GetDIBits(hDC, hBitmap, 0, height, pixels, &bi, DIB_RGB_COLORS) == height)
-    {
-        int count = width * height;
-        int i;
-
-        // legacy 24bpp sources come back with a zero alpha byte everywhere;
-        // PNG (alpha) sources have at least one non-zero alpha byte
-        BOOL hasAlpha = FALSE;
-        for (i = 0; i < count; i++)
-        {
-            if ((pixels[i] & 0xFF000000) != 0)
-            {
-                hasAlpha = TRUE;
-                break;
-            }
-        }
-
-        for (i = 0; i < count; i++)
-        {
-            DWORD px = pixels[i];
-            int a = (int)(px >> 24);
-            if (hasAlpha && a == 0)
-                continue; // fully transparent
-            int r = (int)((px >> 16) & 0xFF);
-            int g = (int)((px >> 8) & 0xFF);
-            int b = (int)(px & 0xFF);
-            if (!hasAlpha && RGB(r, g, b) == transparent)
-                continue; // mask key color must survive untouched
-
-            // un-premultiply partially transparent PNG pixels
-            if (hasAlpha && a > 0 && a < 255)
-            {
-                r = min(255, MulDiv(r, 255, a));
-                g = min(255, MulDiv(g, 255, a));
-                b = min(255, MulDiv(b, 255, a));
-            }
-
-            // feature 029: shared per-color rules (also applied to SVG toolbar
-            // glyphs in svg.cpp and unit-tested from saltests)
-            ThemeDarkAdaptColor(&r, &g, &b);
-
-            if (hasAlpha && a > 0 && a < 255)
-            {
-                r = MulDiv(r, a, 255);
-                g = MulDiv(g, a, 255);
-                b = MulDiv(b, a, 255);
-            }
-            pixels[i] = ((DWORD)a << 24) | ((DWORD)r << 16) | ((DWORD)g << 8) | (DWORD)b;
-        }
-        SetDIBits(hDC, hBitmap, 0, height, pixels, &bi, DIB_RGB_COLORS);
-    }
-    HANDLES(ReleaseDC(NULL, hDC));
-    free(pixels);
+    // feature 427: the bitmap walk is header-only (src/common/themes_bitmap.h) so that the
+    // plug-ins' legacy toolbars get the same Dark adaptation without an interface change
+    ThemeDarkAdaptBitmap(hBitmap, transparent);
 }
 
 //

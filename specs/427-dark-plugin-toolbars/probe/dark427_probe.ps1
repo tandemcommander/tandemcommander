@@ -5,10 +5,13 @@
 # Restore-Reg); the program is started from a fixture under %TEMP% only.
 #
 # Rows, per theme (DARK, DEFAULT):
-#   PV-TOOLBAR  PictView viewer toolbar: glyph pixels darker than the strip (Dark: < 10 % of before)
+#   PV-TOOLBAR  PictView viewer toolbar: neutral glyph pixels (outlines, shading) darker than the strip
+#               (Dark: < 10 % of before; saturated colours are kept by the 029 rule, counted apart)
 #   FC-TOOLBAR  File Comparator toolbar: the same
 #   FC-GREY     File Comparator: light-grey (#F0F0F0 +-2) pixels outside its two text views
 #               (Dark: < 1 % of before)
+#   FC-LIGHT    the same for every light neutral pixel (white too: the rows below the rebar's bands)
+#               (Dark: < 1 % of before + 200 for the glyphs' own highlights)
 #   PV-LABELS   PictView settings, all five pages: every checkbox label contrast >= 4.5
 #   RN-LABELS   Batch Rename: every checkbox label contrast >= 4.5
 #   DEFAULT-SAME (after only) the Default theme's toolbar and File Comparator captures equal the
@@ -83,13 +86,36 @@ public static class Px427
         for (int y = 0; y < b.Height; y++) for (int x = glyph; x < b.Width; x++) { int c = px[y * b.Width + x]; double k = Contrast(c, bg); if (k > best) { best = k; ink = c; } }
         return best;
     }
-    // toolbar glyphs: pixels clearly darker than the strip's background (invisible on a dark strip)
-    public static int DarkerThanStrip(Bitmap b, out int bg)
+    // toolbar glyphs: NEUTRAL pixels (outlines, shading) clearly darker than the strip's background
+    // - what the core's Dark palette (feature 028/029) turns light; saturated colours with a
+    // channel >= 120 are kept by that rule (as for the core's own Classic glyphs) and counted apart
+    public static int DarkerThanStrip(Bitmap b, out int bg, out int saturated)
     {
         int[] px = Px(b);
         bg = Mode(px, 0, b.Width, b.Height, b.Width);
-        double lb = Lum(bg); int n = 0;
-        foreach (int c in px) if (c != bg && Lum(c) < lb && Contrast(c, bg) > 1.15) n++;
+        double lb = Lum(bg); int n = 0; saturated = 0;
+        foreach (int c in px)
+        {
+            if (c == bg || Lum(c) >= lb || Contrast(c, bg) <= 1.15) continue;
+            // the toolbar's own chrome, not a glyph: separators and button frames in the Dark
+            // palette's COLOR_BTNSHADOW (26,26,26) and COLOR_3DDKSHADOW (16,16,16)
+            if (c == 0x1A1A1A || c == 0x101010) continue;
+            int r = (c >> 16) & 255, g = (c >> 8) & 255, bb = c & 255;
+            int mx = Math.Max(r, Math.Max(g, bb)), mn = Math.Min(r, Math.Min(g, bb));
+            if (mx - mn < 32) n++; else saturated++;
+        }
+        return n;
+    }
+    // light neutral pixels (white and the classic face grey): every channel >= 230, max-min < 12
+    public static int Light(Bitmap b, int x0, int y0, int x1, int y1)
+    {
+        int[] px = Px(b); int n = 0;
+        for (int y = Math.Max(0, y0); y < Math.Min(b.Height, y1); y++)
+            for (int x = Math.Max(0, x0); x < Math.Min(b.Width, x1); x++)
+            {
+                int c = px[y * b.Width + x], r = (c >> 16) & 255, g = (c >> 8) & 255, bb = c & 255;
+                if (r >= 230 && g >= 230 && bb >= 230 && Math.Max(r, Math.Max(g, bb)) - Math.Min(r, Math.Min(g, bb)) < 12) n++;
+            }
         return n;
     }
     public static int Grey(Bitmap b, int x0, int y0, int x1, int y1)
@@ -146,9 +172,9 @@ function Toolbar-Dark([IntPtr]$Top, [IntPtr]$Tb, [string]$Tag) {
     $cap = [Cap416]::Capture($Top, $true)
     $crop = [Cap416]::Crop($cap, $Top, $Tb)
     Save-Png $crop (Join-Path $CapDir ("{0}.png" -f $Tag))
-    $bg = 0; $n = [Px427]::DarkerThanStrip($crop, [ref]$bg)
+    $bg = 0; $sat = 0; $n = [Px427]::DarkerThanStrip($crop, [ref]$bg, [ref]$sat)
     $crop.Dispose(); $cap.Dispose()
-    return @{ N = $n; Bg = $bg }
+    return @{ N = $n; Bg = $bg; Sat = $sat }
 }
 function Same-As-Before([string]$Name) {
     $a = Join-Path $BeforeDir $Name; $b = Join-Path $CapDir $Name
@@ -211,7 +237,7 @@ function Run-Theme([int]$Theme) {
         else {
             $r = Toolbar-Dark $viewer $tbs[0] ("pv_toolbar_{0}" -f $t)
             $script:Num["PV-TOOLBAR $t"] = $r.N
-            Row $t 'PV-TOOLBAR' 'INFO' ("class {0}; strip #{1:X6}; glyph pixels darker than the strip: {2}" -f [Cap416]::Cls($tbs[0]), $r.Bg, $r.N)
+            Row $t 'PV-TOOLBAR' 'INFO' ("class {0}; strip #{1:X6}; neutral glyph pixels darker than the strip: {2} (saturated, kept by the palette rule: {3})" -f [Cap416]::Cls($tbs[0]), $r.Bg, $r.N, $r.Sat)
         }
         # PictView settings (CMD_CFG 112 in the viewer), five pages
         $known = Get-Tops $id
@@ -251,22 +277,31 @@ function Run-Theme([int]$Theme) {
         if ($tb) {
             $r = Toolbar-Dark $fc $tb ("fc_toolbar_{0}" -f $t)
             $script:Num["FC-TOOLBAR $t"] = $r.N
-            Row $t 'FC-TOOLBAR' 'INFO' ("strip #{0:X6}; glyph pixels darker than the strip: {1}" -f $r.Bg, $r.N)
+            Row $t 'FC-TOOLBAR' 'INFO' ("strip #{0:X6}; neutral glyph pixels darker than the strip: {1} (saturated: {2})" -f $r.Bg, $r.N, $r.Sat)
         }
         else { Row $t 'FC-TOOLBAR' 'FAIL' 'no toolbar' }
         $cap = [Cap416]::Capture($fc, $true); Save-Png $cap (Join-Path $CapDir ("fc_window_{0}.png" -f $t))
         $grey = [Px427]::Grey($cap, 0, 0, $cap.Width, $cap.Height)
         # minus the text of the two views (their client areas; their scrollbars are chrome and count)
         $o = New-Object Cap416+POINT; $o.x = 0; $o.y = 0; [void][Cap416]::ClientToScreen($fc, [ref]$o)
+        foreach ($k in @([Cap416]::Kids($fc) | Where-Object { [Cap416]::IsWindowVisible($_) })) {
+            $rc = New-Object Cap416+RECT; [void][Cap416]::GetWindowRect($k, [ref]$rc)
+            Out ("  fc child {0} id {1}: {2},{3}-{4},{5}" -f [Cap416]::Cls($k), [Cap416]::GetDlgCtrlID($k), ($rc.left - $o.x), ($rc.top - $o.y), ($rc.right - $o.x), ($rc.bottom - $o.y))
+        }
         $views = @(Get-Desc $fc 'SFC File View Window Class')
         $sized = @($views | ForEach-Object {
                 $cr = New-Object Cap416+RECT; [void][Cap416]::GetClientRect($_, [ref]$cr)
                 $p = New-Object Cap416+POINT; $p.x = 0; $p.y = 0; [void][Cap416]::ClientToScreen($_, [ref]$p)
                 [pscustomobject]@{ H = $_; X0 = $p.x - $o.x; Y0 = $p.y - $o.y; X1 = $p.x - $o.x + $cr.right; Y1 = $p.y - $o.y + $cr.bottom } })
         $inViews = 0
-        foreach ($s in $sized) { $inViews += [Px427]::Grey($cap, $s.X0, $s.Y0, $s.X1, $s.Y1) }
+        foreach ($s in $sized) { Out ("  view client {0},{1}-{2},{3} of {4}x{5}" -f $s.X0, $s.Y0, $s.X1, $s.Y1, $cap.Width, $cap.Height); $inViews += [Px427]::Grey($cap, $s.X0, $s.Y0, $s.X1, $s.Y1) }
+        $light = [Px427]::Light($cap, 0, 0, $cap.Width, $cap.Height)
+        foreach ($s in $sized) { $light -= [Px427]::Light($cap, $s.X0, $s.Y0, $s.X1, $s.Y1) }
         $cap.Dispose()
+        $script:Num["FC-LIGHT $t"] = $light
+        Row $t 'FC-LIGHT' 'INFO' ("light neutral pixels (white or face grey) outside the text views: {0}" -f $light)
         $script:Num["FC-GREY $t"] = $grey - $inViews
+        $script:Views[$t] = $sized
         Row $t 'FC-GREY' 'INFO' ("light-grey pixels outside the text views: {0} (in the views {1}; views: {2})" -f ($grey - $inViews), $inViews, (($sized | ForEach-Object { [Cap416]::Cls($_.H) }) -join ', '))
     }
     finally { Stop-Tc $id }
@@ -276,6 +311,7 @@ $backup = Join-Path $env:TEMP 'tc427_backup.reg'
 $existed = Backup-Reg $backup
 $restored = $false
 $script:Num = @{}
+$script:Views = @{}
 try {
     if ([IO.Directory]::Exists($LP + $Root)) { [IO.Directory]::Delete($LP + $Root, $true) }
     NewDir $StartDir; NewDir $Left
@@ -287,14 +323,29 @@ try {
     Run-Theme 1
     Run-Theme 0
     # compare with the before run
-    $before = Join-Path $ProbeDir 'result_before_rows.txt'
-    if ($Label -ne 'before' -and (Test-Path $before)) {
+    if ($Label -ne 'before' -and (Test-Path $BeforeDir)) {
+        # the before values: the same measurement on the captures the before run saved
         $old = @{}
-        foreach ($l in (Get-Content $before)) { if ($l -match '^NUM (\S+ \S+) (-?\d+)$') { $old[$Matches[1]] = [int]$Matches[2] } }
+        foreach ($pair in @(@('PV-TOOLBAR DARK', 'pv_toolbar_DARK.png'), @('FC-TOOLBAR DARK', 'fc_toolbar_DARK.png'))) {
+            $f = Join-Path $BeforeDir $pair[1]
+            if (Test-Path $f) { $bm = New-Object Drawing.Bitmap $f; $bg = 0; $sat = 0; $old[$pair[0]] = [Px427]::DarkerThanStrip($bm, [ref]$bg, [ref]$sat); $bm.Dispose(); Out ("  before {0}: {1} neutral, {2} saturated" -f $pair[0], $old[$pair[0]], $sat) }
+        }
+        $f = Join-Path $BeforeDir 'fc_window_DARK.png'
+        if ((Test-Path $f) -and $script:Views.ContainsKey('DARK')) {
+            $bm = New-Object Drawing.Bitmap $f
+            $g = [Px427]::Grey($bm, 0, 0, $bm.Width, $bm.Height)
+            foreach ($v in $script:Views['DARK']) { $g -= [Px427]::Grey($bm, $v.X0, $v.Y0, $v.X1, $v.Y1) }
+            $old['FC-GREY DARK'] = $g
+            $l = [Px427]::Light($bm, 0, 0, $bm.Width, $bm.Height)
+            foreach ($v in $script:Views['DARK']) { $l -= [Px427]::Light($bm, $v.X0, $v.Y0, $v.X1, $v.Y1) }
+            $old['FC-LIGHT DARK'] = $l
+            $bm.Dispose(); Out ("  before FC-GREY DARK: {0}, FC-LIGHT DARK: {1}" -f $g, $l)
+        }
         foreach ($k in @('PV-TOOLBAR DARK', 'FC-TOOLBAR DARK')) {
-            if ($old.ContainsKey($k) -and $script:Num.ContainsKey($k)) { Row 'DARK' ($k -replace ' DARK') (V ($script:Num[$k] -le [Math]::Floor($old[$k] * 0.1))) ("{0} -> {1} glyph pixels darker than the strip (needs <= 10 %)" -f $old[$k], $script:Num[$k]) }
+            if ($old.ContainsKey($k) -and $script:Num.ContainsKey($k)) { Row 'DARK' ($k -replace ' DARK') (V ($script:Num[$k] -le [Math]::Floor($old[$k] * 0.1))) ("{0} -> {1} neutral glyph pixels darker than the strip (needs <= 10 %)" -f $old[$k], $script:Num[$k]) }
         }
         if ($old.ContainsKey('FC-GREY DARK') -and $script:Num.ContainsKey('FC-GREY DARK')) { Row 'DARK' 'FC-GREY' (V ($script:Num['FC-GREY DARK'] -le [Math]::Floor($old['FC-GREY DARK'] * 0.01))) ("{0} -> {1} light-grey pixels (needs <= 1 %)" -f $old['FC-GREY DARK'], $script:Num['FC-GREY DARK']) }
+        if ($old.ContainsKey('FC-LIGHT DARK') -and $script:Num.ContainsKey('FC-LIGHT DARK')) { Row 'DARK' 'FC-LIGHT' (V ($script:Num['FC-LIGHT DARK'] -le [Math]::Floor($old['FC-LIGHT DARK'] * 0.01) + 200)) ("{0} -> {1} light neutral pixels outside the text (needs <= 1 % + 200 for glyph highlights)" -f $old['FC-LIGHT DARK'], $script:Num['FC-LIGHT DARK']) }
         foreach ($n in @('pv_toolbar_DEFAULT.png', 'fc_toolbar_DEFAULT.png')) { $d = Same-As-Before $n; Row 'DEFAULT' 'DEFAULT-SAME' (V ($d -eq 0)) ("{0}: {1} pixels differ from the before run" -f $n, $d) }
         $d = Same-As-Before 'fc_window_DEFAULT.png'; Row 'DEFAULT' 'DEFAULT-SAME' 'INFO' ("fc_window_DEFAULT.png: {0} pixels differ (the views' scroll positions may vary)" -f $d)
     }
