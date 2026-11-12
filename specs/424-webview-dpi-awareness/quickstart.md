@@ -14,9 +14,10 @@
    Rows for each viewer (Code Viewer, Markdown Viewer):
    - `AWARE`: the viewer window and the controller window have awareness 2. The browser process has
      `--embedded-browser-webview-dpi-awareness=2` and awareness 2. The program stays at 1.
-   - `GEOMETRY`: the window rectangle equals the one the core asked for. The page window
+   - `GEOMETRY`: the window rectangle, the client size and the status bar height equal those of the
+     same probe run on the before build (label `before`, the same configuration). The page window
      (`Chrome_WidgetWin_0`) starts at the client origin and covers the client (minus the Code
-     Viewer's status bar). The status bar height equals the measured value before the change.
+     Viewer's status bar).
    - `DPICHANGED`: a synthetic `WM_DPICHANGED` with a suggested rectangle 200 x 100 px smaller
      resizes the window to it exactly, and the page still covers the client.
 

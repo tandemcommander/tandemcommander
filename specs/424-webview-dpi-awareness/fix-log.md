@@ -62,3 +62,11 @@ scaling and is **not driven** here: changing the scaling would change the mainta
 - D5: `WM_DPICHANGED` -> `SetWindowPos` to the suggested rectangle. The Code Viewer re-creates its
   status font for the new DPI (`SystemParametersInfoForDpi`) and recomputes the status height. The
   initial font also uses the window's DPI.
+
+## speckit-analyze
+
+0 CRITICAL, 0 HIGH. U1 (MEDIUM, quickstart GEOMETRY compared with a value the probe cannot see)
+fixed: compared with the same probe run on the before build. Accepted: C1 (an older instance
+holding the browser in system mode makes the new environment fail -> the existing
+engine-unavailable path, feature 085; not driven); C2 (dark menu font on a monitor of another DPI,
+a limit).
