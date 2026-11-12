@@ -1,7 +1,7 @@
 ---
 title: Dark theme: black checkbox labels and old toolbar icons in plug-in windows
 type: bug
-status: new
+status: open
 severity: 4
 area: other-plugins
 source: github#25
@@ -54,3 +54,4 @@ Severity 4: a function does not work (labels hardly readable, the setting still 
 
 - 2026-11-12 — created (source github#25)
 - 2026-11-12 — fields set from the issue text and labels
+- 2026-11-12 — moved to Next position 3
