@@ -262,6 +262,9 @@ public:
 public:
     CStatusBar();
     ~CStatusBar();
+    // feature 427: (re)loads the part icons for the current theme (Dark: adapted); a reload puts the
+    // new icons into the parts that showed the old ones
+    void LoadIcons();
 };
 
 //
@@ -334,6 +337,7 @@ public:
     CGUIMenuPopupAbstract* MainMenu;
     CGUIMenuBarAbstract* MenuBar;
     CGUIToolBarAbstract* ToolBar;
+    BOOL RendererDarkened; // feature 427: the image window got the dark scrollbar style
     CStatusBar* StatusBar;
 #ifdef ENABLE_WIA
     CWiaWrap* WiaWrap; // WIA interface
@@ -394,6 +398,7 @@ protected:
     virtual LRESULT WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
     BOOL InitializeGraphics();
+    void ApplyRendererTheme(); // feature 427 (review 4, M5)
     BOOL ReleaseGraphics();
     BOOL FillToolBar();
     BOOL InsertMenuBand();

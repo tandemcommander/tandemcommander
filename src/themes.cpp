@@ -635,7 +635,23 @@ static LRESULT CALLBACK ThemeStatusBarSubclassProc(HWND hWnd, UINT uMsg, WPARAM 
             HICON partIcon = (HICON)SendMessage(hWnd, SB_GETICON, i, 0);
             if (partIcon != NULL)
             {
+                // at the icon's own size (review 4, S7: SM_CXSMICON stretched PictView's 16 px icons
+                // above 100 %)
                 int cx = GetSystemMetrics(SM_CXSMICON), cy = GetSystemMetrics(SM_CYSMICON);
+                ICONINFO ii;
+                if (GetIconInfo(partIcon, &ii))
+                {
+                    BITMAP bm;
+                    if (GetObject(ii.hbmColor != NULL ? ii.hbmColor : ii.hbmMask, sizeof(bm), &bm) != 0)
+                    {
+                        cx = bm.bmWidth;
+                        cy = ii.hbmColor != NULL ? bm.bmHeight : bm.bmHeight / 2;
+                    }
+                    if (ii.hbmColor != NULL)
+                        DeleteObject(ii.hbmColor);
+                    if (ii.hbmMask != NULL)
+                        DeleteObject(ii.hbmMask);
+                }
                 DrawIconEx(hDC, r.left + 2, r.top + (r.bottom - r.top - cy) / 2, partIcon, cx, cy, 0, NULL, DI_NORMAL);
                 textLeft = 2 + cx + 2;
             }

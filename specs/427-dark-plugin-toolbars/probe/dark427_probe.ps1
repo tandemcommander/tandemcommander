@@ -161,6 +161,9 @@ public static class Px427
             }
         return n;
     }
+    [DllImport("user32.dll")] static extern bool RedrawWindow(IntPtr h, IntPtr r, IntPtr g, uint f);
+    // INVALIDATE | ERASE | FRAME | ALLCHILDREN | UPDATENOW
+    public static bool Repaint(IntPtr h) { return RedrawWindow(h, IntPtr.Zero, IntPtr.Zero, 0x0001 | 0x0004 | 0x0400 | 0x0080 | 0x0100); }
     public static int Grey(Bitmap b, int x0, int y0, int x1, int y1)
     {
         int[] px = Px(b); int n = 0;
@@ -250,8 +253,9 @@ function Open-ByKey([int]$Id, [int]$Vk, [double]$Seconds = 15) {
     [void][Px427]::CtrlShiftKey((Get-LeftList $Id), $Vk)
     return (Wait-NewWin $Id $known $Seconds)
 }
-function Open-Viewer([int]$Id) {
-    [void](Do-ChangeDir $Id (Join-Path $Left 'image.png')); [void](Serve $Id 8)
+function Open-Viewer([int]$Id, [string]$File = '') {
+    if (-not $File) { $File = Join-Path $Left 'image.png' }
+    [void](Do-ChangeDir $Id $File); [void](Serve $Id 8)
     [void][Drv098f]::Send((Get-Main $Id), 0, 0, 0, 20000)
     $known = Get-Tops $Id
     Post-Cmd (Get-Main $Id) 742
@@ -372,11 +376,28 @@ function Run-Theme([int]$Theme) {
 # DIFFERENT files). Every capture is compared, after both runs, with the start capture of the run that
 # opened its windows in that theme: whole windows (File Comparator without its views' text, the
 # viewer without its image area) - a stale part anywhere shows (review 3, S4)
+function Sb-State([IntPtr]$Sb) {
+    if (-not $Sb) { return 'no status bar' }
+    $parts = [Cap416]::Send($Sb, 0x0406, [IntPtr]::Zero, [IntPtr]::Zero).ToInt64()   # SB_GETPARTS
+    $d = @(); for ($i = 0; $i -lt $parts; $i++) { $d += ("{0}/{1}" -f ([Cap416]::Send($Sb, 0x040C, [IntPtr]$i, [IntPtr]::Zero).ToInt64() -band 0xFFFF), [int]([Cap416]::Send($Sb, 0x0414, [IntPtr]$i, [IntPtr]::Zero).ToInt64() -ne 0)) }
+    return ("{0} parts, text length/icon {1}" -f $parts, ($d -join ' '))
+}
 function Live-Capture([int]$Id, [IntPtr]$Viewer, [IntPtr]$Fc, [string]$Name) {
     [void][Drv098f]::Send((Get-Main $Id), 0, 0, 0, 10000); [void][Drv098f]::Send($Viewer, 0, 0, 0, 10000); [void][Drv098f]::Send($Fc, 0, 0, 0, 10000)
     Start-Sleep -Milliseconds 1500
+    # every capture shows the window's current state: a full repaint first (the captures read the
+    # window's surface; a window under another one may still show an older paint - measured: the
+    # viewer's status bar, under File Comparator, blank in one capture and filled in the next)
+    foreach ($w in @($Viewer, $Fc)) { [void][Px427]::Repaint($w) }
+    Start-Sleep -Milliseconds 800
     foreach ($w in @(@($Viewer, 'pv'), @($Fc, 'fc'))) {
-        $cap = [Cap416]::Capture($w[0], $true); Save-Png $cap (Join-Path $CapDir ("live_{0}_{1}.png" -f $w[1], $Name)); $cap.Dispose()
+        $cap = [Cap416]::Capture($w[0], $true); Save-Png $cap (Join-Path $CapDir ("live_{0}_{1}.png" -f $w[1], $Name))
+        if ($w[1] -eq 'pv' -and $script:PvSkip.Count -eq 4) {
+            $sbc = $cap.Clone((New-Object Drawing.Rectangle($script:PvSkip[0], $script:PvSkip[1], ($script:PvSkip[2] - $script:PvSkip[0]), ($script:PvSkip[3] - $script:PvSkip[1]))), [Drawing.Imaging.PixelFormat]::Format32bppRgb)
+            $bg = 0; $sat = 0; [void][Px427]::DarkerThanStrip($sbc, [ref]$bg, [ref]$sat); $sbc.Dispose()
+            $script:SbInfo[$Name] = @{ State = (Sb-State $script:PvSb); Bg = $bg }
+        }
+        $cap.Dispose()
     }
 }
 function Skip-Rects([IntPtr]$Top, [string]$Cls) {
@@ -396,7 +417,8 @@ function Run-Live([int]$StartTheme) {
     $id = Start-Tc $Left
     [void](Serve $id 6)
     try {
-        $viewer = Open-Viewer $id
+        $viewer = Open-Viewer $id ($Root + '\big\big.png')
+        if ($viewer -ne [IntPtr]::Zero) { Post-Cmd $viewer 137; Start-Sleep -Milliseconds 5000 }   # CMD_ZOOMACTUAL: 1:1, scrollbars; the status bar filled
         [void](Do-ChangeDir $id $LeftDiff); [void](Serve $id 8)
         Post-Cmd (Get-Main $id) 842; Start-Sleep -Milliseconds 800
         $fc = Open-ByKey $id 0x43
@@ -404,9 +426,13 @@ function Run-Live([int]$StartTheme) {
         if ($viewer -eq [IntPtr]::Zero -or $fc -eq [IntPtr]::Zero) { Row $tag 'OPEN' 'FAIL' 'the viewer or File Comparator did not open'; return }
         Start-Sleep -Milliseconds 4000
         $script:FcSkip = Skip-Rects $fc 'SFC File View Window Class'
-        $rend = @([Cap416]::Kids($viewer) | Where-Object { [Cap416]::IsWindowVisible($_) -and [Cap416]::Cls($_) -eq 'PICTVIEW - WinLib Universal Window2' -and [Cap416]::GetParent($_) -eq $viewer }) | Select-Object -First 1
-        $script:PvSkip = @()
-        if ($rend) { $o = New-Object Cap416+POINT; $o.x = 0; $o.y = 0; [void][Cap416]::ClientToScreen($viewer, [ref]$o); $rc = New-Object Cap416+RECT; [void][Cap416]::GetWindowRect($rend, [ref]$rc); $script:PvSkip = [int[]]@(($rc.left - $o.x), ($rc.top - $o.y), ($rc.right - $o.x), ($rc.bottom - $o.y)) }
+        # the whole viewer counts - the image (1:1) and its scrollbars - except the status bar's content,
+        # which follows the mouse and activation state and, under File Comparator, the moment of its
+        # last paint (measured with a separate debug probe: its parts, texts and icons are the same
+        # before and after a switch); the status bar is checked by its state and its colour instead
+        $script:PvSb = @(Get-Desc $viewer 'msctls_statusbar32') | Select-Object -First 1
+        $script:PvSkip = [int[]]@()
+        if ($script:PvSb) { $o = New-Object Cap416+POINT; $o.x = 0; $o.y = 0; [void][Cap416]::ClientToScreen($viewer, [ref]$o); $rc = New-Object Cap416+RECT; [void][Cap416]::GetWindowRect($script:PvSb, [ref]$rc); $script:PvSkip = [int[]]@(($rc.left - $o.x), ($rc.top - $o.y), ($rc.right - $o.x), ($rc.bottom - $o.y)) }
         Live-Capture $id $viewer $fc ("{0}_start_{1}" -f $tag, $start)
         # the drop-down list of differences in Dark (review 3, S3)
         if ($StartTheme -eq 1) {
@@ -442,16 +468,19 @@ function Compare-Live {
     foreach ($st in $script:LiveSteps) {
         $tag = $st[0]; $k = $st[1]; $theme = $st[2]
         $refTag = if ($theme -eq 'DARK') { 'LIVE' } else { 'LIVE-D' }
+        $ref = $script:SbInfo[("{0}_start_{1}" -f $refTag, $theme)]; $got = $script:SbInfo[("{0}_{1}_{2}" -f $tag, $k, $theme)]
+        if ($ref -and $got) {
+            $wantBg = if ($theme -eq 'DARK') { 0x2D2D2D } else { 0xF0F0F0 }
+            Row $tag ("SB-{0}->{1}" -f $k, $theme) (V ($got.State -eq $ref.State -and $got.Bg -eq $wantBg)) ("status bar after the switch: {0}, background #{1:X6} (a window opened in {2}: {3}, #{4:X6})" -f $got.State, $got.Bg, $theme, $ref.State, $ref.Bg)
+        }
         foreach ($pair in @(@('fc', $script:FcSkip), @('pv', $script:PvSkip))) {
             $a = Join-Path $CapDir ("live_{0}_{1}_start_{2}.png" -f $pair[0], $refTag, $theme)
             $b = Join-Path $CapDir ("live_{0}_{1}_{2}_{3}.png" -f $pair[0], $tag, $k, $theme)
             if (-not (Test-Path $a) -or -not (Test-Path $b)) { Row $tag ("{0}-{1}->{2}" -f $pair[0].ToUpper(), $k, $theme) 'FAIL' 'capture missing'; continue }
             $x = New-Object Drawing.Bitmap $a; $y = New-Object Drawing.Bitmap $b
             $d = [Px427]::DiffOutside($x, $y, [int[]]$pair[1]); $x.Dispose(); $y.Dispose()
-            # the viewer's status bar shows the mouse state (pipette / anchor icon) and the size grip
-            # with the maximise state: up to 120 px are allowed there (review 3, NOTE)
-            $allowed = if ($pair[0] -eq 'pv') { 120 } else { 0 }
-            Row $tag ("{0}-{1}->{2}" -f $pair[0].ToUpper(), $k, $theme) (V ($d -ge 0 -and $d -le $allowed)) ("whole window after the switch: {0} px differ from a window opened in {1} (outside the {2}; allowed {3})" -f $d, $theme, $(if ($pair[0] -eq 'fc') { "views' text" } else { 'image area' }), $allowed)
+            $allowed = 0
+            Row $tag ("{0}-{1}->{2}" -f $pair[0].ToUpper(), $k, $theme) (V ($d -ge 0 -and $d -le $allowed)) ("whole window after the switch: {0} px differ from a window opened in {1} ({2}; allowed {3})" -f $d, $theme, $(if ($pair[0] -eq 'fc') { "outside the views' text" } else { 'the whole window with the image 1:1 and its scrollbars, the status bar apart' }), $allowed)
         }
     }
 }
@@ -462,13 +491,18 @@ $restored = $false
 $script:Num = @{}
 $script:Views = @{}
 $script:LiveSteps = New-Object System.Collections.ArrayList
-$script:FcSkip = @(); $script:PvSkip = @()
+$script:FcSkip = @(); $script:PvSkip = @(); $script:PvSb = $null; $script:SbInfo = @{}
 try {
     if ([IO.Directory]::Exists($LP + $Root)) { [IO.Directory]::Delete($LP + $Root, $true) }
     NewDir $StartDir; NewDir $Left
     Copy-Item -LiteralPath $Image -Destination (Join-Path $Left 'image.png')
     Copy-Item -LiteralPath $Image -Destination (Join-Path $Left 'image2.png')
     NewDir $LeftDiff
+    # a large image for the LIVE viewer: shown 1:1 it gives the image window scrollbars (review 4, S6)
+    $big = New-Object Drawing.Bitmap 2600, 2200
+    $gr = [Drawing.Graphics]::FromImage($big); $gr.Clear([Drawing.Color]::FromArgb(90, 120, 160))
+    for ($q = 0; $q -lt 20; $q++) { $gr.FillEllipse([Drawing.Brushes]::Orange, $q * 120, $q * 100, 200, 150) }
+    $gr.Dispose(); NewDir ($Root + '\big'); $big.Save(($Root + '\big\big.png'), [Drawing.Imaging.ImageFormat]::Png); $big.Dispose()
     Copy-Item -LiteralPath $Image -Destination (Join-Path $LeftDiff 'a.png')
     $other = Join-Path $Repo 'specs\427-dark-plugin-toolbars\evidence\issue25-batch-rename.png'
     Copy-Item -LiteralPath $other -Destination (Join-Path $LeftDiff 'b.png')
@@ -514,7 +548,13 @@ try {
         if ($old.ContainsKey('FC-GREY DARK') -and $script:Num.ContainsKey('FC-GREY DARK')) { Row 'DARK' 'FC-GREY' (V ($script:Num['FC-GREY DARK'] -le [Math]::Floor($old['FC-GREY DARK'] * 0.01))) ("{0} -> {1} light-grey pixels (needs <= 1 %)" -f $old['FC-GREY DARK'], $script:Num['FC-GREY DARK']) }
         if ($old.ContainsKey('FC-LIGHT DARK') -and $script:Num.ContainsKey('FC-LIGHT DARK')) { Row 'DARK' 'FC-LIGHT' (V ($script:Num['FC-LIGHT DARK'] -le [Math]::Floor($old['FC-LIGHT DARK'] * 0.01) + 200)) ("{0} -> {1} light neutral pixels outside the text (needs <= 1 % + 200 for glyph highlights)" -f $old['FC-LIGHT DARK'], $script:Num['FC-LIGHT DARK']) }
         foreach ($n in @('pv_toolbar_DEFAULT.png', 'fc_toolbar_DEFAULT.png')) { $d = Same-As-Before $n; Row 'DEFAULT' 'DEFAULT-SAME' (V ($d -eq 0)) ("{0}: {1} pixels differ from the before run" -f $n, $d) }
-        $d = Same-As-Before 'fc_window_DEFAULT.png'; Row 'DEFAULT' 'DEFAULT-SAME' 'INFO' ("fc_window_DEFAULT.png: {0} pixels differ (the views' scroll positions may vary)" -f $d)
+        $a = Join-Path $BeforeDir 'fc_window_DEFAULT.png'; $b = Join-Path $CapDir 'fc_window_DEFAULT.png'
+        if ((Test-Path $a) -and (Test-Path $b) -and $script:Views.ContainsKey('DEFAULT')) {
+            $skip = @(); foreach ($v in $script:Views['DEFAULT']) { $skip += @($v.X0, $v.Y0, $v.X1, $v.Y1) }
+            $x = New-Object Drawing.Bitmap $a; $y = New-Object Drawing.Bitmap $b
+            $d = [Px427]::DiffOutside($x, $y, [int[]]$skip); $x.Dispose(); $y.Dispose()
+            Row 'DEFAULT' 'DEFAULT-SAME' (V ($d -eq 0)) ("fc_window_DEFAULT.png outside the views' text: {0} pixels differ from the before run" -f $d)
+        }
     }
 }
 catch { Row 'PROBE' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }

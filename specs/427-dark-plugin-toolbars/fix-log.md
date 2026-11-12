@@ -256,3 +256,35 @@ on `main` (`backlog: tmavy-motiv unblocked`), the lock taken again, the work con
 
 Probe after: `ROWS: 0 FAIL`, registry restored identical; saltests 287,439, 0 failed; build
 SUCCEEDED; encoding guard TOTAL: 0.
+
+## Review 4 (refute-first agent): 1 MUST, 3 SHOULD - fixed
+
+- **M5** - after Default → Dark → Default (and in a viewer opened in Dark) the image window's
+  scrollbars were in the wrong style: the core's catch-all branch themes a window only while it has
+  a scrollbar style, and PictView's image window has one only while the image is larger than the
+  window. Fixed: `CViewerWindow::ApplyRendererTheme` sets `DarkMode_Explorer` on the image window in
+  Dark (at the end of `WM_CREATE` and on every `WM_USER_VIEWERCFGCHNG`) and resets it in Default only
+  if it set it (`RendererDarkened`); `SWP_FRAMECHANGED` repaints the frame; `uxtheme.lib` linked by
+  `#pragma comment`.
+- **S5** - the status-bar icons (black legacy glyphs) were ~1.5:1 on the Dark bar:
+  `ThemeDarkAdaptIcon` (themes_bitmap.h; the 028 rule + the 3:1 lift on the visible pixels - alpha > 0,
+  or the AND mask's visible pixels; transparent pixels untouched; a new icon, the source unchanged;
+  saltests +9 checks) and `CStatusBar::LoadIcons` (adapted in Dark; on a theme switch the parts that
+  showed an old icon get the new one before the old one is destroyed). Measured in Dark: the
+  crosshair, size and pipette icons light; the pixels below 1.6:1 left in the bar are the part
+  frames and ClearType fringes.
+- **S7** - the core's status-bar repaint draws a part icon at the icon's own size (`GetIconInfo`),
+  not `SM_CXSMICON` (it stretched PictView's 16 px icons above 100 %).
+- **S6** - the probe: LIVE's viewer shows a 2600 × 2200 image 1:1 (scrollbars) and the whole viewer
+  is compared with 0 px allowed - except the status bar's content, which is checked by its state
+  (parts, text lengths, icons) and its background colour (rows SB-…): a separate debug probe showed
+  the status bar's parts / texts / icons the same before and after a switch, while its pixels under
+  File Comparator depend on when it last painted (blank in one capture, filled in the next, also with
+  a forced `RedrawWindow` from the probe's process). The File Comparator Default window is now a
+  check against the before run outside the views' text (DEFAULT-SAME: 0 px).
+- Not done: a Default `pv_window` against the before build (the before run saved no viewer window;
+  the Default toolbar is compared, 0 px).
+
+Probe after: `ROWS: 0 FAIL` (LIVE / LIVE-D every whole window 0 px, SB rows equal state and the
+theme's background), registry restored identical; saltests 287,448 checks, 0 failed; build
+SUCCEEDED; encoding guard TOTAL: 0.

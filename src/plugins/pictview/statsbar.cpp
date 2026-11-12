@@ -9,6 +9,7 @@
 #include "pictview.rh"
 #include "pictview.rh2"
 #include "lang\lang.rh"
+#include "../../common/themes_bitmap.h" // feature 427: ThemeDarkAdaptIcon
 
 //****************************************************************************
 //
@@ -18,11 +19,55 @@
 CStatusBar::CStatusBar()
     : CWindow(ooAllocated)
 {
-    HCursor = (HICON)LoadImage(DLLInstance, MAKEINTRESOURCE(IDI_SB_CURSOR), IMAGE_ICON, 16, 16, SalamanderGeneral->GetIconLRFlags());
-    HAnchor = (HICON)LoadImage(DLLInstance, MAKEINTRESOURCE(IDI_SB_ANCHOR), IMAGE_ICON, 16, 16, SalamanderGeneral->GetIconLRFlags());
-    HSize = (HICON)LoadImage(DLLInstance, MAKEINTRESOURCE(IDI_SB_SIZE), IMAGE_ICON, 16, 16, SalamanderGeneral->GetIconLRFlags());
-    HPipette = (HICON)LoadImage(DLLInstance, MAKEINTRESOURCE(IDI_SB_PIPETTE), IMAGE_ICON, 16, 16, SalamanderGeneral->GetIconLRFlags());
+    HCursor = HAnchor = HSize = HPipette = NULL;
+    LoadIcons();
     hProgBar = NULL;
+}
+
+// feature 427: a part icon for the current theme - in Dark the legacy black glyph adapted (the 028
+// rule and the 3:1 lift, as the toolbar glyphs; review 4, S5: ~1.5:1 on the Dark face before)
+static HICON LoadStatusIcon427(int id)
+{
+    HICON icon = (HICON)LoadImage(DLLInstance, MAKEINTRESOURCE(id), IMAGE_ICON, 16, 16, SalamanderGeneral->GetIconLRFlags());
+    if (icon != NULL && SalamanderGeneral->IsDarkThemeActive())
+    {
+        HICON dark = ThemeDarkAdaptIcon(icon, SalamanderGeneral->GetThemeSysColor(COLOR_BTNFACE));
+        if (dark != NULL)
+        {
+            DestroyIcon(icon);
+            icon = dark;
+        }
+    }
+    return icon;
+}
+
+void CStatusBar::LoadIcons()
+{
+    HICON* slots[4] = {&HCursor, &HAnchor, &HSize, &HPipette};
+    const int ids[4] = {IDI_SB_CURSOR, IDI_SB_ANCHOR, IDI_SB_SIZE, IDI_SB_PIPETTE};
+    HICON old[4], fresh[4];
+    int i;
+    for (i = 0; i < 4; i++)
+    {
+        old[i] = *slots[i];
+        fresh[i] = LoadStatusIcon427(ids[i]);
+        *slots[i] = fresh[i];
+    }
+    // the parts that showed an old icon show the new one before the old one is destroyed
+    if (HWindow != NULL)
+    {
+        int parts = (int)SendMessage(HWindow, SB_GETPARTS, 0, 0);
+        for (int part = 0; part < parts; part++)
+        {
+            HICON shown = (HICON)SendMessage(HWindow, SB_GETICON, part, 0);
+            for (i = 0; i < 4; i++)
+                if (shown != NULL && shown == old[i])
+                    SendMessage(HWindow, SB_SETICON, part, (LPARAM)fresh[i]);
+        }
+    }
+    for (i = 0; i < 4; i++)
+        if (old[i] != NULL)
+            DestroyIcon(old[i]);
 }
 
 CStatusBar::~CStatusBar()

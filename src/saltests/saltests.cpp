@@ -20582,6 +20582,53 @@ static void TestDarkAdaptBitmap427()
         DeleteObject(lift);
     }
 
+    // ThemeDarkAdaptIcon (review 4, S5): a legacy mask icon - a visible black pixel turns light, a
+    // transparent pixel (AND mask set) keeps its zero colour; the source icon is not changed
+    {
+        const DWORD colorPx[2] = {0x000000, 0x000000};
+        const DWORD maskPx[2] = {0x000000, 0xFFFFFF}; // pixel 0 visible, pixel 1 transparent
+        HBITMAP hColor = Bitmap427(colorPx, 2);
+        HBITMAP hMask = Bitmap427(maskPx, 2);
+        CHECK(hColor != NULL && hMask != NULL);
+        if (hColor != NULL && hMask != NULL)
+        {
+            ICONINFO ii;
+            memset(&ii, 0, sizeof(ii));
+            ii.fIcon = TRUE;
+            ii.hbmColor = hColor;
+            ii.hbmMask = hMask;
+            HICON src = CreateIconIndirect(&ii);
+            CHECK(src != NULL);
+            HICON dark = ThemeDarkAdaptIcon(src, face427);
+            CHECK(dark != NULL);
+            if (dark != NULL)
+            {
+                ICONINFO di;
+                CHECK(GetIconInfo(dark, &di) != FALSE);
+                DWORD visible = Px427(di.hbmColor, 0) & 0xFFFFFF, hidden = Px427(di.hbmColor, 1) & 0xFFFFFF;
+                CHECK(ThemeDarkLiftContrast((visible >> 16) & 0xFF, (visible >> 8) & 0xFF, visible & 0xFF, face427) >= 3.0);
+                CHECK(hidden == 0);
+                DeleteObject(di.hbmColor);
+                DeleteObject(di.hbmMask);
+                DestroyIcon(dark);
+            }
+            ICONINFO si;
+            CHECK(src != NULL && GetIconInfo(src, &si) != FALSE);
+            if (src != NULL)
+            {
+                CHECK((Px427(si.hbmColor, 0) & 0xFFFFFF) == 0); // the source untouched
+                DeleteObject(si.hbmColor);
+                DeleteObject(si.hbmMask);
+                DestroyIcon(src);
+            }
+        }
+        if (hColor != NULL)
+            DeleteObject(hColor);
+        if (hMask != NULL)
+            DeleteObject(hMask);
+        CHECK(ThemeDarkAdaptIcon(NULL, face427) == NULL);
+    }
+
     // a NULL bitmap is ignored
     ThemeDarkAdaptBitmap(NULL, RGB(255, 0, 255));
 }

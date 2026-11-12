@@ -22,6 +22,8 @@
 #include "PixelAccess.h"
 #include "splloadstru8.h" // feature 130: LoadStrU8
 #include "../../common/themes_bitmap.h" // feature 427: Dark adaptation of the toolbar glyphs
+#include <uxtheme.h>
+#pragma comment(lib, "uxtheme.lib") // feature 427: SetWindowTheme of the image window
 
 // plugin interface object; its methods are called from Salamander
 CPluginInterface PluginInterface;
@@ -2195,6 +2197,7 @@ CViewerWindow::CViewerWindow(int enumFilesSourceUID, int enumFilesCurrentIndex, 
     MainMenu = NULL;
     MenuBar = NULL;
     ToolBar = NULL;
+    RendererDarkened = FALSE; // feature 427
     StatusBar = NULL;
 #ifdef ENABLE_WIA
     WiaWrap = NULL;
@@ -2222,6 +2225,29 @@ CViewerWindow::GetLock()
     if (Lock == NULL)
         Lock = CreateEvent(NULL, FALSE, FALSE, NULL);
     return Lock;
+}
+
+// feature 427 (review 4, M5): the image window's scrollbars in the theme's style. The core's control
+// theming sets a window's style only while it has a scrollbar style, and the image window has one
+// only while the image is larger than the window - so PictView sets it itself, at creation and on
+// every theme switch; Default resets it only if Dark set it
+void CViewerWindow::ApplyRendererTheme()
+{
+    if (Renderer.HWindow == NULL)
+        return;
+    if (SalamanderGeneral->IsDarkThemeActive())
+    {
+        SetWindowTheme(Renderer.HWindow, L"DarkMode_Explorer", NULL);
+        RendererDarkened = TRUE;
+    }
+    else if (RendererDarkened)
+    {
+        SetWindowTheme(Renderer.HWindow, NULL, NULL);
+        RendererDarkened = FALSE;
+    }
+    else
+        return;
+    SetWindowPos(Renderer.HWindow, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
 }
 
 // feature 427: repaints a top-level window of the viewer's thread and all its children
@@ -3031,6 +3057,7 @@ CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         SalamanderGeneral->SetWindowClosesUnattended(HWindow, TRUE);
 
         UpdateEnablers();
+        ApplyRendererTheme(); // feature 427 (review 4, M5): the image window's scrollbars in Dark
 
         break;
     }
@@ -3185,6 +3212,9 @@ CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
             InitializeGraphics();
             SalamanderGeneral->ThemeApplyToDialog(HWindow); // feature 427: the status bar follows the switch
+            ApplyRendererTheme();
+            if (StatusBar != NULL)
+                StatusBar->LoadIcons(); // feature 427: the part icons for the new theme
             // every window of this viewer's thread (the toolbar, the histogram window and its
             // toolbar) repaints with the refilled lists (427 review 2)
             EnumThreadWindows(GetCurrentThreadId(), RepaintThreadWindow427, 0);

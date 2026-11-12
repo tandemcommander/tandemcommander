@@ -160,3 +160,69 @@ inline void ThemeDarkAdaptBitmapLift(HBITMAP hBitmap, COLORREF key, COLORREF fac
 {
     ThemeDarkAdaptBitmapImpl(hBitmap, key, face);
 }
+
+// A legacy icon adapted for the Dark theme (427 review 4, S5: PictView's black status-bar icons on the
+// Dark face): the 028 rule and the 3:1 lift against `face` on every visible pixel - with alpha the
+// pixels with alpha > 0 (straight alpha, as icons hold it), without alpha the pixels the AND mask
+// leaves visible; transparent pixels stay untouched (an XOR colour there would show). Returns a new
+// icon (the caller destroys it) or NULL; the source icon is not changed.
+inline HICON ThemeDarkAdaptIcon(HICON icon, COLORREF face)
+{
+    if (icon == NULL)
+        return NULL;
+    ICONINFO ii;
+    if (!GetIconInfo(icon, &ii))
+        return NULL;
+    HICON result = NULL;
+    BITMAP bm;
+    if (ii.hbmColor != NULL && ii.hbmMask != NULL && GetObject(ii.hbmColor, sizeof(bm), &bm) != 0 &&
+        bm.bmWidth > 0 && bm.bmHeight > 0)
+    {
+        int width = bm.bmWidth, height = bm.bmHeight;
+        DWORD* color = (DWORD*)malloc((size_t)width * height * sizeof(DWORD));
+        DWORD* mask = (DWORD*)malloc((size_t)width * height * sizeof(DWORD));
+        BITMAPINFO bi;
+        memset(&bi, 0, sizeof(bi));
+        bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+        bi.bmiHeader.biWidth = width;
+        bi.bmiHeader.biHeight = -height;
+        bi.bmiHeader.biPlanes = 1;
+        bi.bmiHeader.biBitCount = 32;
+        bi.bmiHeader.biCompression = BI_RGB;
+        HDC hDC = GetDC(NULL);
+        if (color != NULL && mask != NULL && hDC != NULL &&
+            GetDIBits(hDC, ii.hbmColor, 0, height, color, &bi, DIB_RGB_COLORS) == height &&
+            GetDIBits(hDC, ii.hbmMask, 0, height, mask, &bi, DIB_RGB_COLORS) == height)
+        {
+            int count = width * height, i;
+            BOOL hasAlpha = FALSE;
+            for (i = 0; i < count; i++)
+                if ((color[i] & 0xFF000000) != 0)
+                {
+                    hasAlpha = TRUE;
+                    break;
+                }
+            for (i = 0; i < count; i++)
+            {
+                DWORD px = color[i];
+                if (hasAlpha ? (px >> 24) == 0 : (mask[i] & 0xFFFFFF) != 0)
+                    continue; // transparent
+                int r = (int)((px >> 16) & 0xFF), g = (int)((px >> 8) & 0xFF), b = (int)(px & 0xFF);
+                ThemeDarkAdaptColor(&r, &g, &b);
+                ThemeDarkLiftColor(&r, &g, &b, face);
+                color[i] = (px & 0xFF000000) | ((DWORD)r << 16) | ((DWORD)g << 8) | (DWORD)b;
+            }
+            if (SetDIBits(hDC, ii.hbmColor, 0, height, color, &bi, DIB_RGB_COLORS) == height)
+                result = CreateIconIndirect(&ii);
+        }
+        if (hDC != NULL)
+            ReleaseDC(NULL, hDC);
+        free(color);
+        free(mask);
+    }
+    if (ii.hbmColor != NULL)
+        DeleteObject(ii.hbmColor);
+    if (ii.hbmMask != NULL)
+        DeleteObject(ii.hbmMask);
+    return result;
+}
