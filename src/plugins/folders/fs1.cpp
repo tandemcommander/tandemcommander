@@ -181,14 +181,15 @@ static BOOL ProbeFldPick(const char* name, BOOL* acts)
 static char* GetDiskPathOfShellFolder(IShellFolder* folder, LPCITEMIDLIST folderPIDL, LPCITEMIDLIST child,
                                       SFGAOF* attrs)
 {
-    SFGAOF a = SFGAO_FOLDER | SFGAO_FILESYSTEM;
+    SFGAOF a = SFGAO_FOLDER | SFGAO_FILESYSTEM | SFGAO_LINK;
     if (folder == NULL || child == NULL || FAILED(folder->GetAttributesOf(1, &child, &a)))
         a = 0;
-    *attrs = a & (SFGAO_FOLDER | SFGAO_FILESYSTEM);
+    *attrs = a & (SFGAO_FOLDER | SFGAO_FILESYSTEM | SFGAO_LINK);
     BOOL isFolder = (a & SFGAO_FOLDER) != 0;
     BOOL isFileSystem = (a & SFGAO_FILESYSTEM) != 0;
-    if (!isFolder || !isFileSystem)
-        return NULL; // virtual: nothing more to ask
+    BOOL isLink = (a & SFGAO_LINK) != 0; // review 2: a folder shortcut (a network location) - its path is the shortcut's own folder
+    if (!isFolder || !isFileSystem || isLink)
+        return NULL; // virtual, or a link fld: follows to its target: nothing more to ask
     char* pathU8 = NULL;
     BOOL havePath = FALSE;
     DWORD pathAttrs = SAL_DESKTOP_INVALID_ATTRS;
@@ -219,8 +220,8 @@ static char* GetDiskPathOfShellFolder(IShellFolder* folder, LPCITEMIDLIST folder
     }
     if (recyclePIDL != NULL)
         ILFree(recyclePIDL);
-    if (!SalShellFolderOpensAsDisk(isFolder != FALSE, isFileSystem != FALSE, havePath != FALSE, pathAttrs,
-                                   inRecycleBin != FALSE))
+    if (!SalShellFolderOpensAsDisk(isFolder != FALSE, isFileSystem != FALSE, isLink != FALSE, havePath != FALSE,
+                                   pathAttrs, inRecycleBin != FALSE))
     {
         if (pathU8 != NULL)
             free(pathU8);

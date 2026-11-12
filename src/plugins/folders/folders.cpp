@@ -150,7 +150,14 @@ void CPluginInterface::Connect(HWND parent, CSalamanderConnectAbstract* salamand
                                       IMAGE_BITMAP, 16, 16, LR_DEFAULTCOLOR);
     salamander->SetBitmapWithIcons(hBmp);
     DeleteObject(hBmp);
-    salamander->SetChangeDriveMenuItem(LoadStr(IDS_DRIVEMENUTEXT), 0);
+    // feature 425 (review 2): the entry's text is translated with letters outside the code page of many
+    // systems (cs/sk "Složky Windows"): read it wide and hand it over as UTF-8, which the core keeps as is
+    // (plug-in metadata is UTF-8 by contract, 052); the code-page text only if that fails
+    char driveMenuText[3 * MAX_PATH];
+    const WCHAR* driveMenuTextW = SalamanderGeneral->LoadStrW(HLanguage, IDS_DRIVEMENUTEXT);
+    if (driveMenuTextW == NULL || SplWToU8(driveMenuTextW, driveMenuText, sizeof(driveMenuText)) == 0)
+        lstrcpynA(driveMenuText, LoadStr(IDS_DRIVEMENUTEXT), sizeof(driveMenuText));
+    salamander->SetChangeDriveMenuItem(driveMenuText, 0);
     salamander->SetPluginIcon(0);
     salamander->SetPluginMenuAndToolbarIcon(0);
 }

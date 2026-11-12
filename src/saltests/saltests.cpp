@@ -20542,14 +20542,16 @@ static void TestDesktopDrive425()
     CHECK(!SalPathHasRecycleBinPart(NULL));
     // fld: items: a file-system folder with a directory path opens as a disk path, all else stays
     const unsigned long dir = FILE_ATTRIBUTE_DIRECTORY;
-    CHECK(SalShellFolderOpensAsDisk(true, true, true, dir, false));                      // Documents, a drive, the user's folder
-    CHECK(!SalShellFolderOpensAsDisk(true, true, true, dir, true));                      // a deleted folder in the Recycle Bin
-    CHECK(!SalShellFolderOpensAsDisk(true, true, true, FILE_ATTRIBUTE_ARCHIVE, false));  // a zip archive / a .lnk to a folder
-    CHECK(!SalShellFolderOpensAsDisk(true, true, true, INVALID_FILE_ATTRIBUTES, false)); // the path is gone or unreachable
-    CHECK(!SalShellFolderOpensAsDisk(true, true, false, dir, false));                    // the shell gave no path
-    CHECK(!SalShellFolderOpensAsDisk(true, false, true, dir, false));                    // a virtual folder (This PC, Control Panel)
-    CHECK(!SalShellFolderOpensAsDisk(false, true, true, dir, false));                    // not a folder of the shell
-    CHECK(!SalShellFolderOpensAsDisk(false, false, false, INVALID_FILE_ATTRIBUTES, false));
+    // arguments: isFolder, isFileSystem, isLink, havePath, pathAttrs, inRecycleBin
+    CHECK(SalShellFolderOpensAsDisk(true, true, false, true, dir, false));                      // Documents, a drive, the user's folder
+    CHECK(!SalShellFolderOpensAsDisk(true, true, false, true, dir, true));                      // a deleted folder in the Recycle Bin
+    CHECK(!SalShellFolderOpensAsDisk(true, true, true, true, dir, false));                      // a folder shortcut / network location (review 2)
+    CHECK(!SalShellFolderOpensAsDisk(true, true, false, true, FILE_ATTRIBUTE_ARCHIVE, false));  // a zip archive / a .lnk to a folder
+    CHECK(!SalShellFolderOpensAsDisk(true, true, false, true, INVALID_FILE_ATTRIBUTES, false)); // the path is gone or unreachable
+    CHECK(!SalShellFolderOpensAsDisk(true, true, false, false, dir, false));                    // the shell gave no path
+    CHECK(!SalShellFolderOpensAsDisk(true, false, false, true, dir, false));                    // a virtual folder (This PC, Control Panel)
+    CHECK(!SalShellFolderOpensAsDisk(false, true, false, true, dir, false));                    // not a folder of the shell
+    CHECK(!SalShellFolderOpensAsDisk(false, false, false, false, INVALID_FILE_ATTRIBUTES, false));
 }
 
 static void TestDocumentsPath386()

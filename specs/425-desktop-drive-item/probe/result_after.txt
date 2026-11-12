@@ -1,6 +1,6 @@
-desktop probe (GitHub #31) after-review1
+desktop probe (GitHub #31) after-review2
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-11-12 15:05; registry key existed True
+Date    : 2026-11-12 15:19; registry key existed True
 Desktop : 'C:\Users\pavel\Desktop'; Documents 'C:\Users\pavel\Documents'; shell names: This PC 'Tento po\u010D\u00EDta\u010D', Documents 'Dokumenty' / '', Control Panel 'Ovl\u00E1dac\u00ED panely', user 'Pavel Stupka', C: 'M\u00EDstn\u00ED disk (C:)', zip 'Newt Commander web design.zip'
 
 [on] menus opened 2/2; builds 4 (menu 2, bar 2)
@@ -21,9 +21,9 @@ FLD-USER   RUN    PASS        EXEC action=disk attrs=60000000 path=C:\Users\pave
 FLD-DOCS   RUN    PASS        at the root; Documents: action=disk attrs=60000000 path=C:\Users\pavel\Documents; panel 'C:\Users\pavel\Documents' (expected 'C:\Users\pavel\Documents')
 FLD-DRIVE  RUN    PASS        This PC: action=fld, panel 'fld:'; M\u00EDstn\u00ED disk (C:): action=disk path=C:\; panel 'C:\' (expected 'C:\')
 FLD-ZIP    RUN    PASS        'Newt Commander web design.zip': action=fld attrs=60000000 path=-; panel 'fld:'
-FLD-RB     RUN    PASS        Recycle Bin: action=fld, panel 'fld:'; the deleted folder (C:\$Recycle.Bin\S-1-5-21-2934764448-1324481543-3308592849-1001\$RM6B85A): action=fld attrs=60000000 path=-; panel 'fld:'
+FLD-RB     RUN    PASS        Recycle Bin: action=fld, panel 'fld:'; the deleted folder (C:\$Recycle.Bin\S-1-5-21-2934764448-1324481543-3308592849-1001\$RK2H7R6): action=fld attrs=60000000 path=-; panel 'fld:'
 fld: items skipped 55; acted upon: Ovl\u00E1dac\u00ED panely=fld, Pavel Stupka=disk, Dokumenty=disk, Tento po\u010D\u00EDta\u010D=fld, M\u00EDstn\u00ED disk (C:)=disk, Newt Commander web design.zip=fld, Ko\u0161=fld, tcdesk_rb_probe=fld
-Registry: restored; identical=True; SHA-256 before B5E391EB06CE2946B2B5B6B17021038F59FB15172F93A8099A466FE5DDBDE6B3 / after B5E391EB06CE2946B2B5B6B17021038F59FB15172F93A8099A466FE5DDBDE6B3
+Registry: restored; identical=True; SHA-256 before BD47D3AD2902BD1598535C1B0EB869A492EED79016FFDA1A22DFF33D39C6DAB2 / after BD47D3AD2902BD1598535C1B0EB869A492EED79016FFDA1A22DFF33D39C6DAB2
 Recycle Bin: the probe's item removed True
 
 Rows: PASS 17, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

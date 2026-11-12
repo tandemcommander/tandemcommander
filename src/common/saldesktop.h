@@ -89,11 +89,14 @@ inline bool SalPathHasRecycleBinPart(const char* path)
 // ('havePath') and that path is an existing directory ('pathAttrs' = GetFileAttributes of it), and
 // it is not an item of the Recycle Bin ('inRecycleBin' = the current fld: folder is the Recycle Bin or
 // inside it, or the path has a recycle bin component - review 1, SHOULD 1: a deleted folder is a
-// file-system folder in C:\$Recycle.Bin\<SID>\$R...). Everything else stays in fld:, as before:
-// virtual places (This PC, Control Panel, Network - no SFGAO_FILESYSTEM or no path), the Recycle Bin's
-// items, and shell folders whose path is a file (a zip archive, a .lnk to a folder).
-inline bool SalShellFolderOpensAsDisk(bool isFolder, bool isFileSystem, bool havePath, unsigned long pathAttrs,
-                                      bool inRecycleBin)
+// file-system folder in C:\$Recycle.Bin\<SID>\$R...), and it is not a link ('isLink' = SFGAO_LINK -
+// review 2: a folder shortcut, e.g. a network location of This PC, is a real directory holding
+// target.lnk and desktop.ini; its path is that directory, not its target, which fld: follows).
+// Everything else stays in fld:, as before: virtual places (This PC, Control Panel, Network - no
+// SFGAO_FILESYSTEM or no path), the Recycle Bin's items, links, and shell folders whose path is a file
+// (a zip archive, a .lnk to a folder).
+inline bool SalShellFolderOpensAsDisk(bool isFolder, bool isFileSystem, bool isLink, bool havePath,
+                                      unsigned long pathAttrs, bool inRecycleBin)
 {
-    return isFolder && isFileSystem && havePath && !inRecycleBin && SalDesktopFolderUsable(pathAttrs);
+    return isFolder && isFileSystem && !isLink && havePath && !inRecycleBin && SalDesktopFolderUsable(pathAttrs);
 }

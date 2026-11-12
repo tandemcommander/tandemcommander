@@ -116,3 +116,32 @@ ChangeDrive, CDriveBar::Execute) and found the Desktop type handled wherever Doc
 After the fixes: `build.cmd full` BUILD SUCCEEDED (189 language modules), saltests 287,408 / 0, folders
 merge 0 gaps (the pins carry the new hot key), `slt --verify` byte-exact, encoding guard TOTAL: 0, probe
 `result_after.txt` **17 PASS / 0 FAIL / 0 NOT DRIVEN**, registry identical, the probe's Recycle Bin item removed.
+
+### Review 2 (refute-first agent, on 007c2ec7) - no MUST, 1 SHOULD, 4 NOTE
+
+The reviewer could not re-run the probe (the maintainer's installed program ran at that moment; the
+probe refused correctly, nothing was stopped); saltests 287,408 / 0; review 1's two fixes confirmed by
+reading and against the API; callers, hot keys, encoding, the page layout checked again.
+
+- **SHOULD 1 (fixed)**: a folder shortcut (a network location of This PC, a folder shortcut on the desktop)
+  is a real directory holding `target.lnk` and `desktop.ini`; the shell reports it
+  `SFGAO_FOLDER | SFGAO_FILESYSTEM` (and `SFGAO_LINK`), its path is the shortcut's own folder - the disk
+  panel showed `target.lnk` instead of the target fld: had followed (measured by the reviewer with the
+  plug-in's call sequence and a network location added for seconds, then removed). Now the attributes
+  asked include `SFGAO_LINK` and a link stays in fld: (`SalShellFolderOpensAsDisk(.., isLink, ..)`, a
+  saltests case). Not driven by the probe: fld: reaches no fixture folder (the root is the real desktop,
+  which the probe never writes) - a release-checklist line.
+- NOTE 1 (fixed): the plug-in's drive-menu text went through the code-page `LoadStr`; cs/sk "Složky /
+  Zložky Windows" would lose `ž` on a system whose code page is not 1250. `Connect` now reads it with
+  `LoadStrW` and hands it over as UTF-8 (`SplWToU8`; the core keeps valid UTF-8, contract 052), the
+  code-page text only if that fails.
+- NOTE 2 (accepted): `SalPathHasRecycleBinPart` also matches a user folder named `Recycled` / `RECYCLER`
+  in fld: - it stays in fld:, the old behaviour; fail-safe.
+- NOTE 3 (accepted, not a regression): `SalGetFileAttributes` of an unreachable share inside fld: blocks
+  the main thread without ESC, as the old bind and listing did.
+- NOTE 4 (existing code, display only): `SalCheckPath`'s message cuts a missing path longer than about
+  360 bytes (`char text[MAX_PATH + 100]`, `_TRUNCATE`); nothing acts on the cut text. Recorded, not
+  changed here (an existing message of every path change).
+
+After the fixes: `build.cmd` BUILD SUCCEEDED, saltests 287,409 / 0, probe `result_after.txt`
+**17 PASS / 0 FAIL / 0 NOT DRIVEN** (registry identical, the probe's Recycle Bin item removed).
