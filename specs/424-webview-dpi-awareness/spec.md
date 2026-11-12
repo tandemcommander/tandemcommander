@@ -26,6 +26,13 @@
 - This machine has one monitor at 100 %. The symptom itself was not driven: changing the display
   scaling would disturb the maintainer's desktop.
 
+## Clarifications
+
+### Session 2026-11-12
+
+- Q: Should the dialogs opened from a viewer (Find, Go to line, message boxes) keep the program's DPI mode, or follow the viewer window's? → A: Follow the viewer window. Windows already runs a window's message handling in that window's DPI mode, and dialog templates scale themselves in per-monitor mode. At an unchanged scaling nothing changes. Wrapping each dialog call to keep the old mode would mean more code and two coordinate spaces in one window's thread. (autonomous run: conservative)
+- Q: Should the remembered viewer position be converted, so that stored values keep the program's coordinates? → A: No. The value is stored and read by the viewer thread, in its own coordinates. At an unchanged scaling the numbers equal the old ones, the registry layout stays as it is, and an old value on a monitor of another scaling is kept visible by the existing check. (autonomous run: conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - The viewer's page fills the window after the display scaling changed (Priority: P1)
@@ -96,6 +103,7 @@ within the client.
 - **FR-005**: The rest of the program (main window, panels, other plug-ins, dialogs not opened by these viewers) MUST keep its current DPI behaviour.
 - **FR-006**: With an unchanged scaling equal to the program's start scaling, both viewers MUST look and behave as before (window rectangle, client size, status bar height, page size and content).
 - **FR-007**: The change MUST stay inside the shared WebView2 host (one host, never copied, `architecture/11-webview2-integration.md`) and the two viewers' window code. No plug-in interface change, no new UI strings, nothing new stored.
+- **FR-008**: The remembered viewer position ("save position") MUST keep its stored format and meaning at an unchanged scaling. It is not converted (Clarifications).
 
 ### Key Entities
 
