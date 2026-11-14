@@ -10,6 +10,14 @@ numbering*): a release with new features raises MINOR, a fixes-only release
 raises PATCH. Each release also carries an internal build number shared by the
 application and every plugin. Versions up to 0.1.10 raised only the third number.
 
+## [Unreleased]
+
+- **A portable edition: Tandem Commander without installation, with everything in its own folder** (feature 428).
+  - **Before:** Tandem Commander had to be installed and kept its settings in the Windows registry of the user; a copy unpacked elsewhere shared them with the installed program.
+  - **Now:** every release also offers `tandemcommander-<version>-x64-portable.zip`. Unpack it anywhere you can write - a USB stick, a folder, a network share - and run `tandemcommander.exe`: it keeps nothing of its own in the registry - all settings, plug-in settings, histories and saved passwords are in the folder `settings` next to the program, so it can be carried to another PC by copying the folder. Paths to files inside the folder keep working when the drive letter changes. The title bar says `[portable]`, the icon carries a badge and the About box shows the settings folder with a link that opens it. The check for a new version tells you about a new release and opens its page; the portable edition never downloads or installs anything. Settings are saved so that an interruption never leaves them half-written, and the program also runs from a folder it cannot write to (it says so once and keeps no changes). Copies in different folders, and an installed Tandem Commander, run side by side without seeing each other.
+  - **Limitation:** no Explorer integration - dragging or copying files out of an archive or an FTP / SFTP connection to Explorer is not available (copy or unpack them to a disk folder first); no jump list. Saved passwords travel with the folder: protect them with a master password if the folder can get lost (the program says so the first time a password is saved).
+  - **For maintainers:** `build.cmd portable` builds the portable edition into `<Config>_x64_portable`, `build.cmd full release portable` also makes the ZIP, and **`build.cmd dist`** builds and signs the complete release - the installer and the portable ZIP - in one command. The plug-in interface is version 109 (`IsPortableEdition`, `GetUserDataFolderW`, `GetInstanceScopeSuffix`).
+
 ## [0.3.0] — 2026-11-08
 
 **Build 196.** Feature release. Tandem Commander can update itself: it

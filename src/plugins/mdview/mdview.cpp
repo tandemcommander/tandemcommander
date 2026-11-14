@@ -7,6 +7,7 @@
 #include "render.h"
 #include "htmlgen.h"
 #include "webglue.h" // feature 081: MdKeeperDisarm, a wrapper over the shared CTcWebKeeper
+#include "webhost.h" // feature 428: TcWebSetUserDataFolder
 
 // plugin interface objects
 CPluginInterface PluginInterface;
@@ -97,6 +98,18 @@ CPluginInterfaceAbstract* WINAPI SalamanderPluginEntry(CSalamanderPluginEntryAbs
 
     SalamanderGeneral = salamander->GetSalamanderGeneral();
     SalamanderGUI = salamander->GetSalamanderGUI();
+
+    // feature 428 (interface 109): the portable edition keeps the WebView2 data in its session
+    // folder in %TEMP% (removed at exit), never in the profile; without that folder no web view is
+    // created at all. The normal edition keeps its folder and creates it when the engine starts.
+    if (SalamanderGeneral->IsPortableEdition())
+    {
+        WCHAR webDataFolder[1024];
+        if (SalamanderGeneral->GetUserDataFolderW(SALUSERDATA_WEBVIEW2, webDataFolder, _countof(webDataFolder)))
+            TcWebSetUserDataFolder(webDataFolder);
+        else
+            TcWebRefuseUserDataFolder();
+    }
 
     if (!InitViewer())
         return NULL;

@@ -80,6 +80,16 @@ eRPE_ERROR Parse(LPTSTR buf, CSalamanderRegistryExAbstract* pRegistry, BOOL doNo
                  LPCTSTR onlyUnderHKCU = NULL, LPCTSTR legacyRoot = NULL);
 eRPE_ERROR CopyBranch(LPCTSTR branch, CSalamanderRegistryExAbstract* pInRegistry, CSalamanderRegistryExAbstract* pOutRegistry);
 
+// feature 428: CopyBranch with a rewrite of each value on its way. The transform gets the path of
+// the value's key relative to the branch ("" for the branch itself, "\\Sub\\Key" below it), the
+// value's type and data (as GetValue gives them: strings UTF-8 in the core); it returns FALSE on out
+// of memory (the copy stops), TRUE with '*newData' = NULL to copy the value as it is, or TRUE with
+// '*newData' malloc'ed (freed by the copy) and '*newSize' to store that instead.
+typedef BOOL (*REG_VALUE_TRANSFORM)(const char* keyPath, DWORD type, const BYTE* data, DWORD size, LPBYTE* newData,
+                                    DWORD* newSize, void* ctx);
+eRPE_ERROR CopyBranchTransform(LPCTSTR branch, CSalamanderRegistryExAbstract* pInReg, CSalamanderRegistryExAbstract* pOutReg,
+                               REG_VALUE_TRANSFORM transform, void* transformCtx);
+
 DWORD ConvertIfNeeded(LPTSTR* pBuf, DWORD size);
 
 #define SizeOf(x) (sizeof(x) / sizeof(x[0]))

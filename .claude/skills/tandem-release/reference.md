@@ -221,7 +221,7 @@ registry values, temporary files or the installer.
 | winget takes the changelog **of the tag** | a mistake after tagging needs a new tag — check before |
 | Tagging a stale release branch (`release-0.1.10`: 132 without 135) | *Current release* names branches that must not be tagged |
 | The installer packs `build\` regardless of `OPENSAL_BUILD_DIR` | warning `build-dir` |
-| The in-app check offers only `v<ver>` + asset `tandemcommander-<ver>-x64-setup.exe`, not draft/prerelease | maintainer's step 4 of the report |
+| The in-app check offers only `v<ver>` + asset `tandemcommander-<ver>-x64-setup.exe`, not draft/prerelease; the portable edition only with `tandemcommander-<ver>-x64-portable.zip` (428) | maintainer's steps 2 and 5 of the report |
 | A released binary is never replaced (winget pins its SHA-256) | rebuild only with a new version |
 | A bumped tree is not a release | the tag decides; `RT status` reads local and remote tags |
 
@@ -229,14 +229,17 @@ registry values, temporary files or the installer.
 
 1. Releasing on another day than `<D>`? First run `/tandem-release <ver>`
    again that day (it moves every date) — before building and tagging.
-2. `build.cmd full release sign setup` (signed tree and installer; the
-   installer packs `build\tandemcommander\Release_x64`).
+2. `build.cmd dist` (feature 428): the signed installer (it packs
+   `build\tandemcommander\Release_x64`) and the portable ZIP of signed binaries,
+   ending with `DIST OK` and both files with SHA-256; it refuses a version whose
+   tag exists. Then `python tools/release/release.py artifacts <ver>`.
 3. Merge / push the branch; tag `v<ver>` on the prepared commit; push the tag.
 4. While `microsoft/winget-pkgs#426090` is not settled: switch the
    **Publish to winget** workflow **off** in the Actions tab and check that
    it is off.
 5. GitHub release `v<ver>`: body = `release_notes/release_notes_v<ver>.md`;
-   asset `tandemcommander-<ver>-x64-setup.exe` (exact name, uploaded); not a
-   draft, not a pre-release.
+   assets `tandemcommander-<ver>-x64-setup.exe` and
+   `tandemcommander-<ver>-x64-portable.zip` (exact names, uploaded - without the
+   ZIP no portable copy hears of the release); not a draft, not a pre-release.
 6. *After publishing* in `backlog/RELEASE.md` (the "newer version" check
    from the previous build, an antivirus scan, winget when unblocked).

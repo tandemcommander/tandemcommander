@@ -1,0 +1,12 @@
+feature 428 import probe, 2026-11-14T12:31:26
+PASS   setup: SRC's file names its folder $(PortableDir)\docs 322328 bytes
+PASS   I1 command: the file is kept as settings\import.reg (a byte copy) boxes ["[#32770 'Otázka'] Konfigurace z tohoto souboru se naimportuje při příštím spuštění programu Tandem Commander (pokud nebude otevřené žádné jiné okno této přenosné kopie):\nC:\\Users\\pavel\\AppData\\Local\\Temp\\tc428\\import\\src\\TC\\settings\\tandemcommander.reg\n\nDo té doby zůstává současné nastavení. Chcete Tandem Commander z"]
+FAIL   I1 command: the question was asked (close now?) ["[#32770 'Otázka'] Konfigurace z tohoto souboru se naimportuje při příštím spuštění programu Tandem Commander (pokud nebude otevřené žádné jiné okno této přenosné kopie):\nC:\\Users\\pavel\\AppData\\Local\\Temp\\tc428\\import\\src\\TC\\settings\\tandemcommander.reg\n\nDo té doby zůstává současné na
+PASS   I1 exit: import.reg stays, DST's file has no Only One Instance = 1 value 0; file changed by the exit save: True
+PASS   I2 next start: imported - import.reg gone, Only One Instance = 1, no error box boxes none
+PASS   I2 next start: $(PortableDir) expanded to DST (title docs, file keeps the token, no SRC path) title 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'; SRC paths none
+PASS   I3 joined start: import.reg stays while another process of the copy runs second process ended (Only One Instance): True
+PASS   I3 lone start afterwards: imported (import.reg gone), no error box boxes none
+PASS   I4 refused file: an error box, no question, no import.reg boxes ["[#32770 'Chyba'] Nelze importovat zadaný soubor. Nejedná se o soubor s konfigurací.\n\nSoubor: C:\\Users\\pavel\\AppData\\Local\\Temp\\tc428\\import\\bad.reg | OK"]
+PASS   the installed edition's key is unchanged (SHA-256 of its export) 19c222e0a142bef9 -> 19c222e0a142bef9
+RESULT: FAIL

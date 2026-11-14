@@ -31,6 +31,9 @@ Commands (specs/243-tandem-release-skill/contracts/cli.md):
   stamp <ver>    the mechanical edits of all records (idempotent; --dry-run)
   check <ver>    consistency of all records for version, build and date
   summary <ver>  the winget release summary exactly as tools/winget/publish.ps1 makes it
+  artifacts <ver> the two files a release attaches - the installer and the portable ZIP - present
+                 in setup/output, the ZIP one folder with the program (feature 428; after
+                 build.cmd dist, before publishing)
 
 Design rules
 ------------
@@ -154,6 +157,11 @@ class Version:
     @property
     def installer(self) -> str:
         return f"tandemcommander-{self.text}-x64-setup.exe"
+
+    @property
+    def portable_zip(self) -> str:
+        """The portable edition's package, attached to every release next to the installer (428)."""
+        return f"tandemcommander-{self.text}-x64-portable.zip"
 
     def next_versions(self) -> "tuple[Version, Version, Version]":
         """The SemVer steps from this release: PATCH, MINOR, MAJOR (feature 343)."""
@@ -1179,6 +1187,7 @@ def status_dict(ctx: Context) -> dict:
     fs = sorted(ctx.features)
     return {
         "version": ctx.target.text, "tag": ctx.target.tag, "installer": ctx.target.installer,
+        "portable_zip": ctx.target.portable_zip,
         "date": ctx.date.isoformat(), "date_long": long_date(ctx.date),
         "previous": ctx.prev.text if ctx.prev else None, "previous_build": ctx.prev_build, "build": ctx.build,
         "branch": ctx.branch, "head": ctx.head, "clean": ctx.clean, "lock": ctx.lock,
@@ -1195,7 +1204,7 @@ def status_dict(ctx: Context) -> dict:
 def print_status(ctx: Context) -> None:
     d = status_dict(ctx)
     p = print
-    p(f"version: {d['version']}   tag: {d['tag']}   installer: {d['installer']}")
+    p(f"version: {d['version']}   tag: {d['tag']}   installer: {d['installer']}   portable: {d['portable_zip']}")
     p(f"date: {d['date']} ({d['date_long']})")
     p(f"previous: {d['previous']} (tag v{d['previous']}, build {d['previous_build']})   build: {d['build']}")
     p(f"branch: {d['branch'] or '(detached)'}   head: {d['head']}   clean: {'yes' if d['clean'] else 'no'}   "
@@ -1294,6 +1303,121 @@ def cmd_summary(args) -> int:
     return 1 if (w["cut"] or w["dropped"] or findings) else 0
 
 
+def signature_status(path: Path) -> str:
+    """Authenticode status of a file as Windows reports it ("Valid", "NotSigned", ...); "?" when
+    PowerShell cannot be asked."""
+    try:
+        r = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command",
+                            "(Get-AuthenticodeSignature -LiteralPath $env:TC_SIGCHECK_FILE).Status"],
+                           capture_output=True, text=True, timeout=120, env={**os.environ, "TC_SIGCHECK_FILE": str(path)})
+        return r.stdout.strip() or "?"
+    except (OSError, subprocess.SubprocessError):
+        return "?"
+
+
+def signature_statuses(folder: Path) -> dict[str, str]:
+    """Authenticode status of every file under 'folder' (relative path -> status), one PowerShell call."""
+    ps = ("Get-ChildItem -LiteralPath $env:TC_SIGCHECK_DIR -Recurse -File | ForEach-Object { "
+          "$_.FullName.Substring($env:TC_SIGCHECK_DIR.Length + 1) + '|' + (Get-AuthenticodeSignature -LiteralPath $_.FullName).Status }")
+    try:
+        r = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", ps], capture_output=True, text=True,
+                           timeout=600, env={**os.environ, "TC_SIGCHECK_DIR": str(folder)})
+    except (OSError, subprocess.SubprocessError):
+        return {}
+    res = {}
+    for line in r.stdout.splitlines():
+        if "|" in line:
+            name, st = line.rsplit("|", 1)
+            res[name.replace("\\", "/")] = st.strip()
+    return res
+
+
+def portable_marker(path: Path) -> bool:
+    """TRUE when the executable carries the portable edition's RCDATA marker TC_PORTABLE_EDITION."""
+    import ctypes
+    from ctypes import wintypes
+    k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    k32.LoadLibraryExW.argtypes = [wintypes.LPCWSTR, wintypes.HANDLE, wintypes.DWORD]
+    k32.LoadLibraryExW.restype = wintypes.HMODULE
+    k32.FindResourceW.argtypes = [wintypes.HMODULE, wintypes.LPCWSTR, wintypes.LPCWSTR]
+    k32.FindResourceW.restype = wintypes.HANDLE
+    k32.FreeLibrary.argtypes = [wintypes.HMODULE]
+    h = k32.LoadLibraryExW(str(path), None, 0x2 | 0x20)
+    if not h:
+        return False
+    found = bool(k32.FindResourceW(h, "TC_PORTABLE_EDITION", ctypes.cast(10, wintypes.LPCWSTR)))
+    k32.FreeLibrary(h)
+    return found
+
+
+def artifact_findings(root: Path, ver: Version, deep: bool = True) -> list[str]:
+    """Feature 428: the two files a release attaches, as build.cmd dist leaves them in setup/output.
+    Reads only; [] when both are there and the ZIP has the layout the portable update check needs.
+    'deep': also the installer's and the packed program's signatures and the packed program's edition
+    (an unsigned or normal-edition ZIP of an earlier build must not pass)."""
+    out = root / "setup" / "output"
+    found = []
+    for name in (ver.installer, ver.portable_zip):
+        f = out / name
+        if not f.is_file() or f.stat().st_size == 0:
+            found.append(f"artifact-missing: setup/output/{name} (build it with build.cmd dist)")
+        elif (out / (name + ".part")).exists():
+            found.append(f"artifact-partial: setup/output/{name}.part is there - a build did not finish")
+    z = out / ver.portable_zip
+    if z.is_file() and z.stat().st_size:
+        import zipfile
+        top = f"TandemCommander-{ver.text}-portable/"
+        try:
+            names = zipfile.ZipFile(z).namelist()
+        except zipfile.BadZipFile:
+            names = None
+        if names is None:
+            found.append(f"artifact-zip: {ver.portable_zip} is not a ZIP archive")
+        elif not names or any(not n.startswith(top) for n in names) or top + "tandemcommander.exe" not in names:
+            found.append(f"artifact-zip: {ver.portable_zip} is not one folder {top} with tandemcommander.exe")
+        elif deep:
+            import zipfile
+            pe = [n for n in names if n.lower().endswith((".exe", ".dll", ".spl", ".slg"))]
+            with tempfile.TemporaryDirectory(prefix="tcartifacts_") as tmp:
+                zf = zipfile.ZipFile(z)
+                for n in pe:
+                    target = Path(tmp) / n[len(top):]
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_bytes(zf.read(n))
+                if not portable_marker(Path(tmp) / "tandemcommander.exe"):
+                    found.append(f"artifact-zip: the program in {ver.portable_zip} is not the portable edition")
+                # every executable file, not the program alone: a plug-in relinked by a later
+                # unsigned build would otherwise pass (feature 428 review)
+                st = signature_statuses(Path(tmp))
+                bad = sorted(n for n in (x[len(top):] for x in pe) if st.get(n) != "Valid")
+                if bad:
+                    found.append(f"artifact-unsigned: {len(bad)} of {len(pe)} executable files in {ver.portable_zip} "
+                                 f"are not validly signed ({', '.join(bad[:3])}{', ...' if len(bad) > 3 else ''}) "
+                                 "- build it with build.cmd dist")
+    inst = out / ver.installer
+    if deep and inst.is_file() and inst.stat().st_size:
+        st = signature_status(inst)
+        if st != "Valid":
+            found.append(f"artifact-unsigned: {ver.installer} - signature {st}")
+    return found
+
+
+def cmd_artifacts(args) -> int:
+    ver = Version.parse(args.version)
+    if ver is None:
+        raise UsageError(f"version-form: '{args.version}' is not MAJOR.MINOR.PATCH without leading zeros")
+    import hashlib
+    findings = artifact_findings(args.root, ver)
+    for name in (ver.installer, ver.portable_zip):
+        f = args.root / "setup" / "output" / name
+        if f.is_file():
+            print(f"{name}  {f.stat().st_size} bytes  SHA-256 {hashlib.sha256(f.read_bytes()).hexdigest()}")
+    for x in findings:
+        print(x)
+    print(f"artifacts {ver.text}: {'OK' if not findings else str(len(findings)) + ' finding(s)'}")
+    return 1 if findings else 0
+
+
 def parse_date(text: str) -> dt.date:
     if not DATE_RE.fullmatch(text):
         raise argparse.ArgumentTypeError(f"'{text}' is not YYYY-MM-DD")
@@ -1321,6 +1445,9 @@ def build_parser() -> argparse.ArgumentParser:
     s.set_defaults(func=cmd_check)
     s = sub.add_parser("summary", parents=[common], help="the winget release summary as publish.ps1 makes it")
     s.set_defaults(func=cmd_summary)
+    s = sub.add_parser("artifacts", parents=[common],
+                       help="the installer and the portable ZIP of the version in setup/output (428)")
+    s.set_defaults(func=cmd_artifacts)
     return ap
 
 

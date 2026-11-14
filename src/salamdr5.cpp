@@ -1488,7 +1488,7 @@ void CSystemPolicies::LoadFromRegistry()
 
     // retrieve the restrictions
     HKEY hKey;
-    if (OpenKeyAux(NULL, HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer", hKey))
+    if (OpenKeyAux(NULL, HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer", hKey)) // portable: system read
     {
         // according to MSDN the values can be of type DWORD or BINARY:
         // It is a REG_DWORD or 4-byte REG_BINARY data value, found under the same key.
@@ -1501,10 +1501,10 @@ void CSystemPolicies::LoadFromRegistry()
         //GetValueDontCheckTypeAux(hKey, "NoComputersNearMe", /*REG_DWORD,*/ &NoComputersNearMe, sizeof(DWORD));
         GetValueDontCheckTypeAux(hKey, "NoNetConnectDisconnect", /*REG_DWORD,*/ &NoNetConnectDisconnect, sizeof(DWORD));
         GetValueDontCheckTypeAux(hKey, "RestrictRun", /*REG_DWORD,*/ &RestrictRun, sizeof(DWORD));
-        if (RestrictRun && !LoadList(&RestrictRunList, HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\\RestrictRun"))
+        if (RestrictRun && !LoadList(&RestrictRunList, HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\\RestrictRun")) // portable: system read
             RestrictRun = 0; // low memory; disable this option
         GetValueDontCheckTypeAux(hKey, "DisallowRun", /*REG_DWORD,*/ &DisallowRun, sizeof(DWORD));
-        if (DisallowRun && !LoadList(&DisallowRunList, HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\\DisallowRun"))
+        if (DisallowRun && !LoadList(&DisallowRunList, HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\\DisallowRun")) // portable: system read
             DisallowRun = 0; // low memory; disable this option
         CloseKeyAux(hKey);
     }
@@ -1515,7 +1515,7 @@ void CSystemPolicies::LoadFromRegistry()
     //    CloseKeyAux(hKey);
     //  }
 
-    if (OpenKeyAux(NULL, HKEY_CURRENT_USER, "SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer", hKey))
+    if (OpenKeyAux(NULL, HKEY_CURRENT_USER, "SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer", hKey)) // portable: system read
     {
         GetValueDontCheckTypeAux(hKey, "NoDotBreakInLogicalCompare", /*REG_DWORD,*/ &NoDotBreakInLogicalCompare, sizeof(DWORD));
         CloseKeyAux(hKey);
@@ -1991,6 +1991,15 @@ BOOL SalGetFolderPathU8(int csidl, char* buf, int bufSize)
 // could then never read back.
 BOOL GetOurPathInRoamingAPPDATA(char* buf)
 {
+#ifdef TC_PORTABLE
+    // feature 428: the portable edition's own folder is settings\ next to the program (the default
+    // folder of Export Configuration); a path that does not fit is refused, never cut
+    const char* settings = PortableStore_SettingsDirU8();
+    if (settings == NULL || settings[0] == 0 || strlen(settings) >= MAX_PATH)
+        return FALSE;
+    lstrcpyn(buf, settings, MAX_PATH);
+    return TRUE;
+#endif
     WCHAR pathW[MAX_PATH];
     if (SHGetFolderPathW(NULL, CSIDL_APPDATA, NULL, 0 /* SHGFP_TYPE_CURRENT */, pathW) == S_OK &&
         SalWToU8(pathW, -1, buf, MAX_PATH) != 0)
@@ -2008,6 +2017,16 @@ BOOL CreateOurPathInRoamingAPPDATA(char* buf)
                                 // exception handler, where the stack may be full
     if (buf != NULL)
         buf[0] = 0;
+#ifdef TC_PORTABLE
+    // feature 428: settings\ next to the program (see GetOurPathInRoamingAPPDATA)
+    if (!GetOurPathInRoamingAPPDATA(path))
+        return FALSE;
+    if (!SalCreateDirectory(path, NULL))
+        CreateDirectory(path, NULL); // it may exist already
+    if (buf != NULL)
+        lstrcpyn(buf, path, MAX_PATH);
+    return TRUE;
+#endif
     WCHAR pathW[MAX_PATH];
     BOOL gotPath = SHGetFolderPathW(NULL, CSIDL_APPDATA, NULL, 0 /* SHGFP_TYPE_CURRENT */, pathW) == S_OK &&
                    SalWToU8(pathW, -1, path, MAX_PATH) != 0;

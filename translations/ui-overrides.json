@@ -339,7 +339,19 @@
       "IDS_UPDATE_DLI_FAILED": "Instalační program verze %s se nepodařilo stáhnout nebo neprošel kontrolou.\\n\\nTlačítkem Stáhnout jej získáte ve webovém prohlížeči.",
       "IDC_TABSTYLE_GROUP": " St&yl karet ",
       "IDC_TABSTYLE_SQUARE": "&Hranaté",
-      "IDS_DESKTOPNOTFOUND": "Složka Plocha nebyla nalezena."
+      "IDS_DESKTOPNOTFOUND": "Složka Plocha nebyla nalezena.",
+      "IDS_PORTABLE_CANNOTSAVE": "Tandem Commander nemůže uložit nastavení do této složky:\\n%s\\n\\nProgram funguje dál, ale změny provedené v této relaci se neuloží. Složka přenosné verze je jen pro čtení, plná nebo už není dostupná.",
+      "IDS_PORTABLE_RESTOREDBAK": "Soubor s nastavením v této složce nelze přečíst:\\n%s\\n\\nTandem Commander místo něj použije předchozí kopii nastavení. Nečitelný soubor zůstal zachován pod jménem končícím %s.",
+      "IDS_PORTABLE_DAMAGED": "Soubory s nastavením v této složce nelze přečíst:\\n%s\\n\\nTandem Commander se spustí s výchozím nastavením. Nečitelné soubory zůstaly zachovány pod jmény končícími %s.",
+      "IDS_PORTABLE_NOSHELLEXT": "Přetažení nebo zkopírování souborů z archivu či ze souborového systému pluginu do jiného programu vyžaduje integraci s Průzkumníkem, kterou přenosná verze neinstaluje.\\n\\nSoubory nejprve zkopírujte nebo rozbalte do složky na disku a přetáhněte je odtud.",
+      "IDS_ABOUT_PORTABLE_EDITION": "Přenosná verze – nastavení se ukládá do této složky:",
+      "IDS_PORTABLE_PWDNOTE": "Toto je přenosná verze: hesla, která ukládá, jsou v její složce a putují s ní. Bez hlavního hesla je může přečíst kdokoli, kdo se ke složce dostane (například když ztratíte flash disk).\\n\\nChcete nyní nastavit hlavní heslo?",
+      "IDS_PORTABLE_PWDNOTE_SETMASTER": "&Nastavit hlavní heslo...",
+      "IDS_PORTABLE_PWDNOTE_CONTINUE": "&Teď ne",
+      "IDS_PORTABLE_PWDNOTE_DONTSHOW": "&Příště nezobrazovat",
+      "IDS_UPDATE_HINT_PORTABLE_EDITION": "Toto je přenosná verze. Aktualizujete ji tak, že ze stránky vydání stáhnete nový přenosný archiv, rozbalíte ho vedle této kopie a do nové kopie zkopírujete složku settings.",
+      "IDS_UPDATE_NOTEST_PORTABLE": "Test aktualizace (--updatetest) v přenosné verzi není k dispozici: přenosná verze aktualizace nikdy neinstaluje.",
+      "IDS_PORTABLE_IMPORTPENDING": "Konfigurace z tohoto souboru se naimportuje při příštím spuštění programu Tandem Commander (pokud nebude otevřené žádné jiné okno této přenosné kopie):\\n%s\\n\\nDo té doby zůstává současné nastavení. Chcete Tandem Commander zavřít hned?"
     },
     "slovak": {
       "IDS_MENU_TAB_MOVETOOTHER": "&Presunúť do druhého panelu",
@@ -391,7 +403,9 @@
       "IDS_UPDATE_DLI_PROGRESS": "Sťahuje sa a kontroluje inštalačný program verzie %s... %u %%",
       "IDS_UPDATE_DLI_FAILED": "Inštalačný program verzie %s sa nepodarilo stiahnuť alebo neprešiel kontrolou.\\n\\nTlačidlom Stiahnuť ho získate vo webovom prehliadači.",
       "IDC_TABSTYLE_SQUARE": "&Hranaté",
-      "IDS_DESKTOPNOTFOUND": "Zložka Plocha sa nedá nájsť."
+      "IDS_DESKTOPNOTFOUND": "Zložka Plocha sa nedá nájsť.",
+      "IDS_PORTABLE_PWDNOTE_CONTINUE": "&Teraz nie",
+      "IDS_UPDATE_HINT_PORTABLE_EDITION": "Toto je prenosná verzia. Ak ju chcete aktualizovať, stiahnite si nový prenosný archív zo stránky s vydaniami, rozbaľte ho vedľa tejto kópie a skopírujte priečinok settings do novej kópie."
     },
     "german": {
       "IDS_MENU_TAB_MOVETOOTHER": "In das andere &Fenster verschieben",
@@ -457,7 +471,12 @@
       "IDS_UPDATE_HINT_PORTABLE": "Diese Kopie von Tandem Commander wurde nicht mit dem Installationsprogramm installiert und kann sich daher nicht selbst aktualisieren. „Download“ öffnet das Installationsprogramm in Ihrem Webbrowser; führen Sie es aus, um zu aktualisieren.",
       "IDS_UPDATE_DLI_PROGRESS": "Installationsprogramm der Version %s wird heruntergeladen und geprüft... %u %%",
       "IDS_UPDATE_DLI_FAILED": "Das Installationsprogramm der Version %s konnte nicht heruntergeladen werden oder hat die Prüfung nicht bestanden.\\n\\nVerwenden Sie „Download“, um das Installationsprogramm in Ihrem Webbrowser herunterzuladen.",
-      "IDC_TABSTYLE_SQUARE": "Ec&kig"
+      "IDC_TABSTYLE_SQUARE": "Ec&kig",
+      "IDS_PORTABLE_PWDNOTE_CONTINUE": "Nicht &jetzt",
+      "IDS_PORTABLE_IMPORTPENDING": "Die Konfiguration aus dieser Datei wird beim nächsten Start von Tandem Commander importiert (sofern kein anderes Fenster dieser portablen Kopie geöffnet ist):\\n%s\\n\\nBis dahin bleiben die aktuellen Einstellungen erhalten. Möchten Sie Tandem Commander jetzt schließen?",
+      "IDS_PORTABLE_EXPORTHINT": "Um die exportierte Konfiguration in einer anderen portablen Kopie zu verwenden, wählen Sie dort „Optionen > Konfiguration importieren“. Ein installierter Tandem Commander importiert sie, wenn Sie die Datei öffnen (der Registrierungs-Editor fügt sie der Registrierung hinzu).\\n\\nWir empfehlen, das Löschen der bestehenden Konfiguration direkt in die exportierte Datei aufzunehmen. Andernfalls wird die importierte Konfiguration mit der aktuellen zusammengeführt, was zu inkonsistenten Einstellungen führen kann.",
+      "IDS_UPDATE_HINT_PORTABLE_EDITION": "Dies ist die portable Version. Um sie zu aktualisieren, laden Sie das neue portable Archiv von der Release-Seite herunter, entpacken Sie es neben dieser Kopie und kopieren Sie den Ordner „settings“ in die neue Kopie.",
+      "IDS_UPDATE_NOTEST_PORTABLE": "Der Update-Test (--updatetest) ist in der portablen Version nicht verfügbar: Die portable Version installiert niemals Updates."
     },
     "french": {
       "IDS_MENU_TAB_MOVETOOTHER": "Dé&placer vers l'autre panneau",
@@ -512,7 +531,12 @@
       "IDS_UPDATE_HINT_DLI": "« Télécharger && installer » télécharge le programme d’installation, le vérifie et installe la mise à jour ; Tandem Commander redémarre ensuite et vos paramètres sont conservés. « Télécharger » l’ouvre dans votre navigateur Web.",
       "IDC_UPDN_LEVELLABEL": "Lorsqu’un&e nouvelle version est détectée :",
       "IDC_TABSTYLE_SQUARE": "Ca&rrés",
-      "#pixels": "pixels"
+      "#pixels": "pixels",
+      "IDS_PORTABLE_PWDNOTE_CONTINUE": "&Pas maintenant",
+      "IDS_PORTABLE_IMPORTPENDING": "La configuration de ce fichier sera importée au prochain démarrage de Tandem Commander (si aucune autre fenêtre de cette copie portable n’est ouverte) :\\n%s\\n\\nD’ici là, les paramètres actuels restent en vigueur. Voulez-vous fermer Tandem Commander maintenant ?",
+      "IDS_PORTABLE_EXPORTHINT": "Pour utiliser la configuration exportée dans une autre copie portable, choisissez Options > Configuration d'Importation dans cette copie. Un Tandem Commander installé l’importe lorsque vous ouvrez le fichier (l’Éditeur du Registre l’ajoute au Registre).\\n\\nNous vous recommandons d’ajouter l’effacement de la configuration existante directement dans le fichier exporté. Sinon, la configuration importée est fusionnée avec la configuration actuelle, ce qui peut rendre les paramètres incohérents.",
+      "IDS_UPDATE_HINT_PORTABLE_EDITION": "Il s’agit de l’édition portable. Pour la mettre à jour, téléchargez la nouvelle archive portable depuis la page de publication, décompressez-la à côté de cette copie, puis copiez le dossier « settings » dans la nouvelle copie.",
+      "IDS_PORTABLE_PWDNOTE": "Il s’agit de l’édition portable : les mots de passe qu’elle enregistre sont conservés dans son dossier et l’accompagnent partout. Sans mot de passe principal, toute personne qui met la main sur le dossier (par exemple, une clé USB perdue) peut les lire.\\n\\nSouhaitez-vous définir un mot de passe principal dès maintenant ?"
     },
     "dutch": {
       "IDS_MENU_TAB_MOVETOOTHER": "Naar ander paneel &verplaatsen",
@@ -560,7 +584,10 @@
       "IDS_UPDATE_HINT_DLI": "‘Download && installeren’ downloadt het installatieprogramma, controleert het en installeert de update; daarna wordt Tandem Commander opnieuw gestart en blijven uw instellingen behouden. ‘Download’ opent het in uw webbrowser.",
       "IDS_UPDATE_HINT_PORTABLE": "Dit exemplaar van Tandem Commander is niet met het installatieprogramma geïnstalleerd en kan zichzelf daarom niet bijwerken. ‘Download’ opent het installatieprogramma in uw webbrowser; voer het uit om bij te werken.",
       "IDS_UPDATE_DLI_FAILED": "Het installatieprogramma van versie %s kon niet worden gedownload of heeft de controle niet doorstaan.\\n\\nGebruik ‘Download’ om het installatieprogramma in uw webbrowser te downloaden.",
-      "IDS_DESKTOPNOTFOUND": "De map Bureaublad kan niet worden gevonden."
+      "IDS_DESKTOPNOTFOUND": "De map Bureaublad kan niet worden gevonden.",
+      "IDS_PORTABLE_PWDNOTE_CONTINUE": "&Niet nu",
+      "IDS_PORTABLE_IMPORTPENDING": "De configuratie in dit bestand wordt geïmporteerd wanneer Tandem Commander de volgende keer start (als er geen ander venster van deze draagbare kopie geopend is):\\n%s\\n\\nTot die tijd blijven de huidige instellingen gelden. Wilt u Tandem Commander nu sluiten?",
+      "IDS_PORTABLE_EXPORTHINT": "Om de geëxporteerde configuratie in een andere draagbare kopie te gebruiken, kiest u daar Opties > Configuratie importeren. Een geïnstalleerde Tandem Commander importeert het bestand wanneer u het opent (de Register-editor voegt het toe aan het register).\\n\\nWij raden u aan het wissen van de bestaande configuratie direct aan het geëxporteerde bestand toe te voegen. Anders wordt de geïmporteerde configuratie samengevoegd met de huidige, wat tot inconsistente instellingen kan leiden."
     },
     "hungarian": {
       "IDS_MENU_TAB_MOVETOOTHER": "Át&helyezés a másik panelre",
@@ -603,7 +630,13 @@
       "IDS_UPDATE_DLI_FAILED": "A(z) %s verzió telepítője nem tölthető le, vagy nem felelt meg az ellenőrzésnek.\\n\\nA telepítőt a Letöltés gombbal töltheti le a webböngészőben.",
       "IDS_UPDATE_DLI_PROGRESS": "A(z) %s verzió telepítőjének letöltése és ellenőrzése... %u %%",
       "IDC_TABSTYLE_GROUP": " Lapok &formája ",
-      "IDS_DESKTOPNOTFOUND": "Az Asztal mappa nem található."
+      "IDS_DESKTOPNOTFOUND": "Az Asztal mappa nem található.",
+      "IDS_PORTABLE_PWDNOTE_CONTINUE": "&Most nem",
+      "IDS_PORTABLE_IMPORTPENDING": "A fájlban lévő konfigurációt a Tandem Commander a következő indításakor importálja (ha a hordozható példány más ablaka nincs megnyitva):\\n%s\\n\\nAddig a jelenlegi beállítások maradnak érvényben. Bezárja most a Tandem Commandert?",
+      "IDS_PORTABLE_EXPORTHINT": "Ha az exportált konfigurációt egy másik hordozható példányban szeretné használni, ott válassza a Beállítások > Beállítások importálása parancsot. A telepített Tandem Commander akkor importálja, amikor megnyitja a fájlt (a Beállításszerkesztő hozzáadja a beállításjegyzékhez).\\n\\nJavasoljuk, hogy a meglévő konfiguráció törlését közvetlenül az exportált fájlba vegye fel. Ellenkező esetben az importált konfiguráció összeolvad a jelenlegivel, ami következetlen beállításokhoz vezethet.",
+      "IDS_UPDATE_HINT_PORTABLE_EDITION": "Ez a hordozható kiadás. A frissítéshez töltse le az új hordozható archívumot a kiadási oldalról, csomagolja ki a jelenlegi példány mellé, majd másolja át a „settings” mappát az új példányba.",
+      "IDS_PORTABLE_PWDNOTE": "Ez a hordozható kiadás: az általa mentett jelszavakat a saját mappájában tárolja, és azok vele együtt vándorolnak. Főjelszó nélkül bárki, aki a mappához jut (például egy elveszett USB-meghajtó esetén), elolvashatja őket.\\n\\nSzeretne most főjelszót beállítani?",
+      "IDS_PORTABLE_PWDNOTE_DONTSHOW": "&Ne mutassa újból"
     },
     "romanian": {
       "IDS_MENU_TAB_MOVETOOTHER": "&Mutare în celălalt panou",
@@ -638,7 +671,10 @@
       "IDS_UPDATE_HINT_OFFER": "Noua versiune a fost descărcată și verificată. „Instalați acum” închide Tandem Commander, instalează actualizarea și repornește programul; setările dvs. sunt păstrate.",
       "IDS_UPDATE_BTN_DLINSTALL": "Descărcare && &instalare",
       "IDS_UPDATE_BTN_CANCELDL": "&Anulați descărcarea",
-      "IDS_UPDATE_HINT_DLI": "„Descărcare && instalare” descarcă programul de instalare, îl verifică și instalează actualizarea; apoi Tandem Commander pornește din nou, iar setările dvs. sunt păstrate. „Descărcare” îl deschide în browserul dvs. web."
+      "IDS_UPDATE_HINT_DLI": "„Descărcare && instalare” descarcă programul de instalare, îl verifică și instalează actualizarea; apoi Tandem Commander pornește din nou, iar setările dvs. sunt păstrate. „Descărcare” îl deschide în browserul dvs. web.",
+      "IDS_PORTABLE_PWDNOTE_CONTINUE": "Nu &acum",
+      "IDS_PORTABLE_IMPORTPENDING": "Configurația din acest fișier va fi importată la următoarea pornire a Tandem Commander (dacă nu este deschisă nicio altă fereastră a acestei copii portabile):\\n%s\\n\\nPână atunci rămân setările actuale. Doriți să închideți Tandem Commander acum?",
+      "IDS_PORTABLE_EXPORTHINT": "Pentru a utiliza configurația exportată într-o altă copie portabilă, alegeți acolo Optiuni > Importa Configuratia. Un Tandem Commander instalat o importă atunci când deschideți fișierul (Editorul de registry o adaugă în registry).\\n\\nVă recomandăm să adăugați ștergerea configurației existente direct în fișierul exportat. În caz contrar, configurația importată se combină cu cea actuală, ceea ce poate duce la setări incoerente."
     },
     "spanish": {
       "IDS_MENU_TAB_MOVETOOTHER": "&Mover al otro panel",
@@ -684,7 +720,10 @@
       "IDS_UPDATE_BTN_DLINSTALL": "Descargar e &instalar",
       "IDS_UPDATE_BTN_CANCELDL": "Cancelar desc&arga",
       "IDS_UPDATE_HINT_DLI": "«Descargar e instalar» descarga el instalador, lo comprueba e instala la actualización; a continuación, Tandem Commander se reinicia y se conservan sus ajustes. «Descargar» lo abre en su navegador web.",
-      "IDC_UPDN_LEVELLABEL": "Cuando s&e encuentre una nueva versión:"
+      "IDC_UPDN_LEVELLABEL": "Cuando s&e encuentre una nueva versión:",
+      "IDS_PORTABLE_PWDNOTE_CONTINUE": "&Ahora no",
+      "IDS_PORTABLE_IMPORTPENDING": "La configuración de este archivo se importará la próxima vez que se inicie Tandem Commander (siempre que no haya abierta ninguna otra ventana de esta copia portátil):\\n%s\\n\\nHasta entonces se mantiene la configuración actual. ¿Desea cerrar Tandem Commander ahora?",
+      "IDS_PORTABLE_EXPORTHINT": "Para usar la configuración exportada en otra copia portátil, elija allí Opciones > Importar configuración. Un Tandem Commander instalado la importa cuando usted abre el archivo (el Editor del Registro la añade al Registro).\\n\\nLe recomendamos que añada la eliminación de la configuración existente directamente al archivo exportado. De lo contrario, la configuración importada se combina con la actual, lo que puede dar lugar a una configuración incoherente."
     },
     "_feature_078": [
       "Panel tabs (feature 078): the term for a tab follows each language's platform",
@@ -779,6 +818,14 @@
     ],
     "_feature_425": [
       "The Desktop item's error (IDS_DESKTOPNOTFOUND) names the folder as the item and Windows name it (cs/sk 'Plocha', nl 'Bureaublad', hu 'Asztal'), not the English 'Desktop' in quotes DeepL gave; de/ro (Windows says 'Desktop'), fr and es were right."
+    ],
+    "_feature_428": [
+      "The portable edition (feature 428): cs pinned whole - one term ('prenosna verze', DeepL mixed verze / edice), 'Soubor s nastavenim' (not 'Nastavovaci soubor'), the buttons of the password note with distinct access keys (N, T, P).",
+      "IDS_PORTABLE_PWDNOTE_CONTINUE was 'Continue Without' first - every language rendered it as a cut phrase ('Continuar sin', 'Ohne fortfahren'); the English is 'Not Now' now.",
+      "IDS_PORTABLE_PWDNOTE_CONTINUE ('&Not Now') pinned in every language - the merge keeps the machine text of the first English wording; access keys distinct from the box's other button and its check box (de 'Dies &nicht', ro '&Nu mai').",
+      "IDS_PORTABLE_IMPORTPENDING / IDS_PORTABLE_EXPORTHINT (Import / Export Configuration of the portable edition): the merge dropped a \\n of the first in cs/de/fr/nl/hu/ro (kept English) and gave the informal register in de/fr/nl/es; the menu path names the language's own menu items (hu 'Beállítások > Beállítások importálása', ro 'Optiuni > Importa Configuratia', fr 'Options > Configuration d'Importation' as the menu has them).",
+      "IDS_UPDATE_HINT_PORTABLE_EDITION (review 428): de / fr / sk said to copy the settings folder 'into the new archive' (into the ZIP, not into the unpacked copy); hu translated the folder's name, which is 'settings' in every language - pinned.",
+      "One term per language for the portable edition (re-review 428): de 'portable Version' (13744 / 13749 / 14003 / 14013), fr 'édition portable', hu 'hordozható kiadás'; hu 'Do not show again' in the program's formal wording ('&Ne mutassa újból')."
     ]
   },
   "zip": {

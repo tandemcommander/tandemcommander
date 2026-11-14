@@ -1,0 +1,20 @@
+feature 428 scenarios probe, 2026-11-14T12:41:33
+PASS   move: panel path inside the folder stored as $(PortableDir) title 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'; absolute path outside Default Directories: none
+PASS   move: started at Z:\TC, the panel opens the moved docs title 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'; windows ["[#32770 ''] ", "[SalamanderSaveBits 'Tandem Commander'] "]
+PASS   move: no message or error box at the moved start []
+PASS   move: the file still says $(PortableDir)\docs, no old path elsewhere 161187 characters; the old place only in Default Directories
+PASS   fail: settings exist before the failure rows C:\Users\pavel\AppData\Local\Temp\tc428\scenarios\fail\TC\settings\tandemcommander.reg
+PASS   fail: unwritable folder - told once at start ["[#32770 'Tandem Commander 0.3.0 (x64)'] Tandem Commander nemůže uložit nastavení do této složky:\nC:\\Users\\pavel\\AppData\\Local\\Temp\\tc428\\scenarios\\fail\\TC\\settings\n\nProgram funguje dál, ale změny provedené v této relaci se neuloží. Složka přenosné verze je jen pro čtení, plná nebo už 
+PASS   fail: unwritable folder - no second message (save, exit) []
+PASS   fail: unwritable folder - settings file unchanged C:\Users\pavel\AppData\Local\Temp\tc428\scenarios\fail\TC\settings\tandemcommander.reg
+PASS   fail: unwritable folder - session folder removed []
+PASS   fail: damaged file - the .bak used and the user told messages ["[#32770 'Tandem Commander 0.3.0 (x64)'] Soubor s nastavením v této složce nelze přečíst:\nC:\\Users\\pavel\\AppData\\Local\\Temp\\tc428\\scenarios\\fail\\TC\\settings\n\nTandem Commander místo něj p; kept aside ['tandemcommander.reg.damaged-20261114-114214']
+PASS   fail: both damaged - defaults, the user told, both kept aside messages ["[#32770 'Tandem Commander 0.3.0 (x64)'] Soubory s nastavením v této složce nelze přečíst:\nC:\\Users\\pavel\\AppData\\Local\\Temp\\tc428\\scenarios\\fail\\TC\\settings\n\nTandem Commander se spustí ; kept aside ['tandemcommander.reg.bak.damaged-20261114-114221', 'tandemcommander.reg.damaged-20261114-114221']
+PASS   kill: 20 kills during a save - the file always complete incomplete after runs []
+PASS   kill: the next start shows no restored / damaged message ["[#32770 ''] "]
+PASS   kill: no temporary file left after a normal start []
+PASS   side: the normal edition and portable A run side by side pids 31288 / 39836
+PASS   side: portable B (another folder) opens its own window pid 46188 alive True
+PASS   side: portable A again - hands over to the running A and ends second A ended True, first A alive True, normal alive True
+PASS   side: the configuration key restored         19c222e0a142bef9bf8496b2b217195ebbd940f85ce8dad955a74c6dfa2f7991
+RESULT: PASS

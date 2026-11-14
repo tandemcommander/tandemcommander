@@ -97,6 +97,7 @@
 #include "regexp.h"
 #include "filter.h"
 #include "regwork.h"
+#include "portstore.h" // feature 428: the portable edition's settings store
 
 #include "texts.rh2"
 #include "lang\lang.rh"

@@ -47,7 +47,7 @@
     </Import>
   </ImportGroup>
   <PropertyGroup>
-    <OutDir>$(OPENSAL_BUILD_DIR)tandemcommander\$(Configuration)_$(ShortPlatform)\saltests\</OutDir>
+    <OutDir>$(OPENSAL_BUILD_DIR)tandemcommander\$(Configuration)_$(ShortPlatform)$(TcOutSuffix)\saltests\</OutDir>
     <IntDir>$(OutDir)Intermediate\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup>

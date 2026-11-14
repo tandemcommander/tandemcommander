@@ -24,6 +24,14 @@
 #include "updcheck.h" // feature 123: the About dialog shows what is known about a newer version
 #include "upddlg.h"
 
+#ifdef TC_PORTABLE
+// feature 428: the controls the About box of the portable edition adds at run time, and the
+// command its settings link posts (ids not used by the dialog template)
+#define IDC_ABOUT_PORTABLE_LABEL 32601
+#define IDC_ABOUT_PORTABLE_LINK 32602
+#define IDC_ABOUT_PORTABLE_OPEN 32603
+#endif
+
 // draws the "Tandem Commander" wordmark into 'r' (left-aligned, vertically centered);
 // shrinks the font until both parts fit the rect width
 static void TCDrawWordmark(HDC hDC, const RECT* r, COLORREF tandemClr, COLORREF commanderClr)
@@ -418,6 +426,95 @@ CAboutDialog::CAboutDialog(HWND parent)
     UpdateLink = NULL;
 }
 
+#ifdef TC_PORTABLE
+
+// feature 428 (FR-015, contracts/ui-identity.md): two lines under the version - the edition and
+// the settings folder as a link that opens it in the active panel. Created here, not in the
+// dialog template, so the box needs no new layout in eight languages; everything below the
+// version moves down by two lines and the box grows by as much.
+void CAboutDialog::AddPortableLines()
+{
+    HWND ver = GetDlgItem(HWindow, IDS_ABOUT_SALAMANDER);
+    if (ver == NULL)
+        return;
+    RECT vr;
+    GetWindowRect(ver, &vr);
+    MapWindowPoints(NULL, HWindow, (POINT*)&vr, 2);
+    RECT unit = {0, 0, 4, 11}; // one line of the box: 11 dialog units, as between its lines
+    MapDialogRect(HWindow, &unit);
+    int line = unit.bottom;
+
+    RECT cr;
+    GetClientRect(HWindow, &cr);
+    int left = vr.left;
+    int width = cr.right - 2 * left; // the box's own margin on both sides
+    int height = vr.bottom - vr.top;
+    HFONT font = (HFONT)SendMessage(HWindow, WM_GETFONT, 0, 0);
+
+    // the edition's label wraps when a language needs more than the box's width (measured by the
+    // identity probe: de / fr / nl did not fit one line) - as many lines as it takes, the box
+    // grows by them; a plain static, coloured by WM_CTLCOLORSTATIC in both themes
+    WCHAR labelTextW[1024];
+    lstrcpynW(labelTextW, LoadStrW(IDS_ABOUT_PORTABLE_EDITION), _countof(labelTextW));
+    int labelLines = 1;
+    HDC dc = GetDC(HWindow);
+    if (dc != NULL)
+    {
+        HFONT oldFont = (HFONT)SelectObject(dc, font);
+        RECT tr = {0, 0, width, 0};
+        DrawTextW(dc, labelTextW, -1, &tr, DT_CALCRECT | DT_WORDBREAK | DT_NOPREFIX | DT_LEFT);
+        TEXTMETRICW tm;
+        if (GetTextMetricsW(dc, &tm) && tm.tmHeight > 0)
+            labelLines = max(1, (tr.bottom + tm.tmHeight - 1) / tm.tmHeight);
+        SelectObject(dc, oldFont);
+        ReleaseDC(HWindow, dc);
+    }
+    int labelHeight = height + (labelLines - 1) * line;
+    int shift = (labelLines + 1) * line;
+
+    // everything below the version line moves down
+    for (HWND child = GetWindow(HWindow, GW_CHILD); child != NULL; child = GetWindow(child, GW_HWNDNEXT))
+    {
+        RECT r;
+        GetWindowRect(child, &r);
+        MapWindowPoints(NULL, HWindow, (POINT*)&r, 2);
+        if (r.top >= vr.bottom)
+            SetWindowPos(child, NULL, r.left, r.top + shift, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+    }
+    RECT wr;
+    GetWindowRect(HWindow, &wr);
+    SetWindowPos(HWindow, NULL, 0, 0, wr.right - wr.left, wr.bottom - wr.top + shift,
+                 SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+
+    HWND label = CreateWindowExW(0, L"STATIC", labelTextW, WS_CHILD | WS_VISIBLE | SS_LEFT | SS_NOPREFIX, left,
+                                 vr.top + line, width, labelHeight, HWindow, (HMENU)(INT_PTR)IDC_ABOUT_PORTABLE_LABEL,
+                                 HInstance, NULL);
+    HWND link = CreateWindowExW(0, L"STATIC", L"", WS_CHILD | WS_VISIBLE | WS_TABSTOP | SS_LEFT | SS_NOTIFY, left,
+                                vr.top + (labelLines + 1) * line, width, height, HWindow,
+                                (HMENU)(INT_PTR)IDC_ABOUT_PORTABLE_LINK, HInstance, NULL);
+    if (label == NULL || link == NULL)
+        return;
+    SendMessage(label, WM_SETFONT, (WPARAM)font, FALSE);
+    SendMessage(link, WM_SETFONT, (WPARAM)font, FALSE);
+    // tab order: right after the version line (the link is the first stop of the box)
+    SetWindowPos(label, ver, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+    SetWindowPos(link, label, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+
+    // the whole path in the tooltip; on the line it is shortened in the middle when it does not fit
+    // CUpdateLink takes Enter itself (a plain CHyperLink leaves it to the box's default button,
+    // which closes the box - found by the identity probe); Space and a click work as for any link
+    CHyperLink* hl = new CUpdateLink(HWindow, IDC_ABOUT_PORTABLE_LINK,
+                                     STF_UNDERLINE | STF_HYPERLINK_COLOR | STF_PATH_ELLIPSIS);
+    if (hl != NULL)
+    {
+        hl->SetText(PortableStore_SettingsDirU8());
+        hl->SetToolTipText(PortableStore_SettingsDirU8());
+        hl->SetActionPostCommand(IDC_ABOUT_PORTABLE_OPEN);
+    }
+}
+
+#endif // TC_PORTABLE
+
 // feature 123: the line under the version - what the program last learned about newer
 // versions, from the stored state alone. Opening the dialog sends nothing; the two links act
 // only when the user chooses them.
@@ -632,6 +729,9 @@ CAboutDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         RefreshUpdateLine();
         UpdateAboutWindow = HWindow;
 
+#ifdef TC_PORTABLE
+        AddPortableLines(); // before the background: it is painted for the final size
+#endif
         BackgroundBitmap = AboutAndEvalDlgCreateBkgnd(HWindow);
         break;
     }
@@ -690,6 +790,16 @@ CAboutDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     case WM_COMMAND:
     {
+#ifdef TC_PORTABLE
+        if (LOWORD(wParam) == IDC_ABOUT_PORTABLE_OPEN) // feature 428: the settings folder link
+        {
+            // the box closes, then the main window shows the folder in the active panel
+            if (MainWindow != NULL)
+                PostMessage(MainWindow->HWindow, WM_USER_PORTABLE_NOTE, 1, 0);
+            EndDialog(HWindow, IDOK);
+            return TRUE;
+        }
+#endif
         if (LOWORD(wParam) == CM_HELP_CHECKVERSION) // the link "Check now"
         {
             CUpdateCheckDone done;
@@ -704,7 +814,11 @@ CAboutDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
             CUpdateState state;
             char url[SALUPD_URL_MAX];
+#ifdef TC_PORTABLE // feature 428 (FR-017): the release page with the portable archive
+            if (UpdateCheck_GetKnownState(&state) == suksNewer && SalUpdReleaseNotesUrl(state.Latest, url, sizeof(url)))
+#else
             if (UpdateCheck_GetKnownState(&state) == suksNewer && SalUpdInstallerUrl(state.Latest, url, sizeof(url)))
+#endif
                 UpdateCheck_OpenUrl(HWindow, url);
             return TRUE;
         }

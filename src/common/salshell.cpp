@@ -357,7 +357,7 @@ static const CSalShellCandidate WtCandidates[] = {
 };
 
 static const CSalShellCandidate GitBashCandidates[] = {
-    {sckRegString, HKEY_CURRENT_USER, "Software\\GitForWindows", "InstallPath", "git-bash.exe"},
+    {sckRegString, HKEY_CURRENT_USER, "Software\\GitForWindows", "InstallPath", "git-bash.exe"}, // portable: system read
     {sckRegString, HKEY_LOCAL_MACHINE, "SOFTWARE\\GitForWindows", "InstallPath", "git-bash.exe"},
     {sckRegString, HKEY_LOCAL_MACHINE, "SOFTWARE\\WOW6432Node\\GitForWindows", "InstallPath", "git-bash.exe"},
     {sckRegString, HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Git_is1", "InstallLocation", "git-bash.exe"},

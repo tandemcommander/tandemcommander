@@ -1,0 +1,34 @@
+feature 428 scenarios probe, 2026-11-14T12:08:31
+PASS   fail: settings exist before the failure rows C:\Users\pavel\AppData\Local\Temp\tc428\scenarios\fail\TC\settings\tandemcommander.reg
+    Traceback (most recent call last):
+      File "E:\Projects\tandemcommander\specs\428-portable-build\probe\scenarios_probe.py", line 312, in main
+        fn()
+        ~~^^
+      File "E:\Projects\tandemcommander\specs\428-portable-build\probe\scenarios_probe.py", line 308, in <lambda>
+        for name, fn in (("move", lambda: scenario_move(args.portable)), ("fail", lambda: scenario_fail(args.portable)),
+                                                                                          ~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+      File "E:\Projects\tandemcommander\specs\428-portable-build\probe\scenarios_probe.py", line 178, in scenario_fail
+        p = subprocess.Popen([exe_c, "-l", docs, "-r", docs])
+      File "C:\Program Files\Python314\Lib\subprocess.py", line 1039, in __init__
+        self._execute_child(args, executable, preexec_fn, close_fds,
+        ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                            pass_fds, cwd, env,
+                            ^^^^^^^^^^^^^^^^^^^
+        ...<5 lines>...
+                            gid, gids, uid, umask,
+                            ^^^^^^^^^^^^^^^^^^^^^^
+                            start_new_session, process_group)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      File "C:\Program Files\Python314\Lib\subprocess.py", line 1553, in _execute_child
+        hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                                 # no special security
+                                 ^^^^^^^^^^^^^^^^^^^^^
+        ...<4 lines>...
+                                 cwd,
+                                 ^^^^
+                                 startupinfo)
+                                 ^^^^^^^^^^^^
+    PermissionError: [WinError 5] Přístup byl odepřen
+FAIL   fail: the scenario ran to its end            PermissionError: [WinError 5] Přístup byl odepřen
+RESULT: FAIL

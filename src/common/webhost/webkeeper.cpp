@@ -209,7 +209,8 @@ void CTcWebKeeper::Arm(const TcWebKeeperConfig& config)
     TRACE_I(s->cfg.TraceName << ": arming (t=" << GetTickCount64() << " ms)");
 
     std::wstring udf = TcWebUserDataFolder();
-    HRESULT hr = CreateCoreWebView2EnvironmentWithOptions(
+    HRESULT hr = TcWebUserDataFolderRefused() ? E_ACCESSDENIED : // feature 428: no usable folder
+                 CreateCoreWebView2EnvironmentWithOptions(
         NULL, udf.empty() ? NULL : udf.c_str(), TcWebBuildEnvOptions().Get(),
         Callback<ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>(
             [self, gen](HRESULT r, ICoreWebView2Environment* env) -> HRESULT

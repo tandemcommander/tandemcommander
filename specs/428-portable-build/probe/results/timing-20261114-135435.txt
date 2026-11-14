@@ -1,0 +1,23 @@
+feature 428 timing probe, 2026-11-14T13:53:05
+  the portable copy runs on the installed edition's configuration: True (342746 bytes settings file)
+  run 0 portable start 0.460 s, exit 1.271 s
+  run 0 normal   start 0.470 s, exit 1.202 s
+  run 1 portable start 0.454 s, exit 1.281 s
+  run 1 normal   start 0.429 s, exit 1.180 s
+  run 2 portable start 0.466 s, exit 1.272 s
+  run 2 normal   start 0.429 s, exit 1.173 s
+  run 3 portable start 0.455 s, exit 1.289 s
+  run 3 normal   start 0.427 s, exit 1.178 s
+  run 4 portable start 0.455 s, exit 1.266 s
+  run 4 normal   start 0.329 s, exit 1.172 s
+  run 5 portable start 0.456 s, exit 1.279 s
+  run 5 normal   start 0.427 s, exit 1.185 s
+  run 6 portable start 0.456 s, exit 1.266 s
+  run 6 normal   start 0.427 s, exit 1.180 s
+  run 7 portable start 0.460 s, exit 1.280 s
+  run 7 normal   start 0.428 s, exit 1.183 s
+PASS   SC-009 start-up: portable median within 10 % of the installed edition portable 0.456 s, installed 0.427 s (+6.7 %)
+PASS   SC-009 exit with save: portable median within 10 % of the installed edition portable 1.279 s, installed 1.180 s (+8.5 %)
+PASS   two runs without a change leave the settings file and its .bak untouched time stamp same True, bytes same True, .bak same True
+PASS   the installed edition's key restored         19c222e0a142bef9 -> 19c222e0a142bef9
+RESULT: PASS

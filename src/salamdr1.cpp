@@ -2435,7 +2435,7 @@ BOOL InitializeGraphics(BOOL colorsOnly)
     IconSizes[ICONSIZE_48] = GetIconSizeForSystemDPI(ICONSIZE_48);
 
     HKEY hKey;
-    if (OpenKeyAux(NULL, HKEY_CURRENT_USER, "Control Panel\\Desktop\\WindowMetrics", hKey))
+    if (OpenKeyAux(NULL, HKEY_CURRENT_USER, "Control Panel\\Desktop\\WindowMetrics", hKey)) // portable: system read
     {
         // dalsi zajimave hodnoty: "Shell Icon Size", "Shell Small Icon Size"
         char buff[100];
@@ -3996,7 +3996,12 @@ BOOL ParseCommandLineParameters(LPSTR cmdLine, CCommandLineParams* cmdLineParams
             // single-dash switches stay as they are); never stored, never passed to a restart
             if (StrICmp(argv[i], "--updatetest") == 0)
             {
+#ifdef TC_PORTABLE
+                // feature 428: the test mode repeats an installation - the portable edition never installs
+                SalMessageBox(NULL, LoadStrU8(IDS_UPDATE_NOTEST_PORTABLE), SALAMANDER_TEXT_VERSION, MB_OK | MB_ICONINFORMATION);
+#else
                 UpdateTestMode = TRUE;
+#endif
                 continue;
             }
 
@@ -4161,6 +4166,9 @@ int WinMainBody(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR cmdLine,
             HANDLES(FreeLibrary(NtDLL));
             NtDLL = NULL;
         }
+#ifdef TC_PORTABLE
+        PortableStore_Close(); // feature 428: an early exit leaves no session folder either
+#endif
         return myExitCode;
     }
 
@@ -4196,6 +4204,22 @@ int WinMainBody(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR cmdLine,
         }
     }
 
+#ifdef TC_PORTABLE
+#ifdef _DEBUG
+    // feature 428: the round-trip seam of the gate test (probe/roundtrip_gate.py)
+    int portableSelfTestExit = 0;
+    if (PortableStore_RunSelfTest(&portableSelfTestExit))
+    {
+        myExitCode = portableSelfTestExit;
+        goto EXIT_1; // frees what is loaded so far (Debug's handle check at exit stays quiet)
+    }
+#endif
+    // feature 428: the portable settings store - before anything reads a setting or creates a named
+    // object (the process list below already carries this copy's scope); never the user's registry
+    if (!PortableStore_Open())
+        goto EXIT_1;
+#endif
+
     // mame nastavene globalni promenne, muzeme inicializovat tento mutex
     if (!TaskList.Init())
         TRACE_E("TaskList.Init() failed!");
@@ -4207,6 +4231,7 @@ int WinMainBody(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR cmdLine,
 
     LoadSaveToRegistryMutex.Init();
 
+#ifndef TC_PORTABLE // feature 428: the portable edition never had a 0.1.x root (nor the user's registry)
     // feature 343: the version-free configuration root; a 0.1.x configuration is copied into it once,
     // before anything reads a setting. If that fails, this session runs on the old root (nothing is
     // lost) and the user is told once the main window is up; the next start tries again.
@@ -4218,6 +4243,7 @@ int WinMainBody(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR cmdLine,
         HoldLegacyConfigSession();
         CfgMigrateFailed = cfgMigTellUser;
     }
+#endif
 
     // zkusime z aktualni konfigurace vytahnout hodnotu "AutoImportConfig" -> existuje v pripade, ze provadime UPGRADE
     BOOL autoImportConfig = FALSE;
@@ -4236,7 +4262,7 @@ int WinMainBody(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR cmdLine,
     LoadSaveToRegistryMutex.Enter();
     HKEY hSalamander;
     DWORD langChanged = FALSE; // TRUE = startujeme Salama poprve s jinym jazykem (naloadime vsechny pluginy, at se overi ze mame tuto jazykovou verzi i pro ne, pripadne at user vyresi jake nahradni verze chce pouzivat)
-    if (OpenKey(HKEY_CURRENT_USER, configKey, hSalamander))
+    if (OpenKey(SalCfgBaseKey(), configKey, hSalamander))
     {
         HKEY actKey;
         DWORD configVersion = 1; // toto je konfig od 1.52 a starsi
@@ -4409,7 +4435,7 @@ FIND_NEW_SLG_FILE:
     // pokud konfigurace neexistuje nebo bude nasledne pri importu ze souboru zmenena, ma uzivatel
     // smulu a splash screen se bude ridit implicitni nebo starou hodnotou
     LoadSaveToRegistryMutex.Enter();
-    if (OpenKey(HKEY_CURRENT_USER, configKey, hSalamander))
+    if (OpenKey(SalCfgBaseKey(), configKey, hSalamander))
     {
         HKEY actKey;
         if (OpenKey(hSalamander, SALAMANDER_CONFIG_REG, actKey))
@@ -4458,8 +4484,13 @@ FIND_NEW_SLG_FILE:
 
     // pokud soubor existuje, bude importovan do registry
     BOOL importCfgFromFileWasSkipped = FALSE;
+#ifndef TC_PORTABLE // feature 428: the portable edition's settings are settings\tandemcommander.reg; the
+                    // upstream start-up import of <exe>\config.reg / -c <file> is not used (research R-09)
     ImportConfiguration(NULL, ConfigurationName, ConfigurationNameIgnoreIfNotExists, autoImportConfig,
                         &importCfgFromFileWasSkipped);
+#else
+    PortableStore_ApplyPendingImport(); // FR-013: Options > Import Configuration of the last session
+#endif
 
     // obslouzime prechod ze stareho configu na novy
 
@@ -4632,6 +4663,7 @@ FIND_NEW_SLG_FILE:
 
     Associations.ReadAssociations(FALSE); // nacteni asociaci z Registry
 
+#ifndef TC_PORTABLE // feature 428: the portable edition never registers the Explorer integration (FR-006a)
     // registrace shell extensions
     // pokud najdeme v podadresari "utils" knihovnu, overime jeji registraci a pripadne ji zaregistrujeme
     char shellExtPath[MAX_PATH];
@@ -4661,6 +4693,7 @@ FIND_NEW_SLG_FILE:
         }
 #endif // _WIN64
     }
+#endif // TC_PORTABLE
 
     //--- vytvoreni hlavniho okna
     // the file-list window class is registered through the W path so its
@@ -4914,12 +4947,19 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                     }
                     else
 #endif
+#ifndef TC_PORTABLE // feature 428: a portable copy starts on any PC - the import stays in the menu, never offered
                         if (CfgImpFreshConfigAtStart && CfgImpAnySupportedSourceExists())
                         PostMessage(MainWindow->HWindow, WM_USER_CFGIMPORT_OFFER, 0, 0);
+#endif
 
                     // feature 343: the configuration could not be moved to the version-free root
                     if (CfgMigrateFailed)
                         PostMessage(MainWindow->HWindow, WM_USER_CFGMIGRATE_FAILED, 0, 0);
+
+#ifdef TC_PORTABLE
+                    // feature 428: the store's messages that waited for the language module
+                    PortableStore_AttachMainWindow(MainWindow->HWindow);
+#endif
 
                     //--- aplikacni smycka
                     CALL_STACK_MESSAGE1("WinMainBody::message_loop");
@@ -5287,6 +5327,11 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
         NOHANDLES(FreeLibrary(User32DLL));
         User32DLL = NULL;
     }
+
+#ifdef TC_PORTABLE
+    // feature 428: the last persist (only when the hive changed), the session folder removed
+    PortableStore_Close();
+#endif
 
     //OleSpyStressTest(); // multi-threaded stress test
     // OleSpyRevoke();     // odpojime OLESPY

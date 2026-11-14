@@ -11,6 +11,7 @@
 #include "fcremote.h"
 #include "messages.h"
 #include "../remotmsg.h"
+#include "../../../common/salportscope.h" // feature 428: the scope of the program folder (CRT-free)
 #include "../filecomp.rh"
 #include "../filecomp.rh2"
 #include "../lang/lang.rh"

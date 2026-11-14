@@ -671,7 +671,7 @@ BOOL CPackACDialog::ProbeKnownLocations()
         {L"SOFTWARE\\WinRAR", L"exe64", L"Rar.exe", TRUE},
         {L"SOFTWARE\\WinRAR", L"exe32", L"Rar.exe", TRUE},
     };
-    static const HKEY roots[] = {HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER};
+    static const HKEY roots[] = {HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER}; // portable: system read
     static const REGSAM views[] = {KEY_WOW64_64KEY, KEY_WOW64_32KEY};
     for (int p = 0; p < _countof(probes); p++)
     {

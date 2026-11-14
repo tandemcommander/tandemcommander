@@ -2374,6 +2374,10 @@ public:
     // feature 088, interface version 107
     virtual BOOL WINAPI IsUnattendedClose();
     virtual void WINAPI SetWindowClosesUnattended(HWND hWindow, BOOL closes);
+    // feature 428, interface version 109
+    virtual BOOL WINAPI IsPortableEdition();
+    virtual BOOL WINAPI GetUserDataFolderW(int kind, WCHAR* buf, int bufSize);
+    virtual BOOL WINAPI GetInstanceScopeSuffix(char* buf, int bufSize);
 };
 
 //

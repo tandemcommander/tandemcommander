@@ -1,0 +1,139 @@
+feature 428 identity probe, 2026-11-14T12:44:44
+PASS   I portable exe: IDI_SALAMANDER = salamand_portable.ico 7 images in the exe, 7 in the .ico
+PASS   I normal exe: IDI_SALAMANDER = salamand.ico (no badge) 7 images
+PASS   T czech: title says [portable]               'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A czech: the label's text fits its line      'Přenosná verze – nastavení se ukládá do této složky:': 348 of 419 px
+PASS   S default: About screenshot                  specs\428-portable-build\evidence\about_portable_default.png (451 x 355)
+PASS   S dark: About screenshot                     specs\428-portable-build\evidence\about_portable_dark.png (451 x 355)
+FAIL   A czech: the link closes the box and the panel shows settings title 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+    at the timeout: (hidden) [Touch Tooltip Window 'Tooltip'] 
+    at the timeout: [UAC_InputIndicatorOverlayWnd ''] 
+    at the timeout: [UAC Input Indicator ''] 
+    at the timeout: [TandemCommanderMainWindowVer01 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'] 
+    at the timeout: (hidden) [ComboLBox ''] 
+    at the timeout: (hidden) [WorkerW ''] 
+    at the timeout: (hidden) [WorkerW ''] 
+    at the timeout: (hidden) [CicLoaderWndClass ''] 
+    at the timeout: (hidden) [CiceroUIWndFrame 'CiceroUIWndFrame'] 
+    at the timeout: (hidden) [CiceroUIWndFrame 'TF_FloatingLangBar_WndTitle'] 
+    at the timeout: (hidden) [MSCTFIME UI 'MSCTFIME UI'] 
+    at the timeout: (hidden) [IME 'Default IME'] 
+    at the timeout: (hidden) [IME 'Default IME'] 
+PASS   T german: title says [portable]              'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+FAIL   A german: the label's text fits its line     'Portable-Version – ihre Einstellungen werden in diesem Ordner gespeichert:': 490 of 419 px
+FAIL   A german: the link closes the box and the panel shows settings title 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+    at the timeout: (hidden) [Touch Tooltip Window 'Tooltip'] 
+    at the timeout: [UAC_InputIndicatorOverlayWnd ''] 
+    at the timeout: [UAC Input Indicator ''] 
+    at the timeout: [TandemCommanderMainWindowVer01 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'] 
+    at the timeout: (hidden) [ComboLBox ''] 
+    at the timeout: (hidden) [WorkerW ''] 
+    at the timeout: (hidden) [WorkerW ''] 
+    at the timeout: (hidden) [CicLoaderWndClass ''] 
+    at the timeout: (hidden) [CiceroUIWndFrame 'CiceroUIWndFrame'] 
+    at the timeout: (hidden) [CiceroUIWndFrame 'TF_FloatingLangBar_WndTitle'] 
+    at the timeout: (hidden) [MSCTFIME UI 'MSCTFIME UI'] 
+    at the timeout: (hidden) [IME 'Default IME'] 
+    at the timeout: (hidden) [IME 'Default IME'] 
+PASS   T french: title says [portable]              'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+FAIL   A french: the label's text fits its line     'Édition portable – ses paramètres sont conservés dans ce dossier :': 434 of 419 px
+FAIL   A french: the link closes the box and the panel shows settings title 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+    at the timeout: (hidden) [Touch Tooltip Window 'Tooltip'] 
+    at the timeout: [UAC_InputIndicatorOverlayWnd ''] 
+    at the timeout: [UAC Input Indicator ''] 
+    at the timeout: [TandemCommanderMainWindowVer01 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'] 
+    at the timeout: (hidden) [ComboLBox ''] 
+    at the timeout: (hidden) [WorkerW ''] 
+    at the timeout: (hidden) [WorkerW ''] 
+    at the timeout: (hidden) [CicLoaderWndClass ''] 
+    at the timeout: (hidden) [CiceroUIWndFrame 'CiceroUIWndFrame'] 
+    at the timeout: (hidden) [CiceroUIWndFrame 'TF_FloatingLangBar_WndTitle'] 
+    at the timeout: (hidden) [MSCTFIME UI 'MSCTFIME UI'] 
+    at the timeout: (hidden) [IME 'Default IME'] 
+    at the timeout: (hidden) [IME 'Default IME'] 
+PASS   T dutch: title says [portable]               'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+FAIL   A dutch: the label's text fits its line      'Draagbare versie – de instellingen worden in deze map bewaard:': 421 of 419 px
+FAIL   A dutch: the link closes the box and the panel shows settings title 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+    at the timeout: (hidden) [Touch Tooltip Window 'Tooltip'] 
+    at the timeout: [UAC_InputIndicatorOverlayWnd ''] 
+    at the timeout: [UAC Input Indicator ''] 
+    at the timeout: [TandemCommanderMainWindowVer01 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'] 
+    at the timeout: (hidden) [ComboLBox ''] 
+    at the timeout: (hidden) [WorkerW ''] 
+    at the timeout: (hidden) [WorkerW ''] 
+    at the timeout: (hidden) [CicLoaderWndClass ''] 
+    at the timeout: (hidden) [CiceroUIWndFrame 'CiceroUIWndFrame'] 
+    at the timeout: (hidden) [CiceroUIWndFrame 'TF_FloatingLangBar_WndTitle'] 
+    at the timeout: (hidden) [MSCTFIME UI 'MSCTFIME UI'] 
+    at the timeout: (hidden) [IME 'Default IME'] 
+    at the timeout: (hidden) [IME 'Default IME'] 
+PASS   T hungarian: title says [portable]           'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A hungarian: the label's text fits its line  'Hordozható kiadás – beállításai ebben a mappában találhatók:': 403 of 419 px
+FAIL   A hungarian: the link closes the box and the panel shows settings title 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+    at the timeout: (hidden) [Touch Tooltip Window 'Tooltip'] 
+    at the timeout: [UAC_InputIndicatorOverlayWnd ''] 
+    at the timeout: [UAC Input Indicator ''] 
+    at the timeout: [TandemCommanderMainWindowVer01 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'] 
+    at the timeout: (hidden) [ComboLBox ''] 
+    at the timeout: (hidden) [WorkerW ''] 
+    at the timeout: (hidden) [WorkerW ''] 
+    at the timeout: (hidden) [CicLoaderWndClass ''] 
+    at the timeout: (hidden) [CiceroUIWndFrame 'CiceroUIWndFrame'] 
+    at the timeout: (hidden) [CiceroUIWndFrame 'TF_FloatingLangBar_WndTitle'] 
+    at the timeout: (hidden) [MSCTFIME UI 'MSCTFIME UI'] 
+    at the timeout: (hidden) [IME 'Default IME'] 
+    at the timeout: (hidden) [IME 'Default IME'] 
+PASS   T romanian: title says [portable]            'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A romanian: the label's text fits its line   'Ediția portabilă – setările sale sunt păstrate în acest folder:': 382 of 419 px
+FAIL   A romanian: the link closes the box and the panel shows settings title 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+    at the timeout: (hidden) [Touch Tooltip Window 'Tooltip'] 
+    at the timeout: [UAC_InputIndicatorOverlayWnd ''] 
+    at the timeout: [UAC Input Indicator ''] 
+    at the timeout: [TandemCommanderMainWindowVer01 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'] 
+    at the timeout: (hidden) [ComboLBox ''] 
+    at the timeout: (hidden) [WorkerW ''] 
+    at the timeout: (hidden) [WorkerW ''] 
+    at the timeout: (hidden) [CicLoaderWndClass ''] 
+    at the timeout: (hidden) [CiceroUIWndFrame 'CiceroUIWndFrame'] 
+    at the timeout: (hidden) [CiceroUIWndFrame 'TF_FloatingLangBar_WndTitle'] 
+    at the timeout: (hidden) [MSCTFIME UI 'MSCTFIME UI'] 
+    at the timeout: (hidden) [IME 'Default IME'] 
+    at the timeout: (hidden) [IME 'Default IME'] 
+PASS   T slovak: title says [portable]              'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A slovak: the label's text fits its line     'Prenosná verzia – jej nastavenia sú uložené v tomto priečinku:': 408 of 419 px
+FAIL   A slovak: the link closes the box and the panel shows settings title 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+    at the timeout: (hidden) [Touch Tooltip Window 'Tooltip'] 
+    at the timeout: [UAC_InputIndicatorOverlayWnd ''] 
+    at the timeout: [UAC Input Indicator ''] 
+    at the timeout: [TandemCommanderMainWindowVer01 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'] 
+    at the timeout: (hidden) [ComboLBox ''] 
+    at the timeout: (hidden) [WorkerW ''] 
+    at the timeout: (hidden) [WorkerW ''] 
+    at the timeout: (hidden) [CicLoaderWndClass ''] 
+    at the timeout: (hidden) [CiceroUIWndFrame 'CiceroUIWndFrame'] 
+    at the timeout: (hidden) [CiceroUIWndFrame 'TF_FloatingLangBar_WndTitle'] 
+    at the timeout: (hidden) [MSCTFIME UI 'MSCTFIME UI'] 
+    at the timeout: (hidden) [IME 'Default IME'] 
+    at the timeout: (hidden) [IME 'Default IME'] 
+PASS   T spanish: title says [portable]             'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A spanish: the label's text fits its line    'Edición portátil: su configuración se guarda en esta carpeta:': 389 of 419 px
+FAIL   A spanish: the link closes the box and the panel shows settings title 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+    at the timeout: (hidden) [Touch Tooltip Window 'Tooltip'] 
+    at the timeout: [UAC_InputIndicatorOverlayWnd ''] 
+    at the timeout: [UAC Input Indicator ''] 
+    at the timeout: [TandemCommanderMainWindowVer01 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'] 
+    at the timeout: (hidden) [ComboLBox ''] 
+    at the timeout: (hidden) [WorkerW ''] 
+    at the timeout: (hidden) [WorkerW ''] 
+    at the timeout: (hidden) [CicLoaderWndClass ''] 
+    at the timeout: (hidden) [CiceroUIWndFrame 'CiceroUIWndFrame'] 
+    at the timeout: (hidden) [CiceroUIWndFrame 'TF_FloatingLangBar_WndTitle'] 
+    at the timeout: (hidden) [MSCTFIME UI 'MSCTFIME UI'] 
+    at the timeout: (hidden) [IME 'Default IME'] 
+    at the timeout: (hidden) [IME 'Default IME'] 
+PASS   A: the settings folder exists after the runs C:\Users\pavel\AppData\Local\Temp\tc428\identity\copy\TC\settings
+PASS   T normal: no [portable] in the title         'docs - Tandem Commander 0.3.0 (x64) ST'
+PASS   A normal: About has no portable lines        label None, link None
+PASS   the installed edition's key is as before (restored) 19c222e0a142bef9 -> 19c222e0a142bef9
+NOT DRIVEN: High Contrast About (a system setting), the badge on a real taskbar in Light / Dark, the taskbar grouping by executable path (person checks)
+RESULT: FAIL

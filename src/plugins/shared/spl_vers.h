@@ -369,8 +369,15 @@
 //         104-107 keep loading and running unchanged (the wizard offers their
 //         settings only as a whole). See
 //         specs/245-settings-import-salamander/contracts/plugin-api-v108.md
+//   109 - after 0.3.0 (feature 428): the portable edition - IsPortableEdition,
+//         GetUserDataFolderW (SALUSERDATA_WEBVIEW2, SALUSERDATA_LOCAL) and
+//         GetInstanceScopeSuffix appended at the end of CSalamanderGeneralAbstract.
+//         Pure vtable append - plugins built for 104-108 keep loading and running
+//         unchanged (their configuration goes through the registry interface, which
+//         the portable edition serves from its own store). See
+//         specs/428-portable-build/contracts/plugin-api-109.md
 
-#define LAST_VERSION_OF_SALAMANDER 108
-#define REQUIRE_LAST_VERSION_OF_SALAMANDER "This plugin requires a newer version of Tandem Commander (" SAL_VER_PLATFORM "): plugin interface 108, first shipped in version 0.2.0."
+#define LAST_VERSION_OF_SALAMANDER 109
+#define REQUIRE_LAST_VERSION_OF_SALAMANDER "This plugin requires a newer version of Tandem Commander (" SAL_VER_PLATFORM "): plugin interface 109, first shipped after version 0.3.0."
 
 #endif // __SPL_VERS_H

@@ -153,7 +153,7 @@ BOOL GetUserName(const char* drive, const char* remoteName, char* userName, DWOR
 {
     CALL_STACK_MESSAGE5("GetUserName(%s, %s, , %u, , %u)", drive, remoteName, userBufSize, providerBufSize);
     HKEY network;
-    LONG res = HANDLES_Q(RegOpenKeyEx(HKEY_CURRENT_USER, "Network", 0, KEY_READ, &network));
+    LONG res = HANDLES_Q(RegOpenKeyEx(HKEY_CURRENT_USER, "Network", 0, KEY_READ, &network)); // portable: system read
     if (res != ERROR_SUCCESS)
         return FALSE; // nothing to do ...
 
@@ -234,7 +234,7 @@ static void GetRememberedNetDriveLogonW(char letter, const WCHAR* remote, WCHAR*
     WCHAR keyName[] = L"Network\\?";
     keyName[_countof(keyName) - 2] = (WCHAR)(BYTE)letter;
     HKEY key;
-    if (HANDLES_Q(RegOpenKeyExW(HKEY_CURRENT_USER, keyName, 0, KEY_READ, &key)) != ERROR_SUCCESS)
+    if (HANDLES_Q(RegOpenKeyExW(HKEY_CURRENT_USER, keyName, 0, KEY_READ, &key)) != ERROR_SUCCESS) // portable: system read
         return; // nothing to do ...
     WCHAR* savedRemote = ReadRegStringW(key, L"RemotePath");
     if (SalNetDriveSameRemote(savedRemote, remote))
@@ -1890,7 +1890,7 @@ static WCHAR* ReadNetDriveNameW(const WCHAR* remote)
     WCHAR* name = NULL;
     HKEY key;
     if (SalNetDriveNameKey(remote, keyPath + prefixLen, keySize) &&
-        RegOpenKeyExW(HKEY_CURRENT_USER, keyPath, 0, KEY_QUERY_VALUE, &key) == ERROR_SUCCESS)
+        RegOpenKeyExW(HKEY_CURRENT_USER, keyPath, 0, KEY_QUERY_VALUE, &key) == ERROR_SUCCESS) // portable: system read
     {
         DWORD type;
         DWORD size = 0;
@@ -2258,7 +2258,7 @@ void InitOneDrivePath()
     char path[MAX_PATH];
     for (int i = 0; !done && i < 2; i++) // theoretically only needed for Windows 8 and lower (from 8.1 we have FOLDERID_SkyDrive)
     {
-        if (HANDLES_Q(RegOpenKeyEx(HKEY_CURRENT_USER,
+        if (HANDLES_Q(RegOpenKeyEx(HKEY_CURRENT_USER, // portable: system read
                                    Windows8_1AndLater && !Windows10AndLater ? (i == 0 ? "Software\\Microsoft\\Windows\\CurrentVersion\\OneDrive" : // jen Win 8.1
                                                                                    "Software\\Microsoft\\Windows\\CurrentVersion\\SkyDrive")
                                                                             : (i == 0 ? "Software\\Microsoft\\OneDrive" : "Software\\Microsoft\\SkyDrive"), // krom Win 8.1
@@ -2282,7 +2282,7 @@ void InitOneDrivePath()
 
     // we will load OneDrive Business storages from the registry
     OneDriveBusinessStorages.DestroyMembers();
-    if (HANDLES_Q(RegOpenKeyEx(HKEY_CURRENT_USER, "Software\\Microsoft\\OneDrive\\Accounts",
+    if (HANDLES_Q(RegOpenKeyEx(HKEY_CURRENT_USER, "Software\\Microsoft\\OneDrive\\Accounts", // portable: system read
                                0, KEY_READ, &hKey)) == ERROR_SUCCESS)
     {
         DWORD i = 0;
@@ -2353,7 +2353,7 @@ int GetWslDistributions(TDirectArray<char*>& names)
 #endif // _DEBUG
 
     HKEY hKey;
-    if (HANDLES_Q(RegOpenKeyExW(HKEY_CURRENT_USER, lxssKey, 0, KEY_READ, &hKey)) != ERROR_SUCCESS)
+    if (HANDLES_Q(RegOpenKeyExW(HKEY_CURRENT_USER, lxssKey, 0, KEY_READ, &hKey)) != ERROR_SUCCESS) // portable: system read
         return 0; // no WSL (or no distribution was ever registered)
 
     for (DWORD i = 0;; i++)

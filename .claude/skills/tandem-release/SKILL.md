@@ -202,9 +202,10 @@ Only when step 7 passed and something changed:
    spl_vers.h, the installer script.>
 
    Verified: release.py check 0 findings, check_encoding.py --strict
-   TOTAL 0. Not done here - the maintainer's steps: build.cmd full release
-   sign setup, the tag v<VER>, the GitHub release with
-   tandemcommander-<VER>-x64-setup.exe attached, winget.
+   TOTAL 0. Not done here - the maintainer's steps: build.cmd dist (the
+   signed installer and the signed portable ZIP, feature 428), the tag
+   v<VER>, the GitHub release with tandemcommander-<VER>-x64-setup.exe and
+   tandemcommander-<VER>-x64-portable.zip attached, winget.
 
    <the attribution lines the session's instructions give for commits>
    ```

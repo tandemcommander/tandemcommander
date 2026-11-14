@@ -24,7 +24,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 
 | Area | Features |
 |------|----------|
-| Build, signing, installer, winget, CI | 002, 050, 072, 077, 080, 091 |
+| Build, signing, installer, winget, CI | 002, 050, 072, 077, 080, 091, 428 |
 | Backlog and project tooling | 242, 243, 247, 265, 342, 344, 371, 411, 412, 414, 415, 419, 426 |
 | Releases and pre-release reviews | 056, 068, 243, 343 |
 | Translations (pipeline, policy, pins) | 038, 039, 055, 409; string additions in 084, 101, 106, 123, 420, 421 |
@@ -35,7 +35,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377, 378, 382, 383, 393, 394, 395, 396, 400, 401, 402, 403 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320, 399 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
-| Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
+| Plug-in interface 107/108/109, closing for an update (Restart Manager) | 080, 088, 118, 121, 245, 428 |
 | WebView2 viewers (Markdown, Code) | 081, 085, 262, 314, 408, 424 |
 | Privacy and security | 083, 085, 086, 090, 123, 420, 421, 422 |
 | FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279, 288, 303, 323, 341, 345, 347, 348, 384, 385, 410 |
@@ -7173,3 +7173,30 @@ a few early ones are out of sequence).
   glyphs 1346 -> 18, light chrome 109,871 -> 167, whole windows after a switch 0 px, Default 0 px
   against the before run; saltests 287,448; refute-first reviews 1-5 (M1-M5 and S1-S8 fixed; the run
   stopped after review 3 and was finished at the maintainer's request).
+- 428-portable-build: **a portable edition** - Tandem Commander without installation, everything in
+  its own folder. A build-time edition (`TC_PORTABLE`, MSBuild `TcEdition=portable`, output
+  `<Config>_x64_portable`, every output root under `$(TcOutSuffix)`, `tools/check_outdir_suffix.py`):
+  the configuration lives in a private registry hive (`RegLoadAppKeyW`) of a session folder
+  `%TEMP%\TandemCommander-portable-<scope>` and is persisted as `settings\tandemcommander.reg`
+  (+ `.bak`, temp + `SalReplaceWithTempW`, `$(PortableDir)` for paths inside the folder; `Default
+  Directories` stays absolute - the move probe found it) by `src/portstore.*`; reglib maps
+  `HKEY_CURRENT_USER` to it, configuration code uses `SalCfgBaseKey()` (33 sites,
+  `tools/check_portable_regsites.py`); kernel objects scoped per copy (`PortableScopedName`,
+  fcremote via `salportscope.h`). Files go to `settings\` (bug reports, import backups, export folder,
+  PictView wallpaper and its backup), WebView2 data to the session folder (`TcWebSetUserDataFolder`,
+  binding rule in architecture/11). Title `[portable]`, badge icon, About line + settings link
+  (`CUpdateLink` - a plain `CHyperLink` leaves Enter to the default button), update check only with
+  the portable ZIP and link-only (level list hidden), Import Configuration applied at the next lone
+  start, password note, Explorer-integration message. Plug-in interface 109 (`IsPortableEdition`,
+  `GetUserDataFolderW`, `GetInstanceScopeSuffix`). Package `make_portable_zip.py` (a released
+  version's ZIP goes to the build folder), `build.cmd dist` (installer + ZIP, signed, refuses a
+  released version / no certificate / another build folder), `release.py artifacts`. Traps: the store
+  needed the configuration's load/save lock around dumps, the copy's start lock around unload and
+  join, a read-only mark inside the shared hive, comparison with the FILE's bytes (not the last own
+  write), retry of transient write failures and a reported stop after 60 s, ReplaceFileW's `~RF*.TMP`
+  leftover; probe traps: a foreign process's `HFONT` does not select, posted clicks do not hit-test,
+  the Explorer save dialog's name box is Edit 1001. Evidence: `specs/428-portable-build/probe/`
+  (`run_all.ps1`: gate, notrace + negative control, scenarios with 20 kills cutting writes, import,
+  identity in 8 languages, update, password note, SC-009 +6.5 % / +7.7 %), three refute-first
+  reviews and three re-checks of the fixes (`fix-log.md`). Inbox: installer licence texts, bit
+  reproducibility, plug-in registry guard, update level in an unpacked copy.

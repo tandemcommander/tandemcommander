@@ -82,7 +82,10 @@ the one list; `CLAUDE.md` and the constitution point here, and
 1. Closing pass on the state to release, **before** the skill (it does not
    build or test; as done for 0.1.10 on 2026-10-14, recorded in commit
    `8e5d6c8a`): `build.cmd full` Debug and `build.cmd full release`
-   succeed; `saltests` 0 failed; `tools/check_encoding.py` TOTAL 0; the
+   succeed, and so does `build.cmd full release portable` with
+   `specs/428-portable-build/probe/zip_check.py` PASS on its ZIP (428; the
+   tree still has the released version, so the ZIP goes to
+   `build\tandemcommander\`, never over a published file in `setup\output`); `saltests` 0 failed; `tools/check_encoding.py` TOTAL 0; the
    probes of the release's features and the regressions they name, on the
    hidden desktop (`tools/run_on_hidden_desktop.ps1`), 0 FAIL. Record every
    FAIL or NOT DRIVEN row with its reason (a known intermittent failure, a
@@ -105,15 +108,31 @@ the one list; `CLAUDE.md` and the constitution point here, and
    it moves every date (changelog, `PRIVACY.md`, `CLAUDE.md`, the project
    reference, the release notes) and folds what was added since — and
    commit before tagging.
-2. `build.cmd full release sign setup` (signed tree and installer).
-3. Tag `v<x.y.z>`.
+2. `build.cmd dist` (feature 428): one command builds and signs both editions —
+   the normal tree and the signed installer (`full release rebuild sign setup`),
+   then the portable tree and its ZIP of signed binaries (`full release rebuild
+   sign portable`) — and ends with `DIST OK` and both files of the version in
+   `setup\output\` with size and SHA-256. On a failure it prints
+   `DIST FAILED at step <n>` and removes what the failing step wrote. It
+   refuses before any work when the version's tag exists, the certificate is
+   not in the store, or `OPENSAL_BUILD_DIR` is not the default `build\` (the
+   installer packs that tree); an earlier build of the same version is set
+   aside as `*.before-dist-<time>`. Then
+   `python tools/release/release.py artifacts <x.y.z>`: both files there, the
+   ZIP's program the portable edition, every executable file of both validly
+   signed.
+3. Tag `v<x.y.z>`. A rebuild after tagging (a fix found late) needs the tag
+   removed first (it is not pushed yet) - `dist` refuses a tagged version.
 4. The **Publish to winget** workflow stays **on**: publishing the GitHub
    release (step 5) opens the winget pull request by itself (so it did for
    0.1.10 and 0.2.0). `microsoft/winget-pkgs#426090` (0.1.7) was merged on
    2026-10-08; the old rule to switch the workflow off no longer applies.
-5. Publish the GitHub release **with the installer attached** under the
-   exact name `tandemcommander-<x.y.z>-x64-setup.exe` (the program's
-   new-version check, feature 123, offers a release only then; not a draft,
+5. Publish the GitHub release **with both files attached** under their
+   exact names `tandemcommander-<x.y.z>-x64-setup.exe` and
+   `tandemcommander-<x.y.z>-x64-portable.zip` (the program's new-version
+   check offers a release to the installed program only with the installer,
+   feature 123, and to the portable edition only with the ZIP, feature 428;
+   the ZIP is part of every release from the one after 0.3.0; not a draft,
    not a pre-release); its body is `release_notes/release_notes_vx.y.z.md`.
 
 ## After publishing (the maintainer)

@@ -5521,6 +5521,80 @@ void CSalamanderGeneral::SetWindowClosesUnattended(HWND hWindow, BOOL closes)
         RemovePropA(hWindow, SALCLOSEAPP_WINDOW_PROP);
 }
 
+// the portable edition for plugins (feature 428, interface version 109)
+
+BOOL CSalamanderGeneral::IsPortableEdition()
+{
+#ifdef TC_PORTABLE
+    return TRUE;
+#else
+    return FALSE;
+#endif
+}
+
+// creates 'dir' and its missing parents (an existing folder is fine); TRUE when it is a folder now
+static BOOL CreateFolderChainW(const std::wstring& dir)
+{
+    if (dir.empty())
+        return FALSE;
+    DWORD attr = GetFileAttributesW(dir.c_str());
+    if (attr != INVALID_FILE_ATTRIBUTES)
+        return (attr & FILE_ATTRIBUTE_DIRECTORY) != 0;
+    size_t slash = dir.find_last_of(L'\\');
+    if (slash != std::wstring::npos && slash > 2)
+        CreateFolderChainW(dir.substr(0, slash));
+    CreateDirectoryW(dir.c_str(), NULL);
+    attr = GetFileAttributesW(dir.c_str());
+    return attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY) != 0;
+}
+
+BOOL CSalamanderGeneral::GetUserDataFolderW(int kind, WCHAR* buf, int bufSize)
+{
+    if (buf == NULL || bufSize <= 0)
+        return FALSE;
+    buf[0] = 0;
+    std::wstring dir;
+#ifdef TC_PORTABLE
+    if (kind == SALUSERDATA_WEBVIEW2)
+        dir = std::wstring(PortableStore_SessionDirW()) + L"\\WebView2";
+    else if (kind == SALUSERDATA_LOCAL)
+        dir = PortableStore_SettingsDirW();
+#else
+    WCHAR local[MAX_PATH];
+    if (SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, SHGFP_TYPE_CURRENT, local) == S_OK)
+    {
+        dir = local;
+        if (!dir.empty() && dir.back() == L'\\')
+            dir.pop_back();
+        dir += L"\\Tandem Commander";
+        if (kind == SALUSERDATA_WEBVIEW2)
+            dir += L"\\WebView2";
+        else if (kind != SALUSERDATA_LOCAL)
+            dir.clear();
+    }
+#endif
+    if (dir.empty() || (int)dir.size() + 1 > bufSize) // a path is never cut
+        return FALSE;
+    if (!CreateFolderChainW(dir))
+        return FALSE;
+    lstrcpyW(buf, dir.c_str());
+    return TRUE;
+}
+
+BOOL CSalamanderGeneral::GetInstanceScopeSuffix(char* buf, int bufSize)
+{
+    if (buf == NULL || bufSize <= 0)
+        return FALSE;
+    const char* s = PortableStore_ScopeSuffix();
+    if ((int)strlen(s) + 1 > bufSize)
+    {
+        buf[0] = 0;
+        return FALSE;
+    }
+    lstrcpyA(buf, s);
+    return TRUE;
+}
+
 //
 // ****************************************************************************
 // CSalamanderForOperations

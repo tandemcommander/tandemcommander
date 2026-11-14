@@ -1,0 +1,45 @@
+feature 428 identity probe, 2026-11-14T14:46:20
+PASS   I portable exe: IDI_SALAMANDER = salamand_portable.ico 7 images in the exe, 7 in the .ico
+PASS   I normal exe: IDI_SALAMANDER = salamand.ico (no badge) 7 images
+PASS   T czech: title says [portable]               'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A czech: the label shows the language's text, not cut at its edge 'Přenosná verze – nastavení se ukládá do této složky:': ink up to x 253 of 419, y 12 of 13
+PASS   S default: About screenshot                  specs\428-portable-build\evidence\about_portable_default.png (451 x 355)
+PASS   S dark: About screenshot                     specs\428-portable-build\evidence\about_portable_dark.png (451 x 355)
+PASS   A czech: the link closes the box and the panel shows settings title 'settings - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A czech: the panel the link opened is the copy's settings folder stored panel paths: ['"Path"="\\\\System Volume Information"', '"Path"="Local Settings\\\\Temporary Internet Files"']
+PASS   T german: title says [portable]              'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A german: the label shows the language's text, not cut at its edge 'Portable-Version – ihre Einstellungen werden in diesem Ordner gespeichert:': ink up to x 358 of 419, y 12 of 13
+PASS   S de-default: About screenshot               specs\428-portable-build\evidence\about_portable_de-default.png (451 x 355)
+PASS   A german: the link closes the box and the panel shows settings title 'settings - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A german: the panel the link opened is the copy's settings folder stored panel paths: ['"Path"="\\\\System Volume Information"', '"Path"="Local Settings\\\\Temporary Internet Files"']
+PASS   T french: title says [portable]              'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A french: the label shows the language's text, not cut at its edge 'Édition portable – ses paramètres sont conservés dans ce dossier :': ink up to x 318 of 419, y 12 of 13
+PASS   A french: the link closes the box and the panel shows settings title 'settings - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A french: the panel the link opened is the copy's settings folder stored panel paths: ['"Path"="\\\\System Volume Information"', '"Path"="Local Settings\\\\Temporary Internet Files"']
+PASS   T dutch: title says [portable]               'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A dutch: the label shows the language's text, not cut at its edge 'Draagbare versie – de instellingen worden in deze map bewaard:': ink up to x 308 of 419, y 12 of 13
+PASS   A dutch: the link closes the box and the panel shows settings title 'settings - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A dutch: the panel the link opened is the copy's settings folder stored panel paths: ['"Path"="\\\\System Volume Information"', '"Path"="Local Settings\\\\Temporary Internet Files"']
+PASS   T hungarian: title says [portable]           'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A hungarian: the label shows the language's text, not cut at its edge 'Hordozható kiadás – beállításai ebben a mappában találhatók:': ink up to x 294 of 419, y 12 of 13
+PASS   A hungarian: the link closes the box and the panel shows settings title 'settings - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A hungarian: the panel the link opened is the copy's settings folder stored panel paths: ['"Path"="\\\\System Volume Information"', '"Path"="Local Settings\\\\Temporary Internet Files"']
+PASS   T romanian: title says [portable]            'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A romanian: the label shows the language's text, not cut at its edge 'Ediția portabilă – setările sale sunt păstrate în acest folder:': ink up to x 280 of 419, y 12 of 13
+PASS   A romanian: the link closes the box and the panel shows settings title 'settings - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A romanian: the panel the link opened is the copy's settings folder stored panel paths: ['"Path"="\\\\System Volume Information"', '"Path"="Local Settings\\\\Temporary Internet Files"']
+PASS   T slovak: title says [portable]              'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A slovak: the label shows the language's text, not cut at its edge 'Prenosná verzia – jej nastavenia sú uložené v tomto priečinku:': ink up to x 297 of 419, y 12 of 13
+PASS   A slovak: the link closes the box and the panel shows settings title 'settings - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A slovak: the panel the link opened is the copy's settings folder stored panel paths: ['"Path"="\\\\System Volume Information"', '"Path"="Local Settings\\\\Temporary Internet Files"']
+PASS   T spanish: title says [portable]             'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A spanish: the label shows the language's text, not cut at its edge 'Edición portátil: su configuración se guarda en esta carpeta:': ink up to x 286 of 419, y 12 of 13
+PASS   A spanish: the link closes the box and the panel shows settings title 'settings - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A spanish: the panel the link opened is the copy's settings folder stored panel paths: ['"Path"="\\\\System Volume Information"', '"Path"="Local Settings\\\\Temporary Internet Files"']
+PASS   A: the settings folder exists after the runs C:\Users\pavel\AppData\Local\Temp\tc428\identity\copy\TC\settings
+PASS   X FR-006a: Ctrl+C in a ZIP panel says the Explorer integration is not available title 'x.zip - Tandem Commander 0.3.0 (x64) [portable] ST'; box [#32770 'Tandem Commander 0.3.0 (x64)'] Para arrastrar o copiar archivos desde un archivo comprimido o un sistema de archivos de un complemento a otro programa es necesaria la integración con el Explo
+PASS   T normal: no [portable] in the title         'docs - Tandem Commander 0.3.0 (x64) ST'
+PASS   A normal: About has no portable lines        label None, link None
+PASS   the installed edition's key is as before (restored) 19c222e0a142bef9 -> 19c222e0a142bef9
+NOT DRIVEN: High Contrast About (a system setting), the badge on a real taskbar in Light / Dark, the taskbar grouping by executable path (person checks)
+RESULT: PASS

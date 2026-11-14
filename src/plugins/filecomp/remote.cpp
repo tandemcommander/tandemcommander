@@ -3,6 +3,21 @@
 
 #include "precomp.h"
 
+// feature 428: the channel of THIS copy of the program - in the portable edition the names carry
+// the copy's scope (interface 109), so fcremote.exe of an installed program (or of another portable
+// copy) never reaches this one; fcremote.exe computes the same names (fcremote.cpp, FcChannelNames)
+static const char* FcScopedName(const char* base, char* buf, int size)
+{
+    char suffix[24];
+    if (SG == NULL || !SG->GetInstanceScopeSuffix(suffix, (int)sizeof(suffix)))
+        suffix[0] = 0;
+    _snprintf_s(buf, size, _TRUNCATE, "%s%s", base, suffix);
+    return buf;
+}
+
+static char FcChannelName[64];
+static char FcStartedEventName[64];
+
 // ****************************************************************************
 //
 // CRemoteComparator
@@ -14,7 +29,7 @@ HANDLE CRemoteComparator::TerminateEvent = NULL;
 
 CRemoteComparator::CRemoteComparator()
     : CThread("Remote Comparator"),
-      MessageCenter(MessageCenterName, FALSE){
+      MessageCenter(FcScopedName(MessageCenterName, FcChannelName, (int)sizeof(FcChannelName)), FALSE){
           CALL_STACK_MESSAGE_NONE}
 
       CRemoteComparator::~CRemoteComparator()
@@ -84,7 +99,7 @@ CRemoteComparator::Body()
     if (!MessageCenter.IsGood())
         return -1;
     BOOL ret;
-    HANDLE started = CreateEvent(NULL, TRUE, FALSE, StartedEventName);
+    HANDLE started = CreateEvent(NULL, TRUE, FALSE, FcScopedName(StartedEventName, FcStartedEventName, (int)sizeof(FcStartedEventName)));
     SetEvent(started);
     while (1)
     {

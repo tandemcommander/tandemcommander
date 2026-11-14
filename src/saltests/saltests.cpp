@@ -47,6 +47,7 @@
 #include "salfindtext.h"    // feature 121
 #include "salupdcheck.h"    // feature 123
 #include "salupdinstall.h"  // feature 420
+#include "salportable.h"    // feature 428
 #include "saluncserver.h"   // feature 125
 #include "salshelllink.h"   // feature 128
 #include "salinserts.h"     // feature 127
@@ -28867,6 +28868,186 @@ static bool SameRect424(const RECT& a, LONG l, LONG t, LONG r, LONG b)
     return a.left == l && a.top == t && a.right == r && a.bottom == b;
 }
 
+// feature 428: the pure rules of the portable edition's settings store (salportable.h)
+static std::string Rel428(const char* text, const char* dir) { return SalPortableRelativize(text, dir); }
+static std::string Exp428(const char* text, const char* dir) { return SalPortableExpand(text, dir); }
+
+static void TestPortable428()
+{
+    // --- scope: 16 lower-case hex digits, stable, every input byte counts
+    unsigned char id[16];
+    for (int i = 0; i < 16; i++)
+        id[i] = (unsigned char)(i * 17 + 3);
+    std::string a = SalPortableScope(0x1234ABCDULL, id);
+    CHECK(a.size() == 16);
+    BOOL hexOnly = TRUE;
+    for (char c : a)
+        if (!(c >= '0' && c <= '9' || c >= 'a' && c <= 'f'))
+            hexOnly = FALSE;
+    CHECK(hexOnly);
+    CHECK(a == SalPortableScope(0x1234ABCDULL, id));
+    CHECK(a != SalPortableScope(0x1234ABCEULL, id));
+    for (int i = 0; i < 16; i++)
+    {
+        unsigned char id2[16];
+        memcpy(id2, id, 16);
+        id2[i] ^= 0x01;
+        CHECK(a != SalPortableScope(0x1234ABCDULL, id2));
+    }
+    // --- names
+    CHECK(SalPortableSessionDirName(a) == "TandemCommander-portable-" + a);
+    CHECK(SalPortableScopeSuffix(a) == "_P" + a);
+    CHECK(SalPortableIsSessionDirName(SalPortableSessionDirName(a).c_str()));
+    CHECK(!SalPortableIsSessionDirName(NULL));
+    CHECK(!SalPortableIsSessionDirName("TandemCommander-portable-"));
+    CHECK(!SalPortableIsSessionDirName("TandemCommander-portable-0123456789abcde"));   // 15
+    CHECK(!SalPortableIsSessionDirName("TandemCommander-portable-0123456789abcdef0")); // 17
+    CHECK(!SalPortableIsSessionDirName("TandemCommander-portable-0123456789ABCDEF"));  // upper case: not ours
+    CHECK(!SalPortableIsSessionDirName("TandemCommander-portable-0123456789abcdeg"));
+    CHECK(!SalPortableIsSessionDirName("Other-portable-0123456789abcdef"));
+    CHECK(SalPortableIsSessionDirName("TandemCommander-portable-0123456789abcdef"));
+
+    // --- relativize: the program folder at a path boundary becomes $(PortableDir)
+    const char* dir = "E:\\TC";
+    CHECK(Rel428("E:\\TC\\x.exe", dir) == "$(PortableDir)\\x.exe");
+    CHECK(Rel428("E:\\TC", dir) == "$(PortableDir)");
+    CHECK(Rel428("E:\\TC\\", dir) == "$(PortableDir)\\");
+    CHECK(Rel428("e:\\tc\\X.EXE", dir) == "$(PortableDir)\\X.EXE"); // the file system's identity
+    CHECK(Rel428("E:\\TC/x", dir) == "$(PortableDir)/x");
+    CHECK(Rel428("E:\\TC2\\x.exe", dir) == "E:\\TC2\\x.exe");         // a longer name is another folder
+    CHECK(Rel428("E:\\TC tools\\x.exe", dir) == "E:\\TC tools\\x.exe"); // so is a name with a space
+    CHECK(Rel428("E:\\TC.bak\\x", dir) == "E:\\TC.bak\\x");
+    CHECK(Rel428("D:\\copy\\E:\\TC\\x", dir) == "D:\\copy\\E:\\TC\\x"); // the tail of a longer path
+    CHECK(Rel428("XE:\\TC\\x", dir) == "XE:\\TC\\x");
+    CHECK(Rel428("\"E:\\TC\\a b\\x.exe\" /p \"E:\\TC\"", dir) == "\"$(PortableDir)\\a b\\x.exe\" /p \"$(PortableDir)\"");
+    CHECK(Rel428("x;E:\\TC\\y;E:\\TC", dir) == "x;$(PortableDir)\\y;$(PortableDir)");
+    CHECK(Rel428("a|E:\\TC|b", dir) == "a|$(PortableDir)|b");
+    CHECK(Rel428("E:\\TC,E:\\TC>x", dir) == "$(PortableDir),$(PortableDir)>x");
+    CHECK(Rel428("$(SalDir)\\x.exe", dir) == "$(SalDir)\\x.exe"); // the user's variable stays as typed
+    CHECK(Rel428("$(SalDir)tools\\x.exe", dir) == "$(SalDir)tools\\x.exe");
+    CHECK(Rel428("", dir) == "");
+    CHECK(Rel428("E:\\TC\\x", "") == "E:\\TC\\x"); // no program folder: nothing replaced
+    CHECK(Rel428("E:\\TC\\x", NULL) == "E:\\TC\\x");
+    CHECK(Rel428(NULL, dir) == "");
+    CHECK(Rel428("no path at all", dir) == "no path at all");
+    // a drive root kept as "E:"
+    CHECK(Rel428("E:\\x\\y", "E:") == "$(PortableDir)\\x\\y");
+    CHECK(Rel428("E:", "E:") == "$(PortableDir)");
+    CHECK(Rel428("E:x", "E:") == "E:x");
+    CHECK(Rel428("XE:\\x", "E:") == "XE:\\x");
+    // UNC
+    CHECK(Rel428("\\\\srv\\share\\TC\\x", "\\\\srv\\share\\TC") == "$(PortableDir)\\x");
+    CHECK(Rel428("\\\\srv\\share\\TCx", "\\\\srv\\share\\TC") == "\\\\srv\\share\\TCx");
+    // letters outside ASCII (UTF-8), folded by the file system's rule
+    CHECK(Rel428("E:\\\xC4\x8D" "as\\x", "E:\\\xC4\x8C" "as") == "$(PortableDir)\\x");                  // c-caron / C-caron
+    CHECK(Rel428("e:\\f\xC3\xA1ke " U8_FOLDER_EMOJI "\\a", "E:\\F\xC3\x81KE " U8_FOLDER_EMOJI) == "$(PortableDir)\\a"); // a-acute, emoji
+
+    // --- expand: exactly $(PortableDir), every occurrence
+    CHECK(Exp428("$(PortableDir)\\x.exe", dir) == "E:\\TC\\x.exe");
+    CHECK(Exp428("a$(PortableDir)b$(PortableDir)", dir) == "aE:\\TCbE:\\TC");
+    CHECK(Exp428("$(SalDir)\\x", dir) == "$(SalDir)\\x");
+    CHECK(Exp428("$(portabledir)\\x", dir) == "$(portabledir)\\x"); // not the store's spelling
+    CHECK(Exp428("$(PortableDir)\\x", "") == "$(PortableDir)\\x");
+    CHECK(Exp428(NULL, dir) == "");
+    CHECK(Exp428("$(PortableDir)", "E:") == "E:");
+    // the round trip is the identity for every text written in the folder's own spelling
+    const char* texts[] = {"E:\\TC\\x.exe", "\"E:\\TC\\a b\\x.exe\" /p \"E:\\TC\"", "x;E:\\TC\\y;E:\\TC", "E:\\TC2\\x",
+                           "$(SalDir)tools\\x.exe", "plain", "", "E:\\TC"};
+    for (const char* t : texts)
+        CHECK(Exp428(Rel428(t, dir).c_str(), dir) == t);
+    // and moving the folder moves the paths with it
+    CHECK(Exp428(Rel428("\"E:\\TC\\a\\x.exe\" E:\\TC2", dir).c_str(), "F:\\Stick\\TC") == "\"F:\\Stick\\TC\\a\\x.exe\" E:\\TC2");
+
+    // --- the start decision
+    CHECK(SalPortableStartDecision(spssHeld, spfsBad, spfsBad) == spsaJoin);
+    CHECK(SalPortableStartDecision(spssHeld, spfsUnreadable, spfsAbsent) == spsaJoin);
+    CHECK(SalPortableStartDecision(spssFree, spfsOk, spfsAbsent) == spsaSeedFile);
+    CHECK(SalPortableStartDecision(spssFree, spfsOk, spfsOk) == spsaSeedFile);
+    CHECK(SalPortableStartDecision(spssFree, spfsOk, spfsBad) == spsaSeedFile);
+    CHECK(SalPortableStartDecision(spssFree, spfsBad, spfsOk) == spsaSeedBak);
+    CHECK(SalPortableStartDecision(spssFree, spfsAbsent, spfsOk) == spsaSeedBak); // an interrupted replace
+    CHECK(SalPortableStartDecision(spssFree, spfsAbsent, spfsAbsent) == spsaDefaults);
+    CHECK(SalPortableStartDecision(spssFree, spfsBad, spfsAbsent) == spsaDefaultsDamaged);
+    CHECK(SalPortableStartDecision(spssFree, spfsBad, spfsBad) == spsaDefaultsDamaged);
+    CHECK(SalPortableStartDecision(spssFree, spfsAbsent, spfsBad) == spsaDefaultsDamaged);
+    CHECK(SalPortableStartDecision(spssFree, spfsUnreadable, spfsOk) == spsaReadOnly);  // never replace it
+    CHECK(SalPortableStartDecision(spssFree, spfsOk, spfsUnreadable) == spsaReadOnly);
+    CHECK(SalPortableStartDecision(spssFree, spfsUnreadable, spfsAbsent) == spsaReadOnly);
+}
+
+// feature 428: the portable edition's release asset (salupdcheck.h) - the normal rule unchanged
+#define UPD_ZIPNAME_019 "tandemcommander-0.1.9-x64-portable.zip"
+#define UPD_ZIPURL_019 "https://github.com/tandemcommander/tandemcommander/releases/download/v0.1.9/tandemcommander-0.1.9-x64-portable.zip"
+
+static std::string UpdAddAsset428(const std::string& record, const char* name, const char* state, const char* url)
+{
+    std::string s = record;
+    size_t pos = s.find("\"}],\"body\"");
+    if (pos == std::string::npos)
+        return s;
+    std::string asset = "\"},{\"id\":8,\"name\":\"";
+    asset += name;
+    asset += "\",\"uploader\":{\"login\":\"a\"},\"state\":\"";
+    asset += state;
+    asset += "\",\"size\":7000000,\"browser_download_url\":\"";
+    asset += url;
+    asset += "\"";
+    s.replace(pos, 1, asset); // the first asset's closing quote is re-written at the start of this one
+    return s;
+}
+
+static BOOL UpdParse428(const std::string& s, BOOL portable, CSalUpdParseError* err, CSalUpdRelease* rel = NULL)
+{
+    CSalUpdRelease r;
+    *err = supeNone;
+    return SalUpdParseLatestRelease(s.c_str(), s.size(), rel != NULL ? rel : &r, err, portable);
+}
+
+static void TestUpdatePortable428()
+{
+    CSalUpdVersion v = {0, 1, 9};
+    char buf[300];
+    CHECK(SalUpdPortableName(v, buf, sizeof(buf)) && strcmp(buf, UPD_ZIPNAME_019) == 0);
+    CHECK(SalUpdPortableUrl(v, buf, sizeof(buf)) && strcmp(buf, UPD_ZIPURL_019) == 0);
+    CHECK(!SalUpdPortableName(v, buf, 10) && buf[0] == 0); // never a cut name
+    CHECK(!SalUpdPortableUrl(v, buf, 20) && buf[0] == 0);
+    CSalUpdVersion big = {123, 4567, 89012};
+    CHECK(SalUpdPortableName(big, buf, sizeof(buf)) && strcmp(buf, "tandemcommander-123.4567.89012-x64-portable.zip") == 0);
+
+    CSalUpdParseError err;
+    CSalUpdRelease rel;
+    std::string onlySetup = UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, UPD_NOTES_019, UPD_NAME_019, "uploaded", UPD_URL_019);
+    std::string onlyZip = UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, UPD_NOTES_019, UPD_ZIPNAME_019, "uploaded", UPD_ZIPURL_019);
+    std::string both = UpdAddAsset428(onlySetup, UPD_ZIPNAME_019, "uploaded", UPD_ZIPURL_019);
+    CHECK(both != onlySetup);
+    // the normal edition: exactly as before
+    CHECK(UpdParse428(onlySetup, FALSE, &err) && err == supeNone);
+    CHECK(!UpdParse428(onlyZip, FALSE, &err) && err == supeNoInstaller);
+    CHECK(UpdParse428(both, FALSE, &err) && err == supeNone);
+    // the portable edition: the archive, not the installer
+    CHECK(UpdParse428(onlyZip, TRUE, &err, &rel) && err == supeNone);
+    CHECK(rel.Version.Major == 0 && rel.Version.Minor == 1 && rel.Version.Patch == 9);
+    CHECK(!UpdParse428(onlySetup, TRUE, &err) && err == supeNoPortable);
+    CHECK(UpdParse428(both, TRUE, &err) && err == supeNone);
+    // the archive must be uploaded, at the constructed address, once
+    CHECK(!UpdParse428(UpdAddAsset428(onlySetup, UPD_ZIPNAME_019, "new", UPD_ZIPURL_019), TRUE, &err) && err == supeNoPortable);
+    std::string foreign = "https://example.com/" UPD_ZIPNAME_019;
+    CHECK(!UpdParse428(UpdAddAsset428(onlySetup, UPD_ZIPNAME_019, "uploaded", foreign.c_str()), TRUE, &err) && err == supeNoPortable);
+    CHECK(!UpdParse428(UpdAddAsset428(onlySetup, "tandemcommander-0.1.8-x64-portable.zip", "uploaded",
+                                      "https://github.com/tandemcommander/tandemcommander/releases/download/v0.1.9/tandemcommander-0.1.8-x64-portable.zip"),
+                       TRUE, &err) &&
+          err == supeNoPortable);
+    // the asset twice: accepted as the installer's rule accepts two installers (420: two only block the
+    // automatic download, and the portable edition downloads nothing)
+    CHECK(UpdParse428(UpdAddAsset428(onlyZip, UPD_ZIPNAME_019, "uploaded", UPD_ZIPURL_019), TRUE, &err) && err == supeNone);
+    CHECK(UpdParse428(UpdAddAsset428(onlySetup, UPD_NAME_019, "uploaded", UPD_URL_019), FALSE, &err) && err == supeNone);
+    // drafts and pre-releases are refused for both editions, before any asset is looked at
+    std::string draftZip = UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, UPD_NOTES_019, UPD_ZIPNAME_019, "uploaded", UPD_ZIPURL_019, "true");
+    CHECK(!UpdParse428(draftZip, TRUE, &err) && err == supeDraft);
+    std::string preZip = UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, UPD_NOTES_019, UPD_ZIPNAME_019, "uploaded", UPD_ZIPURL_019, "false", "true");
+    CHECK(!UpdParse428(preZip, TRUE, &err) && err == supePrerelease);
+}
+
 static void TestDpiRect424()
 {
     RECT r = {570, 160, 2159, 1278};
@@ -29203,6 +29384,8 @@ int main(int argc, char** argv)
     TestUpdateCheck123();
     TestAutoUpdate420();
     TestUpdateNotice421();
+    TestPortable428();
+    TestUpdatePortable428();
     TestUncServer125();
     TestUncShareRoot284();
     TestUncShareListSignIn285();

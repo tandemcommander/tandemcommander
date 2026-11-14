@@ -1,0 +1,6 @@
+feature 428 scenarios probe, 2026-11-14T12:04:52
+FAIL   move: panel path inside the folder stored as $(PortableDir) title 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   move: started at Z:\TC, the panel opens the moved docs title 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'; windows ["[#32770 ''] ", "[SalamanderSaveBits 'Tandem Commander'] "]
+PASS   move: no message or error box at the moved start []
+FAIL   move: the file still says $(PortableDir)\docs, no old path 161187 characters
+RESULT: FAIL

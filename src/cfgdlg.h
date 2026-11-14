@@ -496,13 +496,14 @@ class CLoadSaveToRegistryMutex
 {
 protected:
     HANDLE Mutex;
-    int DebugCheck;
+    volatile LONG DebugCheck; // feature 428: also entered by the portable store's worker thread
 
 public:
     CLoadSaveToRegistryMutex();
     ~CLoadSaveToRegistryMutex();
 
     void Init();
+    BOOL IsInitialized() { return Mutex != NULL; } // feature 428
 
     void Enter();
     void Leave();

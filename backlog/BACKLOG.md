@@ -275,6 +275,10 @@ Last triaged: 2026-11-12
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
 | [Dark theme: black checkbox labels in plug-in windows on some Windows builds](items/dark-checkbox-labels-other-windows-builds/desc.md) | bug | 4 | other-plugins | leftover:427 | 2026-11-12 |
+| [Two builds of one commit give different binaries (no /Brepro, build-time strings)](items/builds-not-bit-reproducible/desc.md) | tech-debt | 4 | build-release | measure:428 | 2026-11-14 |
+| [The portable registry-site check does not scan the plug-ins](items/portable-regsites-check-skips-plugins/desc.md) | tech-debt | 4 | tooling | review:428 | 2026-11-14 |
+| [The installer ships 7-Zip without the LGPL text the notices promise](items/the-installer-ships-7-zip-without-the-lgpl-text-the-notices/desc.md) | bug | 6 | build-release | review:428 | 2026-11-14 |
+| [Configuration offers the update level in an unpacked copy that can only notify](items/update-level-offered-in-unpacked-copy/desc.md) | bug | 3 | panels-ui | review:428 | 2026-11-14 |
 
 ## Parked
 

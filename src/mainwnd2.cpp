@@ -709,7 +709,7 @@ BOOL GetUpgradeInfo(BOOL* autoImportConfig, char* autoImportConfigFromKey, int a
     LoadSaveToRegistryMutex.Enter();
     int rounds = 0; // prevent infinite loops
     *autoImportConfig = FALSE;
-    if (HANDLES_Q(RegOpenKeyEx(HKEY_CURRENT_USER, SalamanderConfigurationRoots[0], 0,
+    if (HANDLES_Q(RegOpenKeyEx(SalCfgBaseKey(), SalamanderConfigurationRoots[0], 0,
                                KEY_READ, &rootKey)) == ERROR_SUCCESS)
     {
         HKEY oldCfgKey;
@@ -722,7 +722,7 @@ BOOL GetUpgradeInfo(BOOL* autoImportConfig, char* autoImportConfigFromKey, int a
             if (CutDirectory(autoImportConfigFromKey) &&
                 SalPathAppend(autoImportConfigFromKey, oldKeyName, autoImportConfigFromKeySize) &&
                 !IsTheSamePath(autoImportConfigFromKey, SalamanderConfigurationRoots[0]) &&     // the key stored in AutoImportConfig does not point to this version's key
-                HANDLES_Q(RegOpenKeyEx(HKEY_CURRENT_USER, autoImportConfigFromKey, 0, KEY_READ, // the key stored in AutoImportConfig can be opened (otherwise it doesn't exist?)
+                HANDLES_Q(RegOpenKeyEx(SalCfgBaseKey(), autoImportConfigFromKey, 0, KEY_READ, // the key stored in AutoImportConfig can be opened (otherwise it doesn't exist?)
                                        &oldCfgKey)) == ERROR_SUCCESS)
             {
                 // if the current "target" key also contains AutoImportConfig, follow it...
@@ -747,7 +747,7 @@ BOOL GetUpgradeInfo(BOOL* autoImportConfig, char* autoImportConfigFromKey, int a
             HKEY cfgKey;
             lstrcpyn(oldKeyName, SalamanderConfigurationRoots[0], 200);
             if (SalPathAppend(oldKeyName, SALAMANDER_CONFIG_REG, 200) &&
-                HANDLES_Q(RegOpenKeyEx(HKEY_CURRENT_USER, oldKeyName, 0, KEY_READ, &cfgKey)) == ERROR_SUCCESS)
+                HANDLES_Q(RegOpenKeyEx(SalCfgBaseKey(), oldKeyName, 0, KEY_READ, &cfgKey)) == ERROR_SUCCESS)
             {
                 HANDLES(RegCloseKey(cfgKey));
                 BOOL clearCfg = FALSE;
@@ -802,7 +802,7 @@ BOOL GetUpgradeInfo(BOOL* autoImportConfig, char* autoImportConfigFromKey, int a
                 else
                     clearCfg = TRUE; // configuration is corrupted, delete it
                 if (clearCfg &&
-                    HANDLES_Q(RegOpenKeyEx(HKEY_CURRENT_USER, SalamanderConfigurationRoots[0], 0,
+                    HANDLES_Q(RegOpenKeyEx(SalCfgBaseKey(), SalamanderConfigurationRoots[0], 0,
                                            KEY_READ | KEY_WRITE, &cfgKey)) == ERROR_SUCCESS)
                 { // delete the configuration and leave only "AutoImportConfig" (recreate it)
                     ClearKey(cfgKey);
@@ -819,7 +819,7 @@ BOOL GetUpgradeInfo(BOOL* autoImportConfig, char* autoImportConfigFromKey, int a
             HANDLES(RegCloseKey(rootKey));
     }
     if (!*autoImportConfig && // this version's key lacks "AutoImportConfig" or does not point to a valid old configuration
-        HANDLES_Q(RegOpenKeyEx(HKEY_CURRENT_USER, SalamanderConfigurationRoots[0], 0,
+        HANDLES_Q(RegOpenKeyEx(SalCfgBaseKey(), SalamanderConfigurationRoots[0], 0,
                                KEY_READ | KEY_WRITE, &rootKey)) == ERROR_SUCCESS)
     { // remove "AutoImportConfig" from this version's key (if it exists it makes no sense here)
         RegDeleteValue(rootKey, SALAMANDER_AUTO_IMPORT_CONFIG);
@@ -852,7 +852,7 @@ BOOL FindLanguageFromPrevVerOfSal(char* slgName)
     {
         // check if the key exists and if a configuration is stored under it
         root = SalamanderConfigurationRoots[rootIndex];
-        BOOL rootFound = HANDLES_Q(RegOpenKeyEx(HKEY_CURRENT_USER, root, 0, KEY_READ, &hRootKey)) == ERROR_SUCCESS;
+        BOOL rootFound = HANDLES_Q(RegOpenKeyEx(SalCfgBaseKey(), root, 0, KEY_READ, &hRootKey)) == ERROR_SUCCESS;
         BOOL cfgFound = rootFound && HANDLES_Q(RegOpenKeyEx(hRootKey, SALAMANDER_CONFIG_REG, 0,
                                                             KEY_READ, &hCfgKey)) == ERROR_SUCCESS;
         if (cfgFound && GetValue(hRootKey, SALAMANDER_SAVE_IN_PROGRESS, REG_DWORD, &saveInProgress, sizeof(DWORD)))
@@ -917,7 +917,7 @@ void CheckShutdownParams()
 
     BOOL showWarning = FALSE;
     HKEY key;
-    if (OpenKeyAux(NULL, HKEY_CURRENT_USER, "Control Panel\\Desktop", key))
+    if (OpenKeyAux(NULL, HKEY_CURRENT_USER, "Control Panel\\Desktop", key)) // portable: system read
     {
         char num[100];
         DWORD value;
@@ -1249,7 +1249,7 @@ BOOL MigrateConfigurationRoot(BOOL* tellUser)
         return FALSE;
     }
     HKEY parent;
-    LSTATUS err = RegOpenKeyExW(HKEY_CURRENT_USER, parentName, 0, KEY_READ, &parent);
+    LSTATUS err = RegOpenKeyExW(HKEY_CURRENT_USER, parentName, 0, KEY_READ, &parent); // portable: not reached (TC_PORTABLE skips MigrateConfigurationRoot)
     if (err != ERROR_SUCCESS) // no key of the program at all (a fresh start), or unreadable: touch nothing
     {
         if (err != ERROR_FILE_NOT_FOUND)
@@ -1297,7 +1297,7 @@ BOOL MigrateConfigurationRoot(BOOL* tellUser)
                      state.LegacyHasConfig; // moved by a start that ended before the record
     if (action == scmaMigrate || sideLeft == 1 || sideBkLeft == 1 || markMoved)
     {
-        if (RegOpenKeyExW(HKEY_CURRENT_USER, parentName, 0, KEY_READ | KEY_WRITE, &parent) != ERROR_SUCCESS)
+        if (RegOpenKeyExW(HKEY_CURRENT_USER, parentName, 0, KEY_READ | KEY_WRITE, &parent) != ERROR_SUCCESS) // portable: not reached (TC_PORTABLE skips MigrateConfigurationRoot)
         {
             TRACE_E("MigrateConfigurationRoot(): cannot open the parent key for writing");
             if (action == scmaMigrate)
@@ -1443,7 +1443,7 @@ BOOL FindLatestConfiguration(BOOL* deleteConfigurations, const char*& loadConfig
     char backup[200];
     sprintf_s(backup, "%s.backup.63A7CD13", SalamanderConfigurationRoots[0]); // "63A7CD13" prevents the key name from matching the user name
     HKEY backupKey;
-    BOOL backupFound = OpenKeyAux(NULL, HKEY_CURRENT_USER, backup, backupKey);
+    BOOL backupFound = OpenKeyAux(NULL, SalCfgBaseKey(), backup, backupKey);
     if (backupFound)
     {
         DWORD copyIsOK;
@@ -1455,7 +1455,7 @@ BOOL FindLatestConfiguration(BOOL* deleteConfigurations, const char*& loadConfig
         if (!copyIsOK) // delete the corrupted backup and pretend it never existed (it probably wasn't fully created)
         {
             TRACE_I("Configuration backup is incomplete, removing... " << backup);
-            SHDeleteKey(HKEY_CURRENT_USER, backup);
+            SHDeleteKey(SalCfgBaseKey(), backup);
             backupFound = FALSE;
         }
         else
@@ -1466,7 +1466,7 @@ BOOL FindLatestConfiguration(BOOL* deleteConfigurations, const char*& loadConfig
     {
         root = SalamanderConfigurationRoots[rootIndex];
         // check whether the key exists
-        BOOL rootFound = OpenKeyAux(NULL, HKEY_CURRENT_USER, root, hRootKey);
+        BOOL rootFound = OpenKeyAux(NULL, SalCfgBaseKey(), root, hRootKey);
         if (rootFound &&
             GetValueAux(NULL, hRootKey, SALAMANDER_SAVE_IN_PROGRESS, REG_DWORD, &saveInProgress, sizeof(DWORD)))
         { // this configuration is corrupted
@@ -1477,12 +1477,12 @@ BOOL FindLatestConfiguration(BOOL* deleteConfigurations, const char*& loadConfig
             {
                 char corrupted[200];
                 sprintf_s(corrupted, "%s.corrupted.63A7CD13", root); // "63A7CD13" prevents the key name from matching the user name
-                SHDeleteKey(HKEY_CURRENT_USER, corrupted);           // if we already have a corrupted configuration, remove it-one is enough
-                if (MyRegRenameKey(HKEY_CURRENT_USER, root, corrupted) &&
-                    MyRegRenameKey(HKEY_CURRENT_USER, backup, root))
+                SHDeleteKey(SalCfgBaseKey(), corrupted);           // if we already have a corrupted configuration, remove it-one is enough
+                if (MyRegRenameKey(SalCfgBaseKey(), root, corrupted) &&
+                    MyRegRenameKey(SalCfgBaseKey(), backup, root))
                 {
                     backupFound = FALSE;
-                    if (CreateKeyAux(NULL, HKEY_CURRENT_USER, root, hRootKey))
+                    if (CreateKeyAux(NULL, SalCfgBaseKey(), root, hRootKey))
                     {
                         DeleteValueAux(hRootKey, SALAMANDER_COPY_IS_OK);
                         CloseKeyAux(hRootKey);
@@ -1529,12 +1529,12 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
 
                 CheckShutdownParams();
                 LoadSaveToRegistryMutex.Enter();
-                if (HANDLES_Q(RegOpenKeyEx(HKEY_CURRENT_USER, root, 0, KEY_READ | KEY_WRITE, &hRootKey)) == ERROR_SUCCESS)
+                if (HANDLES_Q(RegOpenKeyEx(SalCfgBaseKey(), root, 0, KEY_READ | KEY_WRITE, &hRootKey)) == ERROR_SUCCESS)
                 { // delete the corrupted configuration (if it's still there - user might have renamed it for backup)
                     TRACE_I("Deleting corrupted configuration on user demand: " << root);
                     ClearKeyAux(hRootKey);
                     CloseKeyAux(hRootKey);
-                    DeleteKeyAux(HKEY_CURRENT_USER, root);
+                    DeleteKeyAux(SalCfgBaseKey(), root);
                 }
             }
         }
@@ -1545,7 +1545,7 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
         if (rootIndex == 0 && backupFound) // backup not needed, remove it
         {
             TRACE_I("Removing unnecessary configuration backup: " << backup);
-            SHDeleteKey(HKEY_CURRENT_USER, backup);
+            SHDeleteKey(SalCfgBaseKey(), backup);
             backupFound = FALSE;
         }
 
@@ -1631,11 +1631,11 @@ void CMainWindow::DeleteOldConfigurations(BOOL* deleteConfigurations, BOOL autoI
             {
                 HKEY hKey;
                 const char* key = SalamanderConfigurationRoots[rootIndex];
-                if (CreateKeyAux(NULL, HKEY_CURRENT_USER, key, hKey))
+                if (CreateKeyAux(NULL, SalCfgBaseKey(), key, hKey))
                 {
                     ClearKeyAux(hKey);
                     CloseKeyAux(hKey);
-                    DeleteKeyAux(HKEY_CURRENT_USER, key);
+                    DeleteKeyAux(SalCfgBaseKey(), key);
                 }
             }
         }
@@ -1643,7 +1643,7 @@ void CMainWindow::DeleteOldConfigurations(BOOL* deleteConfigurations, BOOL autoI
         {
             BOOL ok = FALSE;
             HKEY cfgKey;
-            if (HANDLES_Q(RegOpenKeyEx(HKEY_CURRENT_USER, SalamanderConfigurationRoots[0], 0,
+            if (HANDLES_Q(RegOpenKeyEx(SalCfgBaseKey(), SalamanderConfigurationRoots[0], 0,
                                        KEY_READ | KEY_WRITE, &cfgKey)) == ERROR_SUCCESS)
             { // remove "AutoImportConfig" value from the new key
                 if (RegDeleteValue(cfgKey, SALAMANDER_AUTO_IMPORT_CONFIG) == ERROR_SUCCESS)
@@ -1660,12 +1660,12 @@ void CMainWindow::DeleteOldConfigurations(BOOL* deleteConfigurations, BOOL autoI
             {
                 if (!doNotDeleteImportedCfg)
                 {
-                    if (HANDLES_Q(RegOpenKeyEx(HKEY_CURRENT_USER, autoImportConfigFromKey, 0,
+                    if (HANDLES_Q(RegOpenKeyEx(SalCfgBaseKey(), autoImportConfigFromKey, 0,
                                                KEY_READ | KEY_WRITE, &cfgKey)) == ERROR_SUCCESS)
                     {
                         ClearKeyAux(cfgKey);
                         HANDLES(RegCloseKey(cfgKey));
-                        DeleteKeyAux(HKEY_CURRENT_USER, autoImportConfigFromKey);
+                        DeleteKeyAux(SalCfgBaseKey(), autoImportConfigFromKey);
                     }
                 }
             }
@@ -1778,7 +1778,7 @@ void CMainWindow::SaveConfig(HWND parent)
     LoadSaveToRegistryMutex.Enter();
 
     HKEY salamander;
-    if (CreateKey(HKEY_CURRENT_USER, SALAMANDER_ROOT_REG, salamander))
+    if (CreateKey(SalCfgBaseKey(), SALAMANDER_ROOT_REG, salamander))
     {
         HKEY actKey;
 
@@ -2772,6 +2772,12 @@ void CMainWindow::SaveConfig(HWND parent)
 
     LoadSaveToRegistryMutex.Leave();
 
+#ifdef TC_PORTABLE
+    // feature 428: Save Configuration (and the save on exit) is durable when it returns - the session
+    // hive is written to settings\tandemcommander.reg now, not only after the store's 2 s quiet time
+    PortableStore_PersistNow();
+#endif
+
     if (GlobalSaveWaitWindow == NULL)
     {
         EnableWindow(parent, TRUE);
@@ -2912,7 +2918,7 @@ void CMainWindow::LoadPanelConfig(char* panelPath, CFilesWindow* panel, HKEY hSa
 void LoadIconOvrlsInfo(const char* root)
 {
     HKEY hSalamander;
-    if (OpenKey(HKEY_CURRENT_USER, root, hSalamander))
+    if (OpenKey(SalCfgBaseKey(), root, hSalamander))
     {
         HKEY actKey;
         if (OpenKey(hSalamander, SALAMANDER_CONFIG_REG, actKey))
@@ -2966,7 +2972,7 @@ BOOL CMainWindow::LoadConfig(BOOL importingOldConfig, const CCommandLineParams* 
     LoadSaveToRegistryMutex.Enter();
 
     HKEY salamander;
-    if (OpenKey(HKEY_CURRENT_USER, SALAMANDER_ROOT_REG, salamander))
+    if (OpenKey(SalCfgBaseKey(), SALAMANDER_ROOT_REG, salamander))
     {
         HKEY actKey;
         BOOL ret = TRUE;

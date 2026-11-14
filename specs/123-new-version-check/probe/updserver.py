@@ -122,6 +122,17 @@ def body_for(name):
         other['browser_download_url'] = 'https://evil.example/tandemcommander-9.9.9-source.zip'
         newer['assets'] = [other, newer['assets'][0]]
         return 200, js, dumps(newer), None
+    if name in ('with-portable', 'portable-not-uploaded'):
+        # feature 428: the release also carries the portable edition's archive (the asset the
+        # portable edition requires); -not-uploaded: that asset is still "open"
+        z = copy.deepcopy(newer['assets'][0])
+        z['name'] = z['name'].replace('-x64-setup.exe', '-x64-portable.zip')
+        z['browser_download_url'] = z['browser_download_url'].replace('-x64-setup.exe', '-x64-portable.zip')
+        z['content_type'] = 'application/zip'
+        if name == 'portable-not-uploaded':
+            z['state'] = 'open'
+        newer['assets'] = newer['assets'] + [z]
+        return 200, js, dumps(newer), None
     if name == 'nested-tag-first':
         text = dumps(newer).decode('utf-8')
         text = text.replace('{', '{\n  "author_note": {"tag_name": "v1.2.3", "draft": true, "prerelease": true},', 1)

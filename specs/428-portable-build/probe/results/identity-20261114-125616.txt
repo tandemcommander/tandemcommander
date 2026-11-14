@@ -1,0 +1,36 @@
+feature 428 identity probe, 2026-11-14T12:54:36
+PASS   I portable exe: IDI_SALAMANDER = salamand_portable.ico 7 images in the exe, 7 in the .ico
+PASS   I normal exe: IDI_SALAMANDER = salamand.ico (no badge) 7 images
+PASS   T czech: title says [portable]               'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+FAIL   A czech: the label shows the language's text, whole (wrapped if needed) 'Přenosná verze – nastavení se ukládá do této složky:': needs 16 px of 13 (width 419)
+PASS   S default: About screenshot                  specs\428-portable-build\evidence\about_portable_default.png (451 x 355)
+PASS   S dark: About screenshot                     specs\428-portable-build\evidence\about_portable_dark.png (451 x 355)
+FAIL   A czech: the link closes the box and the panel shows settings title 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   T german: title says [portable]              'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+FAIL   A german: the label shows the language's text, whole (wrapped if needed) 'Portable-Version – ihre Einstellungen werden in diesem Ordner gespeichert:': needs 32 px of 13 (width 419)
+PASS   S de-default: About screenshot               specs\428-portable-build\evidence\about_portable_de-default.png (451 x 355)
+FAIL   A german: the link closes the box and the panel shows settings title 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   T french: title says [portable]              'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+FAIL   A french: the label shows the language's text, whole (wrapped if needed) 'Édition portable – ses paramètres sont conservés dans ce dossier :': needs 32 px of 13 (width 419)
+FAIL   A french: the link closes the box and the panel shows settings title 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   T dutch: title says [portable]               'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+FAIL   A dutch: the label shows the language's text, whole (wrapped if needed) 'Draagbare versie – de instellingen worden in deze map bewaard:': needs 32 px of 13 (width 419)
+FAIL   A dutch: the link closes the box and the panel shows settings title 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   T hungarian: title says [portable]           'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+FAIL   A hungarian: the label shows the language's text, whole (wrapped if needed) 'Hordozható kiadás – beállításai ebben a mappában találhatók:': needs 16 px of 13 (width 419)
+FAIL   A hungarian: the link closes the box and the panel shows settings title 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   T romanian: title says [portable]            'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+FAIL   A romanian: the label shows the language's text, whole (wrapped if needed) 'Ediția portabilă – setările sale sunt păstrate în acest folder:': needs 16 px of 13 (width 419)
+FAIL   A romanian: the link closes the box and the panel shows settings title 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   T slovak: title says [portable]              'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+FAIL   A slovak: the label shows the language's text, whole (wrapped if needed) 'Prenosná verzia – jej nastavenia sú uložené v tomto priečinku:': needs 16 px of 13 (width 419)
+FAIL   A slovak: the link closes the box and the panel shows settings title 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   T spanish: title says [portable]             'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+FAIL   A spanish: the label shows the language's text, whole (wrapped if needed) 'Edición portátil: su configuración se guarda en esta carpeta:': needs 16 px of 13 (width 419)
+FAIL   A spanish: the link closes the box and the panel shows settings title 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A: the settings folder exists after the runs C:\Users\pavel\AppData\Local\Temp\tc428\identity\copy\TC\settings
+PASS   T normal: no [portable] in the title         'docs - Tandem Commander 0.3.0 (x64) ST'
+PASS   A normal: About has no portable lines        label None, link None
+PASS   the installed edition's key is as before (restored) 19c222e0a142bef9 -> 19c222e0a142bef9
+NOT DRIVEN: High Contrast About (a system setting), the badge on a real taskbar in Light / Dark, the taskbar grouping by executable path (person checks)
+RESULT: FAIL

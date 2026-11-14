@@ -169,6 +169,55 @@ class VersionsAndIO(unittest.TestCase):
         self.assertEqual(release.issue_numbers("GitHub #7, (#5), winget-pkgs#426090, ## head"), {7, 5})
 
 
+class Artifacts(unittest.TestCase):
+    """Feature 428: the installer and the portable ZIP a release attaches."""
+
+    def make(self, root, setup=True, zip_names=None, part=False):
+        import zipfile
+        out = Path(root) / "setup" / "output"
+        out.mkdir(parents=True)
+        if setup:
+            (out / "tandemcommander-0.4.0-x64-setup.exe").write_bytes(b"MZ setup")
+        if zip_names is not None:
+            with zipfile.ZipFile(out / "tandemcommander-0.4.0-x64-portable.zip", "w") as z:
+                for n in zip_names:
+                    z.writestr(n, b"x")
+        if part:
+            (out / "tandemcommander-0.4.0-x64-portable.zip.part").write_bytes(b"")
+
+    def findings(self, **kw):
+        with tempfile.TemporaryDirectory() as t:
+            self.make(t, **kw)
+            return release.artifact_findings(Path(t), release.Version.parse("0.4.0"), deep=False)
+
+    def test_deep_check_refuses_unsigned_or_normal_program(self):
+        with tempfile.TemporaryDirectory() as t:
+            self.make(t, zip_names=["TandemCommander-0.4.0-portable/tandemcommander.exe"])
+            found = release.artifact_findings(Path(t), release.Version.parse("0.4.0"))
+            self.assertTrue(any("not the portable edition" in f for f in found), found)
+            self.assertTrue(any("artifact-unsigned" in f for f in found), found)
+
+    def test_names(self):
+        self.assertEqual(release.Version.parse("0.4.0").portable_zip, "tandemcommander-0.4.0-x64-portable.zip")
+
+    def test_both_present(self):
+        good = ["TandemCommander-0.4.0-portable/tandemcommander.exe", "TandemCommander-0.4.0-portable/lang/czech.slg"]
+        self.assertEqual(self.findings(zip_names=good), [])
+
+    def test_missing_and_bad(self):
+        self.assertTrue(any("artifact-missing" in f and "portable.zip" in f for f in self.findings()))
+        self.assertTrue(any("artifact-missing" in f and "setup.exe" in f
+                            for f in self.findings(setup=False, zip_names=["TandemCommander-0.4.0-portable/tandemcommander.exe"])))
+        wrong_top = ["TandemCommander-0.3.0-portable/tandemcommander.exe"]
+        self.assertTrue(any("artifact-zip" in f for f in self.findings(zip_names=wrong_top)))
+        stray = ["TandemCommander-0.4.0-portable/tandemcommander.exe", "readme.txt"]
+        self.assertTrue(any("artifact-zip" in f for f in self.findings(zip_names=stray)))
+        no_exe = ["TandemCommander-0.4.0-portable/lang/czech.slg"]
+        self.assertTrue(any("artifact-zip" in f for f in self.findings(zip_names=no_exe)))
+        partial = self.findings(zip_names=["TandemCommander-0.4.0-portable/tandemcommander.exe"], part=True)
+        self.assertTrue(any("artifact-partial" in f for f in partial))
+
+
 class Summary(unittest.TestCase):
     def cl(self, lead: str) -> str:
         return f"# Changelog\n\n## [0.1.2] — 2026-11-02\n\n{lead}\n\n- entry\n"

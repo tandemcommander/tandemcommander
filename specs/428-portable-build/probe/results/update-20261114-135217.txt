@@ -1,0 +1,10 @@
+feature 428 update probe, 2026-11-14T13:51:00
+PASS   U1 with-portable: the notification offers 9.9.9 with the portable hint ['Tandem Commander | &Download | Remind Me &Later | &Skip This Version | &Check for a new version at start-up | A new version is available | Installed version | 0.3.0 | Available version | 9.9.9 | Released 14. října 2026 | This is the portable edition. To update it, download the new portable archive from the release page, unpack it next to this copy and copy the settings folder into the new one.']
+PASS   U1 with-portable: no Download & Install, no Install Now, no level list Tandem Commander | &Download | Remind Me &Later | &Skip This Version | &Check for a new version at start-up | A new version is available | Installed version | 0.3.0 | Available version | 9.9.9 | Released 14. října 2026 | This is the portable edition. To update it, download the new portable archive f
+PASS   U4 General page: the level list and its label are hidden dialog True, list visible False, label visible False
+PASS   U2 newer: the release is not offered (no window names 9.9.9); the check reports it could not check ['Check for New Version | Could not check for a new version: the release server gave an unexpected answer.\n\nTry again later, or visit tandemcommander.org. | OK']
+PASS   U3 portable-not-uploaded: the release is not offered (no window names 9.9.9); the check reports it could not check ['Check for New Version | Could not check for a new version: the release server gave an unexpected answer.\n\nTry again later, or visit tandemcommander.org. | OK']
+PASS   U5 the server saw only version requests (nothing downloaded) 7 requests: ['/end/newer', '/end/portable-not-uploaded', '/end/with-portable', '/latest/newer', '/latest/portable-not-uploaded', '/latest/with-portable', '/stop']
+PASS   U5 no new file in %LOCALAPPDATA%\Tandem Commander\Updates [] -> []
+PASS   the installed edition's key is unchanged     19c222e0a142bef9 -> 19c222e0a142bef9
+RESULT: PASS

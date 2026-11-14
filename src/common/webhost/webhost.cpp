@@ -121,8 +121,30 @@ ComPtr<CoreWebView2EnvironmentOptions> TcWebBuildEnvOptions()
     return options;
 }
 
+static std::wstring TcWebUserDataFolderFromProgram; // feature 428 (TcWebSetUserDataFolder)
+
+static bool TcWebUserDataFolderIsRefused = false;
+
+void TcWebSetUserDataFolder(const wchar_t* folder)
+{
+    TcWebUserDataFolderFromProgram = folder != NULL ? folder : L"";
+}
+
+void TcWebRefuseUserDataFolder()
+{
+    TcWebUserDataFolderIsRefused = true;
+}
+
+bool TcWebUserDataFolderRefused()
+{
+    return TcWebUserDataFolderIsRefused;
+}
+
 std::wstring TcWebUserDataFolder()
 {
+    // feature 428: the program's answer wins - the portable edition never uses the profile
+    if (!TcWebUserDataFolderFromProgram.empty())
+        return TcWebUserDataFolderFromProgram;
     wchar_t path[MAX_PATH] = {0};
     if (SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, path)))
     {
@@ -580,6 +602,8 @@ bool CTcWebHost::Create(HWND parent, const std::wstring& userDataFolder,
     p->userDataFolder = userDataFolder;
     p->originPrefix = L"https://" + config.VirtualHost + L"/";
     p->baseUrl = p->originPrefix + config.DocumentPath;
+    if (TcWebUserDataFolderRefused()) // feature 428: no folder the portable edition may use
+        return false;
 
     HRESULT hrco = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
     if (SUCCEEDED(hrco))

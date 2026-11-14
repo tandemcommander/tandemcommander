@@ -1,0 +1,9 @@
+feature 428 scenarios probe, 2026-11-14T12:09:13
+PASS   fail: settings exist before the failure rows C:\Users\pavel\AppData\Local\Temp\tc428\scenarios\fail\TC\settings\tandemcommander.reg
+PASS   fail: unwritable folder - told once at start ["[#32770 'Tandem Commander 0.3.0 (x64)'] Tandem Commander nemůže uložit nastavení do této složky:\nC:\\Users\\pavel\\AppData\\Local\\Temp\\tc428\\scenarios\\fail\\TC\\settings\n\nProgram funguje dál, ale změny provedené v této relaci se neuloží. Složka přenosné verze je jen pro čtení, plná nebo už 
+PASS   fail: unwritable folder - no second message (save, exit) []
+PASS   fail: unwritable folder - settings file unchanged C:\Users\pavel\AppData\Local\Temp\tc428\scenarios\fail\TC\settings\tandemcommander.reg
+PASS   fail: unwritable folder - session folder removed []
+PASS   fail: damaged file - the .bak used and the user told messages ["[#32770 'Tandem Commander 0.3.0 (x64)'] Soubor s nastavením v této složce nelze přečíst:\nC:\\Users\\pavel\\AppData\\Local\\Temp\\tc428\\scenarios\\fail\\TC\\settings\n\nTandem Commander místo něj p; kept aside ['tandemcommander.reg.damaged-20261114-110938']
+PASS   fail: both damaged - defaults, the user told, both kept aside messages ["[#32770 'Tandem Commander 0.3.0 (x64)'] Soubory s nastavením v této složce nelze přečíst:\nC:\\Users\\pavel\\AppData\\Local\\Temp\\tc428\\scenarios\\fail\\TC\\settings\n\nTandem Commander se spustí ; kept aside ['tandemcommander.reg.bak.damaged-20261114-110945', 'tandemcommander.reg.damaged-20261114-110945']
+RESULT: PASS

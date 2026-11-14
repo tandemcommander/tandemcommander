@@ -1,0 +1,21 @@
+feature 428 timing probe, 2026-11-14T13:09:57
+  run 0 portable start 0.649 s, exit 1.299 s
+  run 0 normal   start 0.475 s, exit 1.200 s
+  run 1 portable start 0.491 s, exit 1.244 s
+  run 1 normal   start 0.429 s, exit 1.185 s
+  run 2 portable start 0.493 s, exit 1.236 s
+  run 2 normal   start 0.434 s, exit 1.178 s
+  run 3 portable start 0.486 s, exit 1.248 s
+  run 3 normal   start 0.430 s, exit 1.185 s
+  run 4 portable start 0.484 s, exit 1.237 s
+  run 4 normal   start 0.429 s, exit 1.175 s
+  run 5 portable start 0.489 s, exit 1.247 s
+  run 5 normal   start 0.426 s, exit 1.185 s
+  run 6 portable start 0.485 s, exit 1.243 s
+  run 6 normal   start 0.429 s, exit 1.181 s
+  run 7 portable start 0.487 s, exit 1.249 s
+  run 7 normal   start 0.433 s, exit 1.179 s
+FAIL   SC-009 start-up: portable median within 10 % of the installed edition portable 0.487 s, installed 0.429 s (+13.4 %)
+PASS   SC-009 exit with save: portable median within 10 % of the installed edition portable 1.244 s, installed 1.181 s (+5.3 %)
+PASS   the installed edition's key restored         19c222e0a142bef9 -> 19c222e0a142bef9
+RESULT: FAIL

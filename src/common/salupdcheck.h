@@ -222,6 +222,39 @@ inline BOOL SalUpdInstallerName(const CSalUpdVersion& v, char* buf, int bufSize)
     return p != NULL;
 }
 
+// feature 428: the portable edition's archive -
+// https://github.com/tandemcommander/tandemcommander/releases/download/v<ver>/tandemcommander-<ver>-x64-portable.zip
+inline BOOL SalUpdPortableUrl(const CSalUpdVersion& v, char* buf, int bufSize)
+{
+    if (buf == NULL || bufSize <= 0)
+        return FALSE;
+    char* end = buf + bufSize;
+    buf[0] = 0;
+    char* p = SalUpdAppendText(buf, end, SALUPD_RELEASES_URL "download/v");
+    p = SalUpdAppendVersion(p, end, v);
+    p = SalUpdAppendText(p, end, "/tandemcommander-");
+    p = SalUpdAppendVersion(p, end, v);
+    p = SalUpdAppendText(p, end, "-x64-portable.zip");
+    if (p == NULL)
+        buf[0] = 0;
+    return p != NULL;
+}
+
+// feature 428: tandemcommander-<ver>-x64-portable.zip
+inline BOOL SalUpdPortableName(const CSalUpdVersion& v, char* buf, int bufSize)
+{
+    if (buf == NULL || bufSize <= 0)
+        return FALSE;
+    char* end = buf + bufSize;
+    buf[0] = 0;
+    char* p = SalUpdAppendText(buf, end, "tandemcommander-");
+    p = SalUpdAppendVersion(p, end, v);
+    p = SalUpdAppendText(p, end, "-x64-portable.zip");
+    if (p == NULL)
+        buf[0] = 0;
+    return p != NULL;
+}
+
 // https://github.com/tandemcommander/tandemcommander/releases/tag/v<ver>
 inline BOOL SalUpdReleaseNotesUrl(const CSalUpdVersion& v, char* buf, int bufSize)
 {
@@ -995,7 +1028,8 @@ enum CSalUpdParseError
     supeBadTag,       // "tag_name" is not v<major>.<minor>.<patch>
     supeBadTime,      // "published_at" is not a valid UTC time
     supeForeignNotes, // "html_url" is not the constructed release-notes address
-    supeNoInstaller   // no uploaded asset with the expected name and the constructed address
+    supeNoInstaller,  // no uploaded asset with the expected name and the constructed address
+    supeNoPortable    // feature 428: the same for the portable edition's archive
 };
 
 struct CSalUpdTopFields
@@ -1337,8 +1371,11 @@ inline BOOL SalUpdScanTop(const char* data, size_t len, CSalUpdTopFields* top,
 // 'release' holds the version and the publication time; the addresses are
 // rebuilt from the version whenever needed (SalUpdInstallerUrl,
 // SalUpdReleaseNotesUrl) and are guaranteed to be the ones the record named.
+// feature 428: 'portable' - the release must carry the portable edition's archive
+// (SalUpdPortableName / SalUpdPortableUrl) instead of the installer; a release without it is
+// not offered to a portable copy (supeNoPortable).
 inline BOOL SalUpdParseLatestRelease(const char* data, size_t len, CSalUpdRelease* release,
-                                     CSalUpdParseError* error = NULL)
+                                     CSalUpdParseError* error = NULL, BOOL portable = FALSE)
 {
     CSalUpdParseError dummy;
     if (error == NULL)
@@ -1396,8 +1433,10 @@ inline BOOL SalUpdParseLatestRelease(const char* data, size_t len, CSalUpdReleas
     char wantUrl[SALUPD_URL_MAX];
     char wantName[SALUPD_URL_MAX];
     if (!SalUpdReleaseNotesUrl(version, wantNotes, sizeof(wantNotes)) ||
-        !SalUpdInstallerUrl(version, wantUrl, sizeof(wantUrl)) ||
-        !SalUpdInstallerName(version, wantName, sizeof(wantName)))
+        !(portable ? SalUpdPortableUrl(version, wantUrl, sizeof(wantUrl))
+                   : SalUpdInstallerUrl(version, wantUrl, sizeof(wantUrl))) ||
+        !(portable ? SalUpdPortableName(version, wantName, sizeof(wantName))
+                   : SalUpdInstallerName(version, wantName, sizeof(wantName))))
     {
         *error = supeBadTag;
         return FALSE;
@@ -1418,7 +1457,7 @@ inline BOOL SalUpdParseLatestRelease(const char* data, size_t len, CSalUpdReleas
     }
     if (!installerFound)
     {
-        *error = supeNoInstaller;
+        *error = portable ? supeNoPortable : supeNoInstaller;
         return FALSE;
     }
     release->Version = version;

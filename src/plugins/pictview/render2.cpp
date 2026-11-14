@@ -425,9 +425,40 @@ static void WpLogLine(const WCHAR* log, const WCHAR* a, const WCHAR* b)
     free(u8);
 }
 
+// feature 428: the portable edition writes nothing of its own into the Windows registry - the
+// backup of the previous wallpaper (PrevWallpaper, PrevWallpaperStyle, PrevTileWallpaper) goes into
+// "<settings>\PictView wallpaper.ini" there; the wallpaper itself still changes Windows, because the
+// user asked for exactly that (FR-008). The file is UTF-16 (byte order mark) so the paths keep every
+// character. FALSE / an empty path when the edition is not portable or the folder is unknown.
+static BOOL WpPortableBackupFile(WCHAR* file, int size)
+{
+    if (SalamanderVersion < 109 || !SalamanderGeneral->IsPortableEdition())
+        return FALSE;
+    WCHAR dir[1024];
+    if (!SalamanderGeneral->GetUserDataFolderW(SALUSERDATA_LOCAL, dir, _countof(dir)))
+        return FALSE;
+    if (_snwprintf_s(file, size, _TRUNCATE, L"%s\\PictView wallpaper.ini", dir) < 0)
+        return FALSE;
+    return TRUE;
+}
+
+static BOOL WpIsBackupValue(const WCHAR* name)
+{
+    return wcsncmp(name, L"Prev", 4) == 0;
+}
+
 // a REG_SZ value of HKCU\Control Panel\Desktop (malloc'ed, "" when missing or not a string)
 static WCHAR* WpRegRead(HKEY key, const WCHAR* name)
 {
+    WCHAR ini[1100];
+    if (WpIsBackupValue(name) && WpPortableBackupFile(ini, _countof(ini)))
+    {
+        WCHAR* value = (WCHAR*)malloc(32768 * sizeof(WCHAR));
+        if (value == NULL)
+            return NULL;
+        GetPrivateProfileStringW(L"Wallpaper", name, L"", value, 32768, ini);
+        return value;
+    }
     DWORD type = 0, size = 0;
     if (RegQueryValueExW(key, name, NULL, &type, NULL, &size) != ERROR_SUCCESS || (type != REG_SZ && type != REG_EXPAND_SZ))
         size = 0;
@@ -449,6 +480,22 @@ static BOOL WpRegWrite(HKEY key, const WCHAR* name, const WCHAR* value, const WC
         swprintf_s(head, L"SET %s=", name);
         WpLogLine(dryLog, head, value);
         return TRUE;
+    }
+    WCHAR ini[1100];
+    if (WpIsBackupValue(name) && WpPortableBackupFile(ini, _countof(ini)))
+    {
+        if (GetFileAttributesW(ini) == INVALID_FILE_ATTRIBUTES) // UTF-16: the API keeps it UTF-16 then
+        {
+            HANDLE h = CreateFileW(ini, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+            if (h != INVALID_HANDLE_VALUE)
+            {
+                DWORD written;
+                static const BYTE bom[2] = {0xFF, 0xFE};
+                WriteFile(h, bom, 2, &written, NULL);
+                CloseHandle(h);
+            }
+        }
+        return WritePrivateProfileStringW(L"Wallpaper", name, value, ini);
     }
     return RegSetValueExW(key, name, 0, REG_SZ, (const BYTE*)value, (DWORD)((wcslen(value) + 1) * sizeof(WCHAR))) == ERROR_SUCCESS;
 }
@@ -480,14 +527,18 @@ static void WpShowError(HWND parent, int code, DWORD err)
     SalamanderGeneral->SalMessageBox(parent, msg, LoadStr(IDS_ERRORTITLE), MB_ICONEXCLAMATION | MB_OK);
 }
 
-// writes what the window shows into %LOCALAPPDATA%\Tandem Commander\PictView_Wallpaper.bmp;
-// '*path' (malloc'ed) is that file's plain path. Returns a PVC_* code ('*err': the system error)
+// writes what the window shows into %LOCALAPPDATA%\Tandem Commander\PictView_Wallpaper.bmp (the
+// portable edition: <program>\settings\PictView_Wallpaper.bmp); '*path' (malloc'ed) is that file's plain path. Returns a PVC_* code ('*err': the system error)
 int CRendererWindow::SaveWallpaperFile(WCHAR** path, DWORD* err)
 {
     *path = NULL;
     *err = 0;
-    WCHAR dir[MAX_PATH];
-    if (SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, SHGFP_TYPE_CURRENT, dir) != S_OK)
+    // feature 428: the portable edition keeps the picture in its own folder (<program>\settings,
+    // created by GetUserDataFolderW) - nothing of it is written into the user's profile (FR-007)
+    BOOL portable = SalamanderVersion >= 109 && SalamanderGeneral->IsPortableEdition();
+    WCHAR dir[1024];
+    if (portable ? !SalamanderGeneral->GetUserDataFolderW(SALUSERDATA_LOCAL, dir, _countof(dir))
+                 : SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, SHGFP_TYPE_CURRENT, dir) != S_OK)
     {
         *err = ERROR_PATH_NOT_FOUND;
         return PVC_WRITING_ERROR;
@@ -496,8 +547,13 @@ int CRendererWindow::SaveWallpaperFile(WCHAR** path, DWORD* err)
     WCHAR* file = (WCHAR*)malloc(len * sizeof(WCHAR));
     if (file == NULL)
         return PVC_OOM;
-    swprintf_s(file, len, L"%s\\Tandem Commander", dir);
-    CreateDirectoryW(file, NULL); // created on demand, as for the bug reports; an error shows below
+    if (portable)
+        wcscpy_s(file, len, dir);
+    else
+    {
+        swprintf_s(file, len, L"%s\\Tandem Commander", dir);
+        CreateDirectoryW(file, NULL); // created on demand, as for the bug reports; an error shows below
+    }
     wcscat_s(file, len, L"\\");
     wcscat_s(file, len, WP_FILE_NAME);
     char* fileU8 = SplWToU8Alloc(file);

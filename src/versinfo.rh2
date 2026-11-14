@@ -31,7 +31,11 @@
 #define VERSINFO_COPYRIGHT_OPENSAL  "Copyright © 1997-2026 Open Salamander Authors"
 #define VERSINFO_COMPANY     "Tandem Commander Project"
 
+#ifdef TC_PORTABLE // feature 428: the executable of the portable edition says so in its properties
+#define VERSINFO_DESCRIPTION "Tandem Commander, File Manager (portable)"
+#else
 #define VERSINFO_DESCRIPTION "Tandem Commander, File Manager"
+#endif
 #define VERSINFO_COMMENT     "A small and fast two-pane file manager with open plugin architecture."
 
 #ifdef _LANG

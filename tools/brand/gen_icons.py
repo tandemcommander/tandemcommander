@@ -25,6 +25,11 @@ Usage (from anywhere; paths are resolved relative to this file):
     python tools/brand/gen_icons.py            # regenerate all shipped assets
     python tools/brand/gen_icons.py --verify   # structural check, no writes
 
+Feature 428: src/res/salamand_portable.ico, the program icon of the portable edition, is the same
+icon with a badge drawn on every size by portable_badge() below (no extra source file): a disk in
+the lower-right corner - blue, ringed dark and then light so it reads on light and dark
+taskbars - with a white USB-stick glyph. Each size is drawn at 4x and scaled down.
+
 ICO packing convention (kept from feature 032): 32-bpp; BMP-encoded entries
 for sizes <= 64 px, PNG-encoded entries for sizes >= 128 px.
 """
@@ -34,7 +39,7 @@ import struct
 import sys
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 BRAND_DIR = Path(__file__).resolve().parent
 REPO_ROOT = BRAND_DIR.parent.parent
@@ -74,7 +79,43 @@ HOTPATH_TINTS = (
 HOTPATH_TARGETS = tuple(
     f"src/res/hotpath{i}.ico" for i in range(1, len(HOTPATH_TINTS) + 1))
 
+# Feature 428: the portable edition's program icon (salamand.rc2 under TC_PORTABLE)
+PORTABLE_ICO = "src/res/salamand_portable.ico"
+BADGE_FILL = (37, 99, 235, 255)    # blue - stands apart from the orange folder
+BADGE_DARK = (30, 41, 59, 255)     # slate - the ring that reads on light backgrounds
+BADGE_LIGHT = (255, 255, 255, 255) # the outer ring that reads on dark backgrounds
+BADGE_GLYPH = (255, 255, 255, 255)
+
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
+
+
+def portable_badge(frame):
+    """The frame with the portable badge in its lower-right corner (feature 428)."""
+    size = frame.size[0]
+    k = 4
+    big = size * k
+    layer = Image.new("RGBA", (big, big), (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    r = 0.25 * big                    # the disk
+    ring = max(0.035 * big, 1.5 * k)  # each ring at least 1.5 px wide in the final size
+    cx = cy = big - r - 2 * ring
+    for radius, color in ((r + 2 * ring, BADGE_LIGHT), (r + ring, BADGE_DARK), (r, BADGE_FILL)):
+        d.ellipse((cx - radius, cy - radius, cx + radius, cy + radius), fill=color)
+    # the USB stick: a body with a connector on top, upright in the disk
+    bw, bh = 0.62 * r, 0.82 * r
+    bx0, by0 = cx - bw / 2, cy - bh / 2 + 0.18 * r
+    d.rounded_rectangle((bx0, by0, bx0 + bw, by0 + bh), radius=0.14 * r, fill=BADGE_GLYPH)
+    cw, ch = 0.38 * r, 0.42 * r
+    cx0, cy0 = cx - cw / 2, by0 - ch + 0.04 * r
+    d.rectangle((cx0, cy0, cx0 + cw, cy0 + ch), fill=BADGE_GLYPH)
+    if size >= 32:  # the connector's two contacts, where there are pixels for them
+        hw = 0.09 * r
+        for hx in (cx - 0.11 * r - hw / 2, cx + 0.11 * r - hw / 2):
+            d.rectangle((hx, cy0 + 0.1 * r, hx + hw, cy0 + 0.22 * r), fill=BADGE_FILL)
+    badge = layer.resize((size, size), Image.LANCZOS)
+    out = frame.copy()
+    out.alpha_composite(badge)
+    return out
 
 
 def fail(msg):
@@ -183,6 +224,8 @@ def generate():
         out.parent.mkdir(parents=True, exist_ok=True)
         write_ico(out, frames)
         print(f"OK: wrote {rel} ({', '.join(str(s) for s in ICON_SIZES)} px)")
+    write_ico(REPO_ROOT / PORTABLE_ICO, [portable_badge(f.convert("RGBA")) for f in frames])
+    print(f"OK: wrote {PORTABLE_ICO} (the portable badge on {', '.join(str(s) for s in ICON_SIZES)} px)")
     logo = REPO_ROOT / LOGO_PNG
     logo.write_bytes(ABOUT.read_bytes())
     print(f"OK: wrote {LOGO_PNG} (copy of {ABOUT.name})")
@@ -236,6 +279,10 @@ def verify():
         status = "OK" if not problems else "FAIL: " + "; ".join(problems)
         print(f"{rel}: {status}")
         failures += bool(problems)
+
+    problems = check_ico(PORTABLE_ICO, ICON_SIZES)
+    print(f"{PORTABLE_ICO}: {'OK' if not problems else 'FAIL: ' + '; '.join(problems)}")
+    failures += bool(problems)
 
     for rel in HOTPATH_TARGETS:
         problems = check_ico(rel, HOTPATH_SIZES)
