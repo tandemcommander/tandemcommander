@@ -843,7 +843,7 @@ namespace RegLib
         case reinterpret_cast<ULONG_PTR>(HKEY_CLASSES_ROOT):
             pRootName = _T("HKEY_CLASSES_ROOT");
             break;
-        case reinterpret_cast<ULONG_PTR>(HKEY_CURRENT_USER):
+        case reinterpret_cast<ULONG_PTR>(HKEY_CURRENT_USER): // portable: memory registry (a name, not the user's registry)
             pRootName = _T("HKEY_CURRENT_USER");
             break;
         case reinterpret_cast<ULONG_PTR>(HKEY_LOCAL_MACHINE):

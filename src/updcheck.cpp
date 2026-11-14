@@ -68,10 +68,10 @@ static BOOL UpdOpenKey(BOOL forWrite, HKEY* key)
         return FALSE;
     if (forWrite)
     {
-        return NOHANDLES(RegCreateKeyExW(HKEY_CURRENT_USER, path, 0, NULL, REG_OPTION_NON_VOLATILE,
+        return NOHANDLES(RegCreateKeyExW(SalCfgBaseKey(), path, 0, NULL, REG_OPTION_NON_VOLATILE,
                                          KEY_READ | KEY_WRITE, NULL, key, NULL)) == ERROR_SUCCESS;
     }
-    return NOHANDLES(RegOpenKeyExW(HKEY_CURRENT_USER, path, 0, KEY_READ, key)) == ERROR_SUCCESS;
+    return NOHANDLES(RegOpenKeyExW(SalCfgBaseKey(), path, 0, KEY_READ, key)) == ERROR_SUCCESS;
 }
 
 BOOL UpdateCheck_OpenStateKey(BOOL forWrite, HKEY* key)
@@ -325,7 +325,7 @@ static BOOL UpdIsCancelled(CUpdCheckContext* ctx)
 // 'force' (a manual check): the attempt is recorded without asking the rule.
 static BOOL UpdClaim(BOOL force)
 {
-    HANDLE mutex = NOHANDLES(CreateMutexW(NULL, FALSE, UPDCHECK_MUTEX));
+    HANDLE mutex = NOHANDLES(CreateMutexW(NULL, FALSE, PortableScopedNameW(UPDCHECK_MUTEX))); // 428: per copy
     BOOL locked = FALSE;
     if (mutex != NULL)
     {
@@ -593,7 +593,12 @@ static CSalUpdResult UpdRequest(CUpdCheckContext* ctx, CSalUpdRelease* release, 
     if (bodyComplete && bodyLen <= SALUPD_MAX_ANSWER)
     {
         CSalUpdParseError error;
-        if (SalUpdParseLatestRelease(body, bodyLen, release, &error))
+#ifdef TC_PORTABLE
+        const BOOL portableEdition = TRUE; // feature 428: the release must carry the portable archive
+#else
+        const BOOL portableEdition = FALSE;
+#endif
+        if (SalUpdParseLatestRelease(body, bodyLen, release, &error, portableEdition))
         {
             CSalUpdVersion installed;
             UpdateCheck_GetInstalledVersion(&installed);

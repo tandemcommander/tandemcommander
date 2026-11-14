@@ -1,0 +1,25 @@
+feature 428 no-trace probe, portable edition, 2026-11-14T11:47:01
+copy: C:\Users\pavel\AppData\Local\Temp\tc428\notrace\portable\TC
+configuration key of the installed edition: present, SHA-256 19c222e0a142bef9bf8496b2b217195ebbd940f85ce8dad955a74c6dfa2f7991
+noise in 20 s without the program: 6 registry keys, 1 profile entries
+start dialogs: ["[#32770 ''] ", "[SalamanderSaveBits 'Tandem Commander'] "]
+PASS   session folder created in %TEMP%             ['TandemCommander-portable-5c6872a55de9c234']
+PASS   Configuration opened and closed with OK      Konfigurace; no other window
+viewers: [None, None]
+PASS   WebView2 data in the session folder          a session folder had WebView2 while a viewer was open
+FAIL   session 1 ended normally                     ["[SalamanderSaveBits 'Tandem Commander'] ", 'KILLED after 40 s']
+FAIL   session folder removed at exit               ['TandemCommander-portable-5c6872a55de9c234']
+PASS   settings file written with the toggled value C:\Users\pavel\AppData\Local\Temp\tc428\notrace\portable\TC\settings\tandemcommander.reg = 1
+    registry change (not noise): HKCU\Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\SystemAppData\Microsoft.AAD.BrokerPlugin_cw5n1h2txyewy\HAM\AUI\App\V1\LU
+    registry change (not noise): HKCU\Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\SystemAppData\MicrosoftWindows.Client.CBS_cw5n1h2txyewy\HAM\AUI\SoftLanding\V1\LU
+    registry change (not noise): HKCU\Software\Microsoft\Windows NT\CurrentVersion\TokenBroker\ProviderInfo\Microsoft.AAD.BrokerPlugin_cw5n1h2txyewy
+    registry change (not noise): HKCU\Software\Microsoft\Windows\CurrentVersion\AAD\Storage\https://login.microsoftonline.com
+    registry change (not noise): HKCU\Software\Microsoft\Windows\CurrentVersion\IrisService
+PASS   no registry key of ours changed              5 changes outside the noise, 0 of them ours
+PASS   no profile change                            0 entries
+PASS   installed edition's key unchanged            19c222e0a142bef9bf8496b2b217195ebbd940f85ce8dad955a74c6dfa2f7991
+PASS   second start: the setting is kept            value 1 -> 1
+PASS   second start: session folder removed         []
+PASS   second start: no window but the main one     ["[#32770 ''] "]
+configuration key restored; identical to the backup: True
+RESULT: FAIL

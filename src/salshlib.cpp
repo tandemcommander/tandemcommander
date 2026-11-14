@@ -54,19 +54,21 @@ void InitSalShLib()
     SECURITY_DESCRIPTOR sd;
     SECURITY_ATTRIBUTES* saPtr = CreateAccessableSecurityAttributes(&sa, &sd, GENERIC_ALL, &psidEveryone, &paclNewDacl);
 
-    SalShExtSharedMemMutex = HANDLES_Q(CreateMutex(saPtr, FALSE, SALSHEXT_SHAREDMEMMUTEXNAME));
+    // feature 428: in the portable edition the names carry this copy's scope - the copy hook of an
+    // installed program (fixed names) never finds a portable copy's data (FR-006a, FR-011a)
+    SalShExtSharedMemMutex = HANDLES_Q(CreateMutex(saPtr, FALSE, PortableScopedName(SALSHEXT_SHAREDMEMMUTEXNAME)));
     if (SalShExtSharedMemMutex == NULL)
-        SalShExtSharedMemMutex = HANDLES_Q(OpenMutex(SYNCHRONIZE, FALSE, SALSHEXT_SHAREDMEMMUTEXNAME));
+        SalShExtSharedMemMutex = HANDLES_Q(OpenMutex(SYNCHRONIZE, FALSE, PortableScopedName(SALSHEXT_SHAREDMEMMUTEXNAME)));
     if (SalShExtSharedMemMutex != NULL)
     {
         WaitForSingleObject(SalShExtSharedMemMutex, INFINITE);
         SalShExtSharedMem = HANDLES_Q(CreateFileMapping(INVALID_HANDLE_VALUE, saPtr, PAGE_READWRITE, // FIXME_X64 are we passing incompatible x86/x64 data?
                                                         0, sizeof(CSalShExtSharedMem),
-                                                        SALSHEXT_SHAREDMEMNAME));
+                                                        PortableScopedName(SALSHEXT_SHAREDMEMNAME)));
         BOOL created;
         if (SalShExtSharedMem == NULL)
         {
-            SalShExtSharedMem = HANDLES_Q(OpenFileMapping(FILE_MAP_WRITE, FALSE, SALSHEXT_SHAREDMEMNAME));
+            SalShExtSharedMem = HANDLES_Q(OpenFileMapping(FILE_MAP_WRITE, FALSE, PortableScopedName(SALSHEXT_SHAREDMEMNAME)));
             created = FALSE;
         }
         else

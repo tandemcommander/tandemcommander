@@ -1398,6 +1398,10 @@ struct COpenViewerData
 // feature 421: the level was changed in the notification - apply it to the open window (main window)
 #define WM_USER_UPDATENOTICE_LEVEL WM_APP + 426 // [CSalUpdLevel, 0]
 
+// feature 428 (portstore.h): a message of the portable settings store waits for a free main window
+// (a restored or damaged settings file, settings that cannot be saved); posted by the store
+#define WM_USER_PORTABLE_NOTE WM_APP + 427 // [0, 0]
+
 // states for Shift+F1 help mode
 #define HELP_INACTIVE 0 // not in Shift+F1 help mode (must be 0)
 #define HELP_ACTIVE 1   // in Shift+F1 help mode (non-zero)
@@ -2013,6 +2017,21 @@ DWORD CfgSkillLevelToMenu(BYTE cfgSkillLevel);
 #define IDT_AUTOREFRESHVERIFY 955 // feature 372: a panel without automatic refresh checks its folder 400 ms after a refresh (panel)
 #define IDT_CLIPCHECKRETRY 956    // feature 375: look again at a clipboard another program kept open (main window)
 #define IDT_UPDATEAUTOINSTALL 957 // feature 421: the silent automatic install waits for its moment (main window)
+#define IDT_PORTABLE_NOTE 958     // feature 428: retry showing a message of the portable settings store (main window)
+
+// Feature 428: the key the configuration root (SALAMANDER_ROOT_REG, SalamanderConfigurationRoots)
+// lives under. The normal edition: HKEY_CURRENT_USER, a constant - nothing changes. The portable
+// edition (TC_PORTABLE): the root of the session hive the settings store (portstore.cpp) loads
+// from settings\tandemcommander.reg before anything reads a setting. Code that opens the
+// configuration passes SalCfgBaseKey(), never a literal HKEY_CURRENT_USER; a read of a Windows
+// setting under HKEY_CURRENT_USER keeps the literal and is marked "// portable: system read"
+// (tools\check_portable_regsites.py checks every site).
+#ifdef TC_PORTABLE
+extern HKEY PortableStoreRoot;
+inline HKEY SalCfgBaseKey() { return PortableStoreRoot; }
+#else
+inline HKEY SalCfgBaseKey() { return HKEY_CURRENT_USER; } // portable: the normal edition's base key
+#endif
 
 // POZOR: skoro vsechny funkce v teto sekci pri chybe zobrazuji hlaseni o LOAD / SAVE
 //        konfigurace, coz z nich dela nevhodne pro bezny pristup do Registry,
@@ -2042,8 +2061,10 @@ BOOL LoadEditors(HKEY hKey, const char* name, CEditorMasks* editorMasks);
 BOOL SaveEditors(HKEY hKey, const char* name, CEditorMasks* editorMasks);
 
 BOOL ExportConfiguration(HWND hParent, const char* fileName, BOOL clearKeyBeforeImport);
+// 'checkOnly' (feature 428): read and check the file exactly as an import would (an error is shown
+// the same way), but write nothing; TRUE = the file would import
 BOOL ImportConfiguration(HWND hParent, const char* fileName, BOOL ignoreIfNotExists,
-                         BOOL autoImportConfig, BOOL* importCfgFromFileWasSkipped);
+                         BOOL autoImportConfig, BOOL* importCfgFromFileWasSkipped, BOOL checkOnly = FALSE);
 
 class CHighlightMasks;
 void UpdateDefaultColors(SALCOLOR* colors, CHighlightMasks* highlightMasks, BOOL processColors, BOOL processMasks);

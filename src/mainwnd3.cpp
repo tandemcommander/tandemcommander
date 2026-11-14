@@ -1612,7 +1612,14 @@ BOOL CMainWindow::OnAssociationsChangedNotification(BOOL showWaitWnd)
     // we try to avoid this by postponing the following mess using IDT_ASSOCIATIONSCHNG
 
     HKEY hKey;
-    if (HANDLES(RegOpenKeyEx(HKEY_CURRENT_USER, "Control Panel\\Desktop\\WindowMetrics", 0, KEY_READ | KEY_WRITE, &hKey)) == ERROR_SUCCESS)
+#ifdef TC_PORTABLE
+    // feature 428: the portable edition never writes Windows' settings - not even this temporary
+    // "Shell Icon Size" change (the shell's icon cache is refreshed without it)
+    hKey = NULL;
+    if (FALSE)
+#else
+    if (HANDLES(RegOpenKeyEx(HKEY_CURRENT_USER, "Control Panel\\Desktop\\WindowMetrics", 0, KEY_READ | KEY_WRITE, &hKey)) == ERROR_SUCCESS) // portable: not reached (TC_PORTABLE)
+#endif
     {
         // older SHELL32.DLL versions may not export this, fileIconInit will be NULL
         FT_FileIconInit fileIconInit = NULL;
@@ -2698,6 +2705,32 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
         return 0;
     }
 
+#ifdef TC_PORTABLE
+    case WM_USER_PORTABLE_NOTE: // feature 428: a message of the portable settings store, when the main window is free
+    {
+        if (wParam == 1) // the About box's settings link: the folder in the active panel (created if missing)
+        {
+            CreateDirectoryW(PortableStore_SettingsDirW(), NULL);
+            if (GetActivePanel() != NULL)
+                GetActivePanel()->ChangePathToDisk(HWindow, PortableStore_SettingsDirU8());
+            return 0;
+        }
+        GUITHREADINFO gti;
+        gti.cbSize = sizeof(gti);
+        BOOL busy = !IsWindowEnabled(HWindow) || GetCapture() != NULL ||
+                    (MenuBar != NULL && MenuBar->IsInMenuLoop()) ||
+                    (GetGUIThreadInfo(GetCurrentThreadId(), &gti) &&
+                     (gti.flags & (GUI_INMENUMODE | GUI_POPUPMENUMODE | GUI_SYSTEMMENUMODE | GUI_INMOVESIZE)) != 0);
+        if (busy)
+        {
+            SetTimer(HWindow, IDT_PORTABLE_NOTE, 1000, NULL);
+            return 0;
+        }
+        PortableStore_ShowPendingNotes(HWindow);
+        return 0;
+    }
+#endif
+
 #ifdef _DEBUG
     case WM_USER_CFGIMPORT_AUTORUN: // feature 245: the automation seam (research R18)
     {
@@ -3651,7 +3684,11 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
             params.HParent = HWindow;
             params.Flags = MSGBOXEX_OK | MSGBOXEX_ICONINFORMATION | MSGBOXEX_SILENT;
             params.Caption = LoadStr(IDS_INFOTITLE);
+#ifdef TC_PORTABLE
+            params.Text = LoadStr(IDS_PORTABLE_EXPORTHINT); // feature 428: no config.reg / -C import at start
+#else
             params.Text = LoadStr(WindowsVistaAndLater ? IDS_CONFIGEXPVISTA : IDS_CONFIGEXPUPTOXP);
+#endif
             params.CheckBoxText = LoadStr(IDS_CONFIGEXPCLEARKEY);
             params.CheckBoxValue = &clearKeyBeforeImport;
             SalMessageBoxEx(&params);
@@ -3661,8 +3698,14 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
             {
                 if (!CreateOurPathInRoamingAPPDATA(defDirU8))
                 {
+#ifdef TC_PORTABLE
+                    // feature 428 (test review): a portable folder whose settings\ path does not fit
+                    // MAX_PATH - the dialog opens without a start folder instead of nothing happening
+                    defDirU8[0] = 0;
+#else
                     TRACE_E("CM_EXPORTCONFIG: unexpected situation: unable to get our directory under CSIDL_APPDATA");
                     return 0;
+#endif
                 }
             }
             else
@@ -3711,8 +3754,14 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
 
         case CM_IMPORTCONFIG:
         {
+#ifdef TC_PORTABLE
+            // feature 428 (FR-013): Registry Editor would write the user's registry - the portable
+            // edition imports the file itself, at its next start
+            PortableStore_ImportConfigurationCommand(HWindow);
+#else
             SalMessageBox(HWindow, LoadStr(IDS_CONFIGHOWTOIMPORT), LoadStr(IDS_INFOTITLE),
                           MB_OK | MB_ICONINFORMATION);
+#endif
             return 0;
         }
 
@@ -6807,6 +6856,15 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
             break;
         }
 
+#ifdef TC_PORTABLE
+        case IDT_PORTABLE_NOTE: // feature 428: the store's message waited for a free main window
+        {
+            KillTimer(HWindow, IDT_PORTABLE_NOTE);
+            PostMessage(HWindow, WM_USER_PORTABLE_NOTE, 0, 0);
+            break;
+        }
+#endif
+
         case IDT_UPDATENOTICE: // feature 123: the notification could not be shown yet
         {
             TryShowUpdateNotice();
@@ -7576,7 +7634,7 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
                 LoadSaveToRegistryMutex.Enter();
 
                 HKEY salamander;
-                if (OpenKeyAux(NULL, HKEY_CURRENT_USER, SALAMANDER_ROOT_REG, salamander))
+                if (OpenKeyAux(NULL, SalCfgBaseKey(), SALAMANDER_ROOT_REG, salamander))
                 {
                     DWORD saveInProgress;
                     if (!GetValueAux(NULL, salamander, SALAMANDER_SAVE_IN_PROGRESS, REG_DWORD, &saveInProgress, sizeof(DWORD)))
@@ -7595,14 +7653,14 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
             {
                 char backup[200];
                 sprintf_s(backup, "%s.backup.63A7CD13", SALAMANDER_ROOT_REG); // "63A7CD13" prevents the key name from matching a user key
-                SHDeleteKey(HKEY_CURRENT_USER, backup);                       // delete the old backup if one exists
+                SHDeleteKey(SalCfgBaseKey(), backup);                       // delete the old backup if one exists
                 HKEY salBackup;
-                if (!OpenKeyAux(NULL, HKEY_CURRENT_USER, backup, salBackup)) // check that no backup exists
+                if (!OpenKeyAux(NULL, SalCfgBaseKey(), backup, salBackup)) // check that no backup exists
                 {
-                    if (CreateKeyAux(NULL, HKEY_CURRENT_USER, backup, salBackup)) // create a key for the backup
+                    if (CreateKeyAux(NULL, SalCfgBaseKey(), backup, salBackup)) // create a key for the backup
                     {
                         // I tried RegCopyTree (without KEY_ALL_ACCESS it failed) and it was as fast as SHCopyKey
-                        if (SHCopyKey(HKEY_CURRENT_USER, SALAMANDER_ROOT_REG, salBackup, 0) == ERROR_SUCCESS)
+                        if (SHCopyKey(SalCfgBaseKey(), SALAMANDER_ROOT_REG, salBackup, 0) == ERROR_SUCCESS)
                         { // creating the backup
                             DWORD copyIsOK = 1;
                             if (SetValueAux(NULL, salBackup, SALAMANDER_COPY_IS_OK, REG_DWORD, &copyIsOK, sizeof(DWORD)))

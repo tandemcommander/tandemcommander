@@ -2334,6 +2334,23 @@
 #define IDS_CANTLOADPLUGINSLG2          13741
 #define IDS_PLUGINSLGNOTFOUND           13742
 #define IDS_DONOTSHOWCANTLOADPLUGINSLG  13743
+// feature 428 (the portable edition's settings store): %s = the settings folder
+#define IDS_PORTABLE_CANNOTSAVE         13744
+// feature 428: the settings file could not be read, the previous copy was used;
+// %s = the settings folder, %s = the suffix the unreadable file was renamed with (".damaged-<UTC>")
+#define IDS_PORTABLE_RESTOREDBAK        13745
+// feature 428: neither settings file could be read; %s = the settings folder, %s = the suffix
+#define IDS_PORTABLE_DAMAGED            13746
+// feature 428: drag / copy from an archive or a plug-in file system to another program needs the
+// Explorer integration, which the portable edition does not install
+#define IDS_PORTABLE_NOSHELLEXT         13747
+// feature 428: About box of the portable edition, the line above the settings folder (a link)
+#define IDS_ABOUT_PORTABLE_EDITION      13748
+// feature 428: the first password saved without a master password in the portable edition
+#define IDS_PORTABLE_PWDNOTE            13749
+#define IDS_PORTABLE_PWDNOTE_SETMASTER  13754 // button: open the master password setting
+#define IDS_PORTABLE_PWDNOTE_CONTINUE   13758 // button "Not Now": save the password without a master password
+#define IDS_PORTABLE_PWDNOTE_DONTSHOW   13759 // check box
 
 // we have found out that configuration stored in registry is corrupted
 #define IDS_CORRUPTEDCONFIGFOUND        13750
@@ -2600,6 +2617,11 @@
 #define IDS_UPDATE_HINT_PORTABLE        14010 // notification hint: a copy not installed by the installer
 #define IDS_UPDATE_DLI_PROGRESS         14011 // %s = version, %u = per cent downloaded
 #define IDS_UPDATE_DLI_FAILED           14012 // %s = version: the download or its check failed
+// feature 428: the portable edition, free slots of the bundle of 14000
+#define IDS_UPDATE_HINT_PORTABLE_EDITION 14003 // notification hint: how a portable copy is updated
+#define IDS_UPDATE_NOTEST_PORTABLE      14013 // --updatetest refused in the portable edition
+#define IDS_PORTABLE_IMPORTPENDING      14014 // %s = file: Import Configuration in the portable edition, applied at the next start; Yes/No: close now
+#define IDS_PORTABLE_EXPORTHINT         14015 // Export Configuration in the portable edition: how the file is imported
 
 // Translation of Open Salamander into your language is not finished. Please join the translation effort.
 #define IDS_SLGINCOMPLETE_TITLE         14150

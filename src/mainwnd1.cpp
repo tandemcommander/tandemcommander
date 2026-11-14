@@ -2004,6 +2004,11 @@ void CMainWindow::SetWindowTitle(const char* text)
         // Open Salamander name + ver
         lstrcat(stdWndName, MAINWINDOW_NAME);
         lstrcat(stdWndName, " " VERSINFO_VERSION);
+#ifdef TC_PORTABLE
+        // feature 428 (FR-014): the portable edition says so - the same word in every language,
+        // before "(Administrator)"; the taskbar, Alt+Tab and the tray tip show the title too
+        lstrcat(stdWndName, " [portable]");
+#endif
 
         if (RunningAsAdmin)
             sprintf(stdWndName + lstrlen(stdWndName), " (%s)", LoadStr(IDS_AS_ADMIN_TITLE));

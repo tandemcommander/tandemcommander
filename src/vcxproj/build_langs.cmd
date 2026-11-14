@@ -11,6 +11,8 @@ setlocal enabledelayedexpansion
 ::   build_langs.cmd --module sftp            Restrict to one module
 ::   build_langs.cmd --language czech         Restrict to one language
 ::   build_langs.cmd release                  Operate on the Release_x64 output
+::   build_langs.cmd portable                 Operate on the portable output
+::                                            (<Config>_x64_portable, feature 428)
 ::
 :: Requires english.slg to exist, i.e. run build.cmd first.
 ::
@@ -21,6 +23,7 @@ setlocal enabledelayedexpansion
 
 set "BUILD_CONFIG=Debug"
 set "BUILD_PLATFORM=x64"
+set "OUT_SUFFIX="
 set "PS_ARGS="
 
 for %%a in (%*) do (
@@ -28,6 +31,8 @@ for %%a in (%*) do (
         set "BUILD_CONFIG=Release"
     ) else if /i "%%~a"=="debug" (
         set "BUILD_CONFIG=Debug"
+    ) else if /i "%%~a"=="portable" (
+        set "OUT_SUFFIX=_portable"
     ) else if /i "%%~a"=="--export-templates" (
         set "PS_ARGS=!PS_ARGS! -ExportTemplates"
     ) else if /i "%%~a"=="--check-layout" (
@@ -67,7 +72,7 @@ if not defined OPENSAL_BUILD_DIR (
     echo NOTE: OPENSAL_BUILD_DIR not set, defaulting to !OPENSAL_BUILD_DIR!
 )
 
-set "OUT_DIR=%OPENSAL_BUILD_DIR%tandemcommander\%BUILD_CONFIG%_%BUILD_PLATFORM%"
+set "OUT_DIR=%OPENSAL_BUILD_DIR%tandemcommander\%BUILD_CONFIG%_%BUILD_PLATFORM%%OUT_SUFFIX%"
 
 if not exist "%OUT_DIR%" (
     echo ERROR: build output not found: %OUT_DIR%
@@ -118,6 +123,7 @@ echo   build_langs.cmd --check-layout      also run the layout validator (slow:
 echo                                       every finding costs a 30s timeout)
 echo   build_langs.cmd --force             rebuild even if up to date
 echo   build_langs.cmd release             use the Release_x64 output
+echo   build_langs.cmd portable            use the portable output ^(feature 428^)
 echo.
 echo Run build.cmd first: english.slg is the source every language module is
 echo copied from.

@@ -90,24 +90,33 @@ namespace RegLib
         return len >= plen && _wcsicmp(name + len - plen, L".hidden") == 0;
     }
 
+    // feature 428: a key named HKEY_CURRENT_USER is the configuration's base key - the user's
+    // registry in the normal edition, the session hive in the portable one (SalCfgBaseKey()). Every
+    // user of this class in the core names the configuration under HKEY_CURRENT_USER (export,
+    // import, the portable store), so export / import work on the session hive unchanged.
+    static HKEY MapRoot(HKEY key)
+    {
+        return key == HKEY_CURRENT_USER ? SalCfgBaseKey() : key; // portable: the mapping itself
+    }
+
     // the longest value name the registry allows, in UTF-16 units with the terminator
     static const DWORD REG_VALUE_NAME_MAX_W = 16384;
 
     BOOL CSystemRegistry::ClearKey(HKEY key)
     {
-        return ClearKeyAux(key, FALSE, NULL);
+        return ClearKeyAux(MapRoot(key), FALSE, NULL);
     }
 
     BOOL CSystemRegistry::ClearKeyEx(HKEY key, BOOL doNotDeleteHiddenKeysAndValues, BOOL* keyIsNotEmpty)
     {
-        return ClearKeyAux(key, doNotDeleteHiddenKeysAndValues, keyIsNotEmpty);
+        return ClearKeyAux(MapRoot(key), doNotDeleteHiddenKeysAndValues, keyIsNotEmpty);
     }
 
     BOOL CSystemRegistry::CreateKey(HKEY key, LPCTSTR name, HKEY& createdKey)
     {
         BOOL failed;
         WCHAR* w = RegNameW(name, &failed);
-        BOOL ret = !failed && ERROR_SUCCESS == RegCreateKeyExW(key, w, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &createdKey, NULL);
+        BOOL ret = !failed && ERROR_SUCCESS == RegCreateKeyExW(MapRoot(key), w, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &createdKey, NULL);
         free(w);
         return ret;
     }
@@ -116,7 +125,7 @@ namespace RegLib
     {
         BOOL failed;
         WCHAR* w = RegNameW(name, &failed);
-        BOOL ret = !failed && ERROR_SUCCESS == RegOpenKeyExW(key, w, 0, KEY_ALL_ACCESS, &openedKey);
+        BOOL ret = !failed && ERROR_SUCCESS == RegOpenKeyExW(MapRoot(key), w, 0, KEY_ALL_ACCESS, &openedKey);
         free(w);
         return ret;
     }
@@ -130,7 +139,7 @@ namespace RegLib
     {
         BOOL failed;
         WCHAR* w = RegNameW(name, &failed);
-        BOOL ret = !failed && w != NULL && ERROR_SUCCESS == RegDeleteKeyW(key, w);
+        BOOL ret = !failed && w != NULL && ERROR_SUCCESS == RegDeleteKeyW(MapRoot(key), w);
         free(w);
         return ret;
     }
@@ -140,7 +149,7 @@ namespace RegLib
         BOOL failed;
         char* n = RegNameU8(name, &failed);
         DWORD realType = REG_NONE;
-        BOOL ret = !failed && ERROR_SUCCESS == SalRegQueryValueExW8(key, n, &realType, (BYTE*)data, &dataSize) && realType == type;
+        BOOL ret = !failed && ERROR_SUCCESS == SalRegQueryValueExW8(MapRoot(key), n, &realType, (BYTE*)data, &dataSize) && realType == type;
         free(n);
         return ret;
     }
@@ -149,7 +158,7 @@ namespace RegLib
     {
         BOOL failed;
         char* n = RegNameU8(name, &failed);
-        BOOL ret = !failed && ERROR_SUCCESS == SalRegSetValueExW8(key, n, type, (CONST BYTE*)data, dataSize);
+        BOOL ret = !failed && ERROR_SUCCESS == SalRegSetValueExW8(MapRoot(key), n, type, (CONST BYTE*)data, dataSize);
         free(n);
         return ret;
     }
@@ -158,7 +167,7 @@ namespace RegLib
     {
         BOOL failed;
         WCHAR* w = RegNameW(name, &failed);
-        BOOL ret = !failed && ERROR_SUCCESS == RegDeleteValueW(key, w);
+        BOOL ret = !failed && ERROR_SUCCESS == RegDeleteValueW(MapRoot(key), w);
         free(w);
         return ret;
     }
@@ -168,7 +177,7 @@ namespace RegLib
         BOOL failed;
         char* n = RegNameU8(name, &failed);
         DWORD realType = REG_NONE;
-        BOOL ret = !failed && ERROR_SUCCESS == SalRegQueryValueExW8(key, n, &realType, NULL, &dataSize) && realType == type;
+        BOOL ret = !failed && ERROR_SUCCESS == SalRegQueryValueExW8(MapRoot(key), n, &realType, NULL, &dataSize) && realType == type;
         free(n);
         return ret;
     }
@@ -177,7 +186,7 @@ namespace RegLib
     {
         WCHAR nameW[256]; // a key name has at most 255 characters
         DWORD len = _countof(nameW);
-        return ERROR_SUCCESS == RegEnumKeyExW(key, subKeyIndex, nameW, &len, NULL, NULL, NULL, NULL) &&
+        return ERROR_SUCCESS == RegEnumKeyExW(MapRoot(key), subKeyIndex, nameW, &len, NULL, NULL, NULL, NULL) &&
                SalWToU8(nameW, -1, name, (int)bufferSize) != 0;
     }
 
@@ -188,13 +197,13 @@ namespace RegLib
             return FALSE;
         DWORD len = REG_VALUE_NAME_MAX_W;
         DWORD type = REG_NONE;
-        BOOL ret = ERROR_SUCCESS == RegEnumValueW(key, valIndex, nameW, &len, NULL, &type, NULL, NULL) &&
+        BOOL ret = ERROR_SUCCESS == RegEnumValueW(MapRoot(key), valIndex, nameW, &len, NULL, &type, NULL, NULL) &&
                    SalWToU8(nameW, -1, name, (int)nameSize) != 0;
         free(nameW);
         if (ret && valType != NULL)
             *valType = type;
         if (ret && dataSize != NULL) // the data as GetValue gives them (strings UTF-8)
-            ret = ERROR_SUCCESS == SalRegQueryValueExW8(key, name, NULL, data, dataSize);
+            ret = ERROR_SUCCESS == SalRegQueryValueExW8(MapRoot(key), name, NULL, data, dataSize);
         return ret;
     }
 

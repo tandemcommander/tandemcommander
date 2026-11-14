@@ -30,8 +30,8 @@ add *Recent Changes* / *Active Technologies* sections.
 - **Tandem Commander 0.3.0** (internal build 196, release dated 2026-11-08;
   carries features 345–422; previous: 0.2.0 / build 195 / tag
   `v0.2.0`). Plugin interface version (`LAST_VERSION_OF_SALAMANDER`) **107**
-  in 0.1.10, **108** in the tree (245) — independent, changes only with the
-  plugin API.
+  in 0.1.10, **108** in 0.3.0 (245), **109** in the tree (428) — independent,
+  changes only with the plugin API.
 - **A release** sets the eight *Release records* of `backlog/RELEASE.md`
   (version and build in `spl_vers.h`, `MyAppVersion`, the changelog section,
   `PRIVACY.md`, the line above, …) in one change — prepared by
@@ -64,6 +64,8 @@ build.cmd rebuild         :: clean + rebuild Debug x64
 build.cmd full            :: + runtime data, plugins.ver, language modules
 build.cmd full release    :: complete Release x64 (LTO; VC++ runtime copied in)
 build.cmd full release sign [setup]   :: signed tree (+ signed installer)
+build.cmd [full] [release] portable   :: the portable edition (428) into <Config>_x64_portable (+ ZIP)
+build.cmd dist            :: the whole signed release: installer + portable ZIP (428)
 ```
 
 - Output: `OPENSAL_BUILD_DIR` (default `.\build\`). Python is required (the
@@ -133,7 +135,10 @@ Each is one line of a longer story; the number is the feature whose entry in
 - Code reads the configuration only through `SalamanderConfigurationRoots[0]` /
   `SALAMANDER_ROOT_REG`, never a literal key; the old root `SALCFG_LEGACY_ROOT` is read
   only by `MigrateConfigurationRoot`, used only for a session whose move failed, and
-  never deleted (343).
+  never deleted (343). The key is opened under `SalCfgBaseKey()` (HKCU, or the portable
+  edition's private hive), never a literal `HKEY_CURRENT_USER`; a file the program keeps
+  goes into `GetUserDataFolderW`'s folder, a shared kernel object gets
+  `PortableScopedName()` / `GetInstanceScopeSuffix()` (428, `check_portable_regsites.py`).
 - Replacing a user's file: temporary file + `SalReplaceWithTempW`
   (`salsafereplace.h`, 105). A replaced archive member is deleted only once
   its replacement is stored (110, 113).

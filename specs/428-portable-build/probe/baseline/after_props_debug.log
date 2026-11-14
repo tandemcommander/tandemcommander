@@ -1,0 +1,1235 @@
+NOTE: OPENSAL_BUILD_DIR not set, defaulting to E:\Projects\tandemcommander\build\
+Plugins: 20 enabled, 11 disabled
+Languages: 8 enabled, 3 disabled
+           off: chinesesimplified, russian, ukrainian
+check_update_pin: OK (a3d05ccf5ca13eaff49cc7f64d1832f0e6ef6733 of 1 pinned)
+check_outdir_suffix: OK (202 project files checked)
+
+============================================================
+ Open Salamander Build
+============================================================
+ Configuration : Debug x64
+ Mode          : build
+ Plugin policy : 20 plugins enabled (plugins.cfg)
+ Lang policy   : 8 of 11 languages enabled (languages.cfg)
+ Full build    : runtime data files + plugins.ver
+ Output        : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\
+ MSBuild       : C:\Program Files\Microsoft Visual Studio\2022\Community\Msbuild\Current\Bin\MSBuild.exe
+============================================================
+
+MSBuild verze 17.10.4+10fbfbf2e pro .NET Framework
+Vytváření sestavení bylo zahájeno 14.11.2026 10:45:45.
+
+     1>Projekt E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf v uzlu 1 (počet cílů: build).
+     1>ValidateSolutionConfiguration:
+         Probíhá vytváření konfigurace řešení Debug|x64.
+       ValidateProjects:
+         Projekt salextx86 není vybrán k sestavování v konfiguraci řešení Debug|x64.
+         Projekt salextx64 není vybrán k sestavování v konfiguraci řešení Debug|x64.
+         Projekt salopen není vybrán k sestavování v konfiguraci řešení Debug|x64.
+         Projekt zip2sfx není vybrán k sestavování v konfiguraci řešení Debug|x64.
+         Projekt tserver není vybrán k sestavování v konfiguraci řešení Debug|x64.
+         Projekt sfx7zip není vybrán k sestavování v konfiguraci řešení Debug|x64.
+         Projekt setup není vybrán k sestavování v konfiguraci řešení Debug|x64.
+         Projekt translator není vybrán k sestavování v konfiguraci řešení Debug|x64.
+         Projekt remove není vybrán k sestavování v konfiguraci řešení Debug|x64.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\folders\vcxproj\lang_folders.vcxproj (8) v uzlu 7 (výchozí cíle).
+     8>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\checksum\vcxproj\lang_checksum.vcxproj (11) v uzlu 9 (výchozí cíle).
+    11>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\vcxproj\lang.vcxproj (5) v uzlu 2 (výchozí cíle).
+     5>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\ftp\vcxproj\lang_ftp.vcxproj (7) v uzlu 12 (výchozí cíle).
+     7>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\peviewer\vcxproj\lang_peviewer.vcxproj (9) v uzlu 15 (výchozí cíle).
+     9>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     7>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\ftp\lang\Intermediate\lang_ftp.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+     5>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\lang\Intermediate\lang.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+     7>InitializeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\ftp\lang\Intermediate\lang_ftp.tlog\unsuccessfulbuild.
+     5>InitializeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\lang\Intermediate\lang.tlog\unsuccessfulbuild.
+     9>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\peviewer\lang\Intermediate\lang_peviewer.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\peviewer\lang\Intermediate\lang_peviewer.tlog\unsuccessfulbuild.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\vcxproj\saltests\saltests.vcxproj (12) v uzlu 3 (výchozí cíle).
+    12>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+       InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\saltests\Intermediate\saltests.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+    11>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\checksum\lang\Intermediate\lang_checksum.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+     5>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+    11>InitializeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\checksum\lang\Intermediate\lang_checksum.tlog\unsuccessfulbuild.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\pictview\vcxproj\lang_pictview.vcxproj (10) v uzlu 14 (výchozí cíle).
+    10>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\dbviewer\vcxproj\lang_dbviewer.vcxproj (4) v uzlu 16 (výchozí cíle).
+     4>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    12>InitializeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\saltests\Intermediate\saltests.tlog\unsuccessfulbuild.
+     8>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\folders\lang\Intermediate\lang_folders.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+     4>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\dbviewer\lang\Intermediate\lang_dbviewer.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\dbviewer\lang\Intermediate\lang_dbviewer.tlog\unsuccessfulbuild.
+    10>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\pictview\lang\Intermediate\lang_pictview.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\diskmap\vcxproj\lang_diskmap.vcxproj (3) v uzlu 11 (výchozí cíle).
+     3>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    10>InitializeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\pictview\lang\Intermediate\lang_pictview.tlog\unsuccessfulbuild.
+     8>InitializeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\folders\lang\Intermediate\lang_folders.tlog\unsuccessfulbuild.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\7zip\vcxproj\lang_7zip.vcxproj (2) v uzlu 5 (výchozí cíle).
+     2>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\filecomp\vcxproj\lang_filecomp.vcxproj (6) v uzlu 13 (výchozí cíle).
+     6>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     7>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+     3>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\diskmap\lang\Intermediate\lang_diskmap.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\diskmap\lang\Intermediate\lang_diskmap.tlog\unsuccessfulbuild.
+     9>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+     6>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\filecomp\lang\Intermediate\lang_filecomp.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\filecomp\lang\Intermediate\lang_filecomp.tlog\unsuccessfulbuild.
+     2>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\7zip\lang\Intermediate\lang_7zip.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\7zip\lang\Intermediate\lang_7zip.tlog\unsuccessfulbuild.
+     8>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+     5>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    11>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+     4>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+     7>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+     9>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    11>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+     4>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    12>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+     3>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+     2>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+    10>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+     8>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+     9>Link:
+         Všechny výstupy jsou aktuální.
+         lang_peviewer.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\peviewer\lang\english.slg
+     3>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+     2>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+     6>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+    10>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+     7>Link:
+         Všechny výstupy jsou aktuální.
+    11>Link:
+         Všechny výstupy jsou aktuální.
+         lang_checksum.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\checksum\lang\english.slg
+     7>Link:
+         lang_ftp.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\ftp\lang\english.slg
+     6>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+     4>Link:
+         Všechny výstupy jsou aktuální.
+     3>Link:
+         Všechny výstupy jsou aktuální.
+    12>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+     3>Link:
+         lang_diskmap.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\diskmap\lang\english.slg
+    12>VcpkgTripletSelection:
+         Using normalized configuration "Debug"
+     4>Link:
+         lang_dbviewer.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\dbviewer\lang\english.slg
+     2>Link:
+         Všechny výstupy jsou aktuální.
+         lang_7zip.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\7zip\lang\english.slg
+     5>Link:
+         Všechny výstupy jsou aktuální.
+         lang.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\lang\english.slg
+    10>Link:
+         Všechny výstupy jsou aktuální.
+         lang_pictview.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\pictview\lang\english.slg
+     9>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\peviewer\lang\Intermediate\lang_peviewer.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\peviewer\lang\Intermediate\lang_peviewer.tlog\lang_peviewer.lastbuildstate.
+     9>Sestavení projektu E:\Projects\tandemcommander\src\plugins\peviewer\vcxproj\lang_peviewer.vcxproj (s výchozími cíli) bylo dokončeno.
+     8>Link:
+         Všechny výstupy jsou aktuální.
+         lang_folders.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\folders\lang\english.slg
+     4>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\dbviewer\lang\Intermediate\lang_dbviewer.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\dbviewer\lang\Intermediate\lang_dbviewer.tlog\lang_dbviewer.lastbuildstate.
+     4>Sestavení projektu E:\Projects\tandemcommander\src\plugins\dbviewer\vcxproj\lang_dbviewer.vcxproj (s výchozími cíli) bylo dokončeno.
+     3>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\diskmap\lang\Intermediate\lang_diskmap.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\diskmap\lang\Intermediate\lang_diskmap.tlog\lang_diskmap.lastbuildstate.
+     3>Sestavení projektu E:\Projects\tandemcommander\src\plugins\diskmap\vcxproj\lang_diskmap.vcxproj (s výchozími cíli) bylo dokončeno.
+     6>Link:
+         Všechny výstupy jsou aktuální.
+    11>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\checksum\lang\Intermediate\lang_checksum.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\checksum\lang\Intermediate\lang_checksum.tlog\lang_checksum.lastbuildstate.
+    11>Sestavení projektu E:\Projects\tandemcommander\src\plugins\checksum\vcxproj\lang_checksum.vcxproj (s výchozími cíli) bylo dokončeno.
+     2>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\7zip\lang\Intermediate\lang_7zip.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\7zip\lang\Intermediate\lang_7zip.tlog\lang_7zip.lastbuildstate.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\7zip\vcxproj\7ZA\7za.dll.vcxproj (16) v uzlu 6 (výchozí cíle).
+    16>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     2>Sestavení projektu E:\Projects\tandemcommander\src\plugins\7zip\vcxproj\lang_7zip.vcxproj (s výchozími cíli) bylo dokončeno.
+     6>Link:
+         lang_filecomp.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\filecomp\lang\english.slg
+     7>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\ftp\lang\Intermediate\lang_ftp.tlog\unsuccessfulbuild.
+    12>ClCompile:
+         Všechny výstupy jsou aktuální.
+    16>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\7zip\Intermediate\7za\7za.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\7zip\Intermediate\7za\7za.tlog\unsuccessfulbuild.
+     7>FinalizeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\ftp\lang\Intermediate\lang_ftp.tlog\lang_ftp.lastbuildstate.
+     8>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\folders\lang\Intermediate\lang_folders.tlog\unsuccessfulbuild.
+     7>Sestavení projektu E:\Projects\tandemcommander\src\plugins\ftp\vcxproj\lang_ftp.vcxproj (s výchozími cíli) bylo dokončeno.
+     8>FinalizeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\folders\lang\Intermediate\lang_folders.tlog\lang_folders.lastbuildstate.
+     8>Sestavení projektu E:\Projects\tandemcommander\src\plugins\folders\vcxproj\lang_folders.vcxproj (s výchozími cíli) bylo dokončeno.
+     5>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\lang\Intermediate\lang.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\lang\Intermediate\lang.tlog\lang.lastbuildstate.
+     5>Sestavení projektu E:\Projects\tandemcommander\src\vcxproj\lang.vcxproj (s výchozími cíli) bylo dokončeno.
+    10>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\pictview\lang\Intermediate\lang_pictview.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\pictview\lang\Intermediate\lang_pictview.tlog\lang_pictview.lastbuildstate.
+    10>Sestavení projektu E:\Projects\tandemcommander\src\plugins\pictview\vcxproj\lang_pictview.vcxproj (s výchozími cíli) bylo dokončeno.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\regedt\vcxproj\lang_regedt.vcxproj (18) v uzlu 10 (výchozí cíle).
+    18>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     6>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\filecomp\lang\Intermediate\lang_filecomp.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\filecomp\lang\Intermediate\lang_filecomp.tlog\lang_filecomp.lastbuildstate.
+     6>Sestavení projektu E:\Projects\tandemcommander\src\plugins\filecomp\vcxproj\lang_filecomp.vcxproj (s výchozími cíli) bylo dokončeno.
+    18>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\regedt\lang\Intermediate\lang_regedt.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\regedt\lang\Intermediate\lang_regedt.tlog\unsuccessfulbuild.
+    12>Link:
+         Všechny výstupy jsou aktuální.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\filecomp\vcxproj\filecomp.vcxproj (15) v uzlu 8 (výchozí cíle).
+    15>Probíhá sestavení projektu E:\Projects\tandemcommander\src\plugins\filecomp\vcxproj\filecomp.vcxproj (15) – E:\Projects\tandemcommander\src\plugins\filecomp\vcxproj\fcremote\fcremote.vcxproj (19) v uzlu 8 (výchozí cíle).
+    19>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    12>Link:
+         saltests.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\saltests\saltests.exe
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\renamer\vcxproj\lang_renamer.vcxproj (20) v uzlu 4 (výchozí cíle).
+    20>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    18>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+    19>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\filecomp\Intermediate\fcremote\fcremote.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\filecomp\Intermediate\fcremote\fcremote.tlog\unsuccessfulbuild.
+    20>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\renamer\lang\Intermediate\lang_renamer.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\renamer\lang\Intermediate\lang_renamer.tlog\unsuccessfulbuild.
+    18>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    20>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+    19>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    20>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    12>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\saltests\Intermediate\saltests.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\saltests\Intermediate\saltests.tlog\saltests.lastbuildstate.
+    12>Sestavení projektu E:\Projects\tandemcommander\src\vcxproj\saltests\saltests.vcxproj (s výchozími cíli) bylo dokončeno.
+    19>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+    18>Link:
+         Všechny výstupy jsou aktuální.
+         lang_regedt.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\regedt\lang\english.slg
+    16>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+    20>Link:
+         Všechny výstupy jsou aktuální.
+         lang_renamer.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\renamer\lang\english.slg
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\zip\vcxproj\lang_zip.vcxproj (24) v uzlu 5 (výchozí cíle).
+    24>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    19>ClCompile:
+         Všechny výstupy jsou aktuální.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\tar\vcxproj\lang_tar.vcxproj (21) v uzlu 15 (výchozí cíle).
+    21>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\uniso\vcxproj\lang_uniso.vcxproj (23) v uzlu 9 (výchozí cíle).
+    23>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\uncab\vcxproj\lang_uncab.vcxproj (22) v uzlu 16 (výchozí cíle).
+    22>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    24>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\zip\lang\Intermediate\lang_zip.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+    21>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\tar\lang\Intermediate\lang_tar.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+    24>InitializeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\zip\lang\Intermediate\lang_zip.tlog\unsuccessfulbuild.
+    21>InitializeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\tar\lang\Intermediate\lang_tar.tlog\unsuccessfulbuild.
+    22>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\uncab\lang\Intermediate\lang_uncab.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+    23>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\uniso\lang\Intermediate\lang_uniso.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+    22>InitializeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\uncab\lang\Intermediate\lang_uncab.tlog\unsuccessfulbuild.
+    23>InitializeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\uniso\lang\Intermediate\lang_uniso.tlog\unsuccessfulbuild.
+    18>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\regedt\lang\Intermediate\lang_regedt.tlog\unsuccessfulbuild.
+    19>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    18>FinalizeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\regedt\lang\Intermediate\lang_regedt.tlog\lang_regedt.lastbuildstate.
+    21>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+    24>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+    18>Sestavení projektu E:\Projects\tandemcommander\src\plugins\regedt\vcxproj\lang_regedt.vcxproj (s výchozími cíli) bylo dokončeno.
+    20>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\renamer\lang\Intermediate\lang_renamer.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\renamer\lang\Intermediate\lang_renamer.tlog\lang_renamer.lastbuildstate.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\pictview\vcxproj\exif\exif.vcxproj (27) v uzlu 7 (výchozí cíle).
+    27>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\undelete\vcxproj\lang_undelete.vcxproj (25) v uzlu 11 (výchozí cíle).
+    25>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    20>Sestavení projektu E:\Projects\tandemcommander\src\plugins\renamer\vcxproj\lang_renamer.vcxproj (s výchozími cíli) bylo dokončeno.
+    23>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+    25>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\undelete\lang\Intermediate\lang_undelete.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\undelete\lang\Intermediate\lang_undelete.tlog\unsuccessfulbuild.
+    24>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    23>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    21>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    22>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+    27>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\pictview\Intermediate\exif\exif.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+    22>VcpkgTripletSelection:
+         Using normalized configuration "Debug"
+    27>InitializeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\pictview\Intermediate\exif\exif.tlog\unsuccessfulbuild.
+    25>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+    19>Link:
+         Všechny výstupy jsou aktuální.
+    25>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    19>Link:
+         fcremote.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\filecomp\fcremote.exe
+    22>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    23>Link:
+         Všechny výstupy jsou aktuální.
+         lang_uniso.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\uniso\lang\english.slg
+    21>Link:
+         Všechny výstupy jsou aktuální.
+    24>Link:
+         Všechny výstupy jsou aktuální.
+    21>Link:
+         lang_tar.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\tar\lang\english.slg
+    24>Link:
+         lang_zip.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\zip\lang\english.slg
+    25>Link:
+         Všechny výstupy jsou aktuální.
+    27>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    23>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\uniso\lang\Intermediate\lang_uniso.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\uniso\lang\Intermediate\lang_uniso.tlog\lang_uniso.lastbuildstate.
+    23>Sestavení projektu E:\Projects\tandemcommander\src\plugins\uniso\vcxproj\lang_uniso.vcxproj (s výchozími cíli) bylo dokončeno.
+    25>Link:
+         lang_undelete.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\undelete\lang\english.slg
+    22>Link:
+         Všechny výstupy jsou aktuální.
+         lang_uncab.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\uncab\lang\english.slg
+    19>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\filecomp\Intermediate\fcremote\fcremote.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\filecomp\Intermediate\fcremote\fcremote.tlog\fcremote.lastbuildstate.
+    19>Sestavení projektu E:\Projects\tandemcommander\src\plugins\filecomp\vcxproj\fcremote\fcremote.vcxproj (s výchozími cíli) bylo dokončeno.
+    21>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\tar\lang\Intermediate\lang_tar.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\tar\lang\Intermediate\lang_tar.tlog\lang_tar.lastbuildstate.
+    24>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\zip\lang\Intermediate\lang_zip.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\zip\lang\Intermediate\lang_zip.tlog\lang_zip.lastbuildstate.
+    21>Sestavení projektu E:\Projects\tandemcommander\src\plugins\tar\vcxproj\lang_tar.vcxproj (s výchozími cíli) bylo dokončeno.
+    24>Sestavení projektu E:\Projects\tandemcommander\src\plugins\zip\vcxproj\lang_zip.vcxproj (s výchozími cíli) bylo dokončeno.
+    22>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\uncab\lang\Intermediate\lang_uncab.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\uncab\lang\Intermediate\lang_uncab.tlog\lang_uncab.lastbuildstate.
+    22>Sestavení projektu E:\Projects\tandemcommander\src\plugins\uncab\vcxproj\lang_uncab.vcxproj (s výchozími cíli) bylo dokončeno.
+    25>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\undelete\lang\Intermediate\lang_undelete.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\undelete\lang\Intermediate\lang_undelete.tlog\lang_undelete.lastbuildstate.
+    25>Sestavení projektu E:\Projects\tandemcommander\src\plugins\undelete\vcxproj\lang_undelete.vcxproj (s výchozími cíli) bylo dokončeno.
+    27>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\sftp\vcxproj\lang_sftp.vcxproj (31) v uzlu 10 (výchozí cíle).
+    31>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+       InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\sftp\lang\Intermediate\lang_sftp.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\sftp\lang\Intermediate\lang_sftp.tlog\unsuccessfulbuild.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\mdview\vcxproj\lang_mdview.vcxproj (32) v uzlu 2 (výchozí cíle).
+    32>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    27>ClCompile:
+         Všechny výstupy jsou aktuální.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\codeview\vcxproj\lang_codeview.vcxproj (34) v uzlu 12 (výchozí cíle).
+    34>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    27>ClCompile:
+         Všechny výstupy jsou aktuální.
+    32>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\mdview\lang\Intermediate\lang_mdview.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\mdview\lang\Intermediate\lang_mdview.tlog\unsuccessfulbuild.
+    34>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\codeview\lang\Intermediate\lang_codeview.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\codeview\lang\Intermediate\lang_codeview.tlog\unsuccessfulbuild.
+    31>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+       ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    34>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+    27>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    32>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+    34>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    32>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    31>Link:
+         Všechny výstupy jsou aktuální.
+         lang_sftp.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\sftp\lang\english.slg
+    16>ClCompile:
+         Všechny výstupy jsou aktuální.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\dbviewer\vcxproj\dbviewer.vcxproj (26) v uzlu 14 (výchozí cíle).
+    26>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+       InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\dbviewer\Intermediate\dbviewer.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\dbviewer\Intermediate\dbviewer.tlog\unsuccessfulbuild.
+    15>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    32>Link:
+         Všechny výstupy jsou aktuální.
+    34>Link:
+         Všechny výstupy jsou aktuální.
+    32>Link:
+         lang_mdview.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\mdview\lang\english.slg
+    34>Link:
+         lang_codeview.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\codeview\lang\english.slg
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\tar\vcxproj\tar.vcxproj (42) v uzlu 15 (výchozí cíle).
+    42>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    15>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\filecomp\Intermediate\filecomp.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\filecomp\Intermediate\filecomp.tlog\unsuccessfulbuild.
+    27>Link:
+         Všechny výstupy jsou aktuální.
+    31>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\sftp\lang\Intermediate\lang_sftp.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\sftp\lang\Intermediate\lang_sftp.tlog\lang_sftp.lastbuildstate.
+    31>Sestavení projektu E:\Projects\tandemcommander\src\plugins\sftp\vcxproj\lang_sftp.vcxproj (s výchozími cíli) bylo dokončeno.
+    42>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\tar\Intermediate\tar.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\tar\Intermediate\tar.tlog\unsuccessfulbuild.
+    27>Link:
+         exif.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\pictview\exif.dll
+    34>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\codeview\lang\Intermediate\lang_codeview.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\codeview\lang\Intermediate\lang_codeview.tlog\lang_codeview.lastbuildstate.
+    34>Sestavení projektu E:\Projects\tandemcommander\src\plugins\codeview\vcxproj\lang_codeview.vcxproj (s výchozími cíli) bylo dokončeno.
+    26>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\portables\vcxproj\lang_portables.vcxproj (43) v uzlu 1 (výchozí cíle).
+    43>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\vcxproj\sqlite\sqlite.vcxproj (46) v uzlu 3 (výchozí cíle).
+    46>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\zip\vcxproj\zip.vcxproj (44) v uzlu 16 (výchozí cíle).
+    44>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\diskmap\vcxproj\diskmap.vcxproj (13) v uzlu 10 (výchozí cíle).
+    13>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    32>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\mdview\lang\Intermediate\lang_mdview.tlog\unsuccessfulbuild.
+    44>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\zip\Intermediate\zip.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+    32>FinalizeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\mdview\lang\Intermediate\lang_mdview.tlog\lang_mdview.lastbuildstate.
+    44>InitializeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\zip\Intermediate\zip.tlog\unsuccessfulbuild.
+    32>Sestavení projektu E:\Projects\tandemcommander\src\plugins\mdview\vcxproj\lang_mdview.vcxproj (s výchozími cíli) bylo dokončeno.
+    46>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\utils\..\plugins\Intermediate\sqlite\Intermediate\sqlite.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\utils\..\plugins\Intermediate\sqlite\Intermediate\sqlite.tlog\unsuccessfulbuild.
+    13>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\diskmap\Intermediate\diskmap.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\diskmap\Intermediate\diskmap.tlog\unsuccessfulbuild.
+    42>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\uniso\vcxproj\uniso.vcxproj (45) v uzlu 11 (výchozí cíle).
+    45>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\undelete\vcxproj\undelete.vcxproj (40) v uzlu 5 (výchozí cíle).
+    40>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    45>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\uniso\Intermediate\uniso.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\uniso\Intermediate\uniso.tlog\unsuccessfulbuild.
+    40>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\undelete\Intermediate\undelete.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\undelete\Intermediate\undelete.tlog\unsuccessfulbuild.
+    43>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\portables\lang\Intermediate\lang_portables.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\portables\lang\Intermediate\lang_portables.tlog\unsuccessfulbuild.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\checksum\vcxproj\checksum.vcxproj (28) v uzlu 2 (výchozí cíle).
+    28>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    26>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+    16>ClCompile:
+         Všechny výstupy jsou aktuální.
+    28>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\checksum\Intermediate\checksum.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\checksum\Intermediate\checksum.tlog\unsuccessfulbuild.
+    27>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\pictview\Intermediate\exif\exif.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\pictview\Intermediate\exif\exif.tlog\exif.lastbuildstate.
+    27>Sestavení projektu E:\Projects\tandemcommander\src\plugins\pictview\vcxproj\exif\exif.vcxproj (s výchozími cíli) bylo dokončeno.
+    46>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+    42>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+    46>ComputeStdModulesCompileInputs:
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    42>VcpkgTripletSelection:
+         Using normalized configuration "Debug"
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\regedt\vcxproj\regedt.vcxproj (39) v uzlu 9 (výchozí cíle).
+    39>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\uncab\vcxproj\uncab.vcxproj (47) v uzlu 13 (výchozí cíle).
+    47>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    39>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\regedt\Intermediate\regedt.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+    43>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+    39>InitializeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\regedt\Intermediate\regedt.tlog\unsuccessfulbuild.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\portables\vcxproj\portables.vcxproj (48) v uzlu 4 (výchozí cíle).
+    48>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    47>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\uncab\Intermediate\uncab.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+    43>VcpkgTripletSelection:
+         Using normalized configuration "Debug"
+    47>InitializeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\uncab\Intermediate\uncab.tlog\unsuccessfulbuild.
+    26>ClCompile:
+         Všechny výstupy jsou aktuální.
+    15>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    48>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\portables\Intermediate\portables.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+    13>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+    48>InitializeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\portables\Intermediate\portables.tlog\unsuccessfulbuild.
+    13>ComputeStdModulesCompileInputs:
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    46>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+    16>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    40>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    44>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    26>ClCompile:
+         Všechny výstupy jsou aktuální.
+    46>ClCompile:
+         Všechny výstupy jsou aktuální.
+    26>ClCompile:
+         Všechny výstupy jsou aktuální.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\folders\vcxproj\folders.vcxproj (30) v uzlu 13 (výchozí cíle).
+    30>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    13>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+    28>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+    13>VcpkgTripletSelection:
+         Using normalized configuration "Debug"
+    28>ComputeStdModulesCompileInputs:
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    48>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+    30>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\folders\Intermediate\folders.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+    48>ComputeStdModulesCompileInputs:
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    30>InitializeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\folders\Intermediate\folders.tlog\unsuccessfulbuild.
+    46>ClCompile:
+         Všechny výstupy jsou aktuální.
+    26>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    42>ClCompile:
+         Všechny výstupy jsou aktuální.
+    46>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    45>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    40>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+    13>ClCompile:
+         Všechny výstupy jsou aktuální.
+    28>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+    15>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+    42>ClCompile:
+         Všechny výstupy jsou aktuální.
+    13>ClCompile:
+         Všechny výstupy jsou aktuální.
+    48>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+    40>ClCompile:
+         Všechny výstupy jsou aktuální.
+    44>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+    28>ClCompile:
+         Všechny výstupy jsou aktuální.
+    42>ClCompile:
+         Všechny výstupy jsou aktuální.
+    26>Link:
+         Všechny výstupy jsou aktuální.
+    13>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    26>Link:
+         dbviewer.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\dbviewer\dbviewer.spl
+    43>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    46>Link:
+         Všechny výstupy jsou aktuální.
+    42>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    48>ClCompile:
+         Všechny výstupy jsou aktuální.
+    46>Link:
+         sqlite.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\utils\sqlite.dll
+    28>ClCompile:
+         Všechny výstupy jsou aktuální.
+    16>Link:
+         Všechny výstupy jsou aktuální.
+    15>ClCompile:
+         Všechny výstupy jsou aktuální.
+    28>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    45>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+    40>ClCompile:
+         Všechny výstupy jsou aktuální.
+    48>ClCompile:
+         Všechny výstupy jsou aktuální.
+    44>ClCompile:
+         Všechny výstupy jsou aktuální.
+    46>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\utils\..\plugins\Intermediate\sqlite\Intermediate\sqlite.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\utils\..\plugins\Intermediate\sqlite\Intermediate\sqlite.tlog\sqlite.lastbuildstate.
+    46>Sestavení projektu E:\Projects\tandemcommander\src\vcxproj\sqlite\sqlite.vcxproj (s výchozími cíli) bylo dokončeno.
+    15>ClCompile:
+         Všechny výstupy jsou aktuální.
+    43>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    42>Link:
+         Všechny výstupy jsou aktuální.
+    13>Link:
+         Všechny výstupy jsou aktuální.
+    45>ClCompile:
+         Všechny výstupy jsou aktuální.
+    48>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    40>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    13>Link:
+         diskmap.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\diskmap\diskmap.spl
+    42>Link:
+         tar.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\tar\tar.spl
+    15>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    16>Link:
+         7za.dll.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\7zip\7za.dll
+    44>ClCompile:
+         Všechny výstupy jsou aktuální.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\sftp\vcxproj\sftp.vcxproj (38) v uzlu 14 (výchozí cíle).
+    38>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\ftp\vcxproj\ftp.vcxproj (33) v uzlu 3 (výchozí cíle).
+    33>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+       InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\ftp\Intermediate\ftp.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\ftp\Intermediate\ftp.tlog\unsuccessfulbuild.
+    38>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\sftp\Intermediate\sftp.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\sftp\Intermediate\sftp.tlog\unsuccessfulbuild.
+    40>Link:
+         Všechny výstupy jsou aktuální.
+    28>Link:
+         Všechny výstupy jsou aktuální.
+    42>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\tar\Intermediate\tar.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\tar\Intermediate\tar.tlog\tar.lastbuildstate.
+    42>Sestavení projektu E:\Projects\tandemcommander\src\plugins\tar\vcxproj\tar.vcxproj (s výchozími cíli) bylo dokončeno.
+    45>ClCompile:
+         Všechny výstupy jsou aktuální.
+    40>Link:
+         undelete.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\undelete\undelete.spl
+    28>Link:
+         checksum.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\checksum\checksum.spl
+    44>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    45>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    39>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    15>Link:
+         Všechny výstupy jsou aktuální.
+    48>Link:
+         Všechny výstupy jsou aktuální.
+    15>Link:
+         filecomp.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\filecomp\filecomp.spl
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\pictview\vcxproj\pictview.vcxproj (29) v uzlu 12 (výchozí cíle).
+    29>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    48>Link:
+         portables.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\portables\portables.spl
+    16>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\7zip\Intermediate\7za\7za.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\7zip\Intermediate\7za\7za.tlog\7za.lastbuildstate.
+    30>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    16>Sestavení projektu E:\Projects\tandemcommander\src\plugins\7zip\vcxproj\7ZA\7za.dll.vcxproj (s výchozími cíli) bylo dokončeno.
+    29>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\pictview\Intermediate\pictview.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\pictview\Intermediate\pictview.tlog\unsuccessfulbuild.
+    38>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    33>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    44>Link:
+         Všechny výstupy jsou aktuální.
+    43>Link:
+         Všechny výstupy jsou aktuální.
+    44>Link:
+         zip.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\zip\zip.spl
+    43>Link:
+         lang_portables.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\portables\lang\english.slg
+    45>Link:
+         Všechny výstupy jsou aktuální.
+    39>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+    45>Link:
+         uniso.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\uniso\uniso.spl
+    48>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\portables\Intermediate\portables.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\portables\Intermediate\portables.tlog\portables.lastbuildstate.
+    48>Sestavení projektu E:\Projects\tandemcommander\src\plugins\portables\vcxproj\portables.vcxproj (s výchozími cíli) bylo dokončeno.
+    39>ClCompile:
+         Všechny výstupy jsou aktuální.
+    44>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\zip\Intermediate\zip.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\zip\Intermediate\zip.tlog\zip.lastbuildstate.
+    44>Sestavení projektu E:\Projects\tandemcommander\src\plugins\zip\vcxproj\zip.vcxproj (s výchozími cíli) bylo dokončeno.
+    40>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\undelete\Intermediate\undelete.tlog\unsuccessfulbuild.
+    30>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+    40>FinalizeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\undelete\Intermediate\undelete.tlog\undelete.lastbuildstate.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\mdview\vcxproj\mdview.vcxproj (36) v uzlu 4 (výchozí cíle).
+    36>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    40>Sestavení projektu E:\Projects\tandemcommander\src\plugins\undelete\vcxproj\undelete.vcxproj (s výchozími cíli) bylo dokončeno.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\renamer\vcxproj\renamer.vcxproj (41) v uzlu 8 (výchozí cíle).
+    41>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    13>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\diskmap\Intermediate\diskmap.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\diskmap\Intermediate\diskmap.tlog\diskmap.lastbuildstate.
+    36>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\mdview\Intermediate\mdview.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\mdview\Intermediate\mdview.tlog\unsuccessfulbuild.
+    13>Sestavení projektu E:\Projects\tandemcommander\src\plugins\diskmap\vcxproj\diskmap.vcxproj (s výchozími cíli) bylo dokončeno.
+    41>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\renamer\Intermediate\renamer.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\renamer\Intermediate\renamer.tlog\unsuccessfulbuild.
+    39>ClCompile:
+         Všechny výstupy jsou aktuální.
+    38>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+    39>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    33>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+    43>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\portables\lang\Intermediate\lang_portables.tlog\unsuccessfulbuild.
+    30>ClCompile:
+         Všechny výstupy jsou aktuální.
+    43>FinalizeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\portables\lang\Intermediate\lang_portables.tlog\lang_portables.lastbuildstate.
+    43>Sestavení projektu E:\Projects\tandemcommander\src\plugins\portables\vcxproj\lang_portables.vcxproj (s výchozími cíli) bylo dokončeno.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\7zip\vcxproj\7zip.vcxproj (14) v uzlu 4 (výchozí cíle).
+    14>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+       InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\7zip\Intermediate\7zip.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\7zip\Intermediate\7zip.tlog\unsuccessfulbuild.
+    30>ClCompile:
+         Všechny výstupy jsou aktuální.
+    33>ClCompile:
+         Všechny výstupy jsou aktuální.
+    39>Link:
+         Všechny výstupy jsou aktuální.
+         regedt.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\regedt\regedt.spl
+    38>ClCompile:
+         Všechny výstupy jsou aktuální.
+    30>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\vcxproj\salamand.vcxproj (17) v uzlu 1 (výchozí cíle).
+    17>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    36>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    17>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\Intermediate\salamand.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\Intermediate\salamand.tlog\unsuccessfulbuild.
+    33>ClCompile:
+         Všechny výstupy jsou aktuální.
+    38>ClCompile:
+         Všechny výstupy jsou aktuální.
+    30>Link:
+         Všechny výstupy jsou aktuální.
+    45>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\uniso\Intermediate\uniso.tlog\unsuccessfulbuild.
+    39>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\regedt\Intermediate\regedt.tlog\unsuccessfulbuild.
+    30>Link:
+         folders.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\folders\folders.spl
+    45>FinalizeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\uniso\Intermediate\uniso.tlog\uniso.lastbuildstate.
+    39>FinalizeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\regedt\Intermediate\regedt.tlog\regedt.lastbuildstate.
+    45>Sestavení projektu E:\Projects\tandemcommander\src\plugins\uniso\vcxproj\uniso.vcxproj (s výchozími cíli) bylo dokončeno.
+    39>Sestavení projektu E:\Projects\tandemcommander\src\plugins\regedt\vcxproj\regedt.vcxproj (s výchozími cíli) bylo dokončeno.
+    33>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    38>ClCompile:
+         Všechny výstupy jsou aktuální.
+    36>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\codeview\vcxproj\codeview.vcxproj (35) v uzlu 1 (výchozí cíle).
+    35>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    28>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\checksum\Intermediate\checksum.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\checksum\Intermediate\checksum.tlog\checksum.lastbuildstate.
+    28>Sestavení projektu E:\Projects\tandemcommander\src\plugins\checksum\vcxproj\checksum.vcxproj (s výchozími cíli) bylo dokončeno.
+    38>ClCompile:
+         Všechny výstupy jsou aktuální.
+    35>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\codeview\Intermediate\codeview.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\codeview\Intermediate\codeview.tlog\unsuccessfulbuild.
+    38>ClCompile:
+         Všechny výstupy jsou aktuální.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\peviewer\vcxproj\peviewer.vcxproj (37) v uzlu 13 (výchozí cíle).
+    37>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    38>ClCompile:
+         Všechny výstupy jsou aktuální.
+    36>ClCompile:
+         Všechny výstupy jsou aktuální.
+    37>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\peviewer\Intermediate\peviewer.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\peviewer\Intermediate\peviewer.tlog\unsuccessfulbuild.
+    33>Link:
+         Všechny výstupy jsou aktuální.
+    38>ClCompile:
+         Všechny výstupy jsou aktuální.
+    33>Link:
+         ftp.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\ftp\ftp.spl
+    36>ClCompile:
+         Všechny výstupy jsou aktuální.
+    30>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\folders\Intermediate\folders.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\folders\Intermediate\folders.tlog\folders.lastbuildstate.
+    38>ClCompile:
+         Všechny výstupy jsou aktuální.
+    30>Sestavení projektu E:\Projects\tandemcommander\src\plugins\folders\vcxproj\folders.vcxproj (s výchozími cíli) bylo dokončeno.
+    36>ClCompile:
+         Všechny výstupy jsou aktuální.
+    38>ClCompile:
+         Všechny výstupy jsou aktuální.
+    37>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    36>ClCompile:
+         Všechny výstupy jsou aktuální.
+    33>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\ftp\Intermediate\ftp.tlog\unsuccessfulbuild.
+    38>ClCompile:
+         Všechny výstupy jsou aktuální.
+    33>FinalizeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\ftp\Intermediate\ftp.tlog\ftp.lastbuildstate.
+    33>Sestavení projektu E:\Projects\tandemcommander\src\plugins\ftp\vcxproj\ftp.vcxproj (s výchozími cíli) bylo dokončeno.
+    36>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    38>ClCompile:
+         Všechny výstupy jsou aktuální.
+    37>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+    38>ClCompile:
+         Všechny výstupy jsou aktuální.
+    37>ClCompile:
+         Všechny výstupy jsou aktuální.
+    38>ClCompile:
+         Všechny výstupy jsou aktuální.
+    36>Link:
+         Všechny výstupy jsou aktuální.
+         mdview.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\mdview\mdview.spl
+    38>ClCompile:
+         Všechny výstupy jsou aktuální.
+    37>ClCompile:
+         Všechny výstupy jsou aktuální.
+    38>ClCompile:
+         Všechny výstupy jsou aktuální.
+    37>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    38>ClCompile:
+         Všechny výstupy jsou aktuální.
+    17>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    14>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+    38>ClCompile:
+         Všechny výstupy jsou aktuální.
+    14>ClCompile:
+         Všechny výstupy jsou aktuální.
+    38>ClCompile:
+         Všechny výstupy jsou aktuální.
+    37>Link:
+         Všechny výstupy jsou aktuální.
+         peviewer.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\peviewer\peviewer.spl
+    38>ClCompile:
+         Všechny výstupy jsou aktuální.
+         Všechny výstupy jsou aktuální.
+    14>ClCompile:
+         Všechny výstupy jsou aktuální.
+    38>ClCompile:
+         Všechny výstupy jsou aktuální.
+    47>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    14>ClCompile:
+         Všechny výstupy jsou aktuální.
+    38>ClCompile:
+         Všechny výstupy jsou aktuální.
+    47>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+    14>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    47>ClCompile:
+         Všechny výstupy jsou aktuální.
+    38>ClCompile:
+         Všechny výstupy jsou aktuální.
+    47>ClCompile:
+         Všechny výstupy jsou aktuální.
+       ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    38>ClCompile:
+         Všechny výstupy jsou aktuální.
+    14>Link:
+         Všechny výstupy jsou aktuální.
+    38>ClCompile:
+         Všechny výstupy jsou aktuální.
+    14>Link:
+         7zip.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\7zip\7zip.spl
+    47>Link:
+         Všechny výstupy jsou aktuální.
+         uncab.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\uncab\uncab.spl
+    38>ClCompile:
+         Všechny výstupy jsou aktuální.
+         Všechny výstupy jsou aktuální.
+    36>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\mdview\Intermediate\mdview.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\mdview\Intermediate\mdview.tlog\mdview.lastbuildstate.
+    36>Sestavení projektu E:\Projects\tandemcommander\src\plugins\mdview\vcxproj\mdview.vcxproj (s výchozími cíli) bylo dokončeno.
+    38>ClCompile:
+         Všechny výstupy jsou aktuální.
+       ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    14>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\7zip\Intermediate\7zip.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\7zip\Intermediate\7zip.tlog\7zip.lastbuildstate.
+    14>Sestavení projektu E:\Projects\tandemcommander\src\plugins\7zip\vcxproj\7zip.vcxproj (s výchozími cíli) bylo dokončeno.
+    37>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\peviewer\Intermediate\peviewer.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\peviewer\Intermediate\peviewer.tlog\peviewer.lastbuildstate.
+    37>Sestavení projektu E:\Projects\tandemcommander\src\plugins\peviewer\vcxproj\peviewer.vcxproj (s výchozími cíli) bylo dokončeno.
+    41>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    47>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\uncab\Intermediate\uncab.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\uncab\Intermediate\uncab.tlog\uncab.lastbuildstate.
+    47>Sestavení projektu E:\Projects\tandemcommander\src\plugins\uncab\vcxproj\uncab.vcxproj (s výchozími cíli) bylo dokončeno.
+    38>Link:
+         Všechny výstupy jsou aktuální.
+    17>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+    38>Link:
+         sftp.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\sftp\sftp.spl
+    41>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+    26>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\dbviewer\Intermediate\dbviewer.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\dbviewer\Intermediate\dbviewer.tlog\dbviewer.lastbuildstate.
+    26>Sestavení projektu E:\Projects\tandemcommander\src\plugins\dbviewer\vcxproj\dbviewer.vcxproj (s výchozími cíli) bylo dokončeno.
+    41>ClCompile:
+         Všechny výstupy jsou aktuální.
+    38>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\sftp\Intermediate\sftp.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\sftp\Intermediate\sftp.tlog\sftp.lastbuildstate.
+    38>Sestavení projektu E:\Projects\tandemcommander\src\plugins\sftp\vcxproj\sftp.vcxproj (s výchozími cíli) bylo dokončeno.
+    41>ClCompile:
+         Všechny výstupy jsou aktuální.
+       ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    29>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    41>Link:
+         Všechny výstupy jsou aktuální.
+    17>ClCompile:
+         Všechny výstupy jsou aktuální.
+    41>Link:
+         renamer.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\renamer\renamer.spl
+    15>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\filecomp\Intermediate\filecomp.tlog\unsuccessfulbuild.
+    29>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+    15>FinalizeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\filecomp\Intermediate\filecomp.tlog\filecomp.lastbuildstate.
+    15>Sestavení projektu E:\Projects\tandemcommander\src\plugins\filecomp\vcxproj\filecomp.vcxproj (s výchozími cíli) bylo dokončeno.
+    41>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\renamer\Intermediate\renamer.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\renamer\Intermediate\renamer.tlog\renamer.lastbuildstate.
+    41>Sestavení projektu E:\Projects\tandemcommander\src\plugins\renamer\vcxproj\renamer.vcxproj (s výchozími cíli) bylo dokončeno.
+    29>ClCompile:
+         Všechny výstupy jsou aktuální.
+    17>ClCompile:
+         Všechny výstupy jsou aktuální.
+    29>ClCompile:
+         Všechny výstupy jsou aktuální.
+       ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    17>ClCompile:
+         Všechny výstupy jsou aktuální.
+         Všechny výstupy jsou aktuální.
+    29>Link:
+         Všechny výstupy jsou aktuální.
+         pictview.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\pictview\pictview.spl
+    17>ClCompile:
+         Všechny výstupy jsou aktuální.
+         Všechny výstupy jsou aktuální.
+    29>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\pictview\Intermediate\pictview.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\pictview\Intermediate\pictview.tlog\pictview.lastbuildstate.
+    29>Sestavení projektu E:\Projects\tandemcommander\src\plugins\pictview\vcxproj\pictview.vcxproj (s výchozími cíli) bylo dokončeno.
+    17>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+       Link:
+         Všechny výstupy jsou aktuální.
+         salamand.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+    35>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+       VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Debug"
+       ClCompile:
+         Všechny výstupy jsou aktuální.
+         Všechny výstupy jsou aktuální.
+       ResourceCompile:
+         Všechny výstupy jsou aktuální.
+       Link:
+         Všechny výstupy jsou aktuální.
+         codeview.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\codeview\codeview.spl
+    17>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\Intermediate\salamand.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\Intermediate\salamand.tlog\salamand.lastbuildstate.
+    17>Sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.vcxproj (s výchozími cíli) bylo dokončeno.
+    35>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\codeview\Intermediate\codeview.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\codeview\Intermediate\codeview.tlog\codeview.lastbuildstate.
+    35>Sestavení projektu E:\Projects\tandemcommander\src\plugins\codeview\vcxproj\codeview.vcxproj (s výchozími cíli) bylo dokončeno.
+     1>Sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (počet cílů: build) bylo dokončeno.
+
+Vytváření sestavení bylo úspěšně dokončeno.
+    0 upozornění
+    Počet chyb: 0
+
+Uplynulý čas 00:00:00.81
+
+Populating runtime layout: E:\Projects\tandemcommander\build\tandemcommander\Debug_x64
+  plugins.ver version 14132745: 20 plugins registered for auto-install
+Building language modules: 21 module(s) x 8 language(s)
+  language modules built: 0
+  up to date (skipped)   : 168
+  languages skipped (off): 3  -- chinesesimplified, russian, ukrainian
+  language modules built: 189 (all shipped languages)
+
+  NOTE: unrar additionally needs unrar.dll at runtime (not in repo);
+        pictview runs on the built-in Windows imaging (WIC)
+        engine since feature 006.
+
+============================================================
+ BUILD SUCCEEDED
+ Configuration : Debug x64
+ Duration      : 0 min 2 sec
+ Output        : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\
+ Plugins       : 20 registered in plugins.ver (version 14132745)
+ Languages     : 189 language modules
+============================================================
+

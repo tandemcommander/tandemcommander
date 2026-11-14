@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Feature 428: the edition of the build.
+
+  build.cmd passes /p:TcEdition=portable for the portable edition (build.cmd ... portable). Every
+  project of the solution then writes into its own output tree,
+  ...\tandemcommander\<Configuration>_<Platform>_portable\, next to the normal one, so neither
+  edition's build ever changes the other's output (the installer packages the normal tree only).
+  Every <OutDir> / <SalPath> that spells the output root appends $(TcOutSuffix); the Release IntDir
+  rewrite in Directory.Build.targets uses the same token. tools\check_outdir_suffix.py (run by
+  build.cmd) fails the build when a project spells the root without it.
+
+  Only salamand.vcxproj differs in code between the editions: sal_base.props defines TC_PORTABLE
+  for it. The plug-ins are the same sources; they learn the edition at run time from the plug-in
+  interface (IsPortableEdition, version 109).
+
+  Directory.Build.props is imported by Microsoft.Common.props before the project's own properties,
+  so TcOutSuffix is defined before any property sheet reads it.
+-->
+<Project>
+  <PropertyGroup>
+    <TcEdition Condition="'$(TcEdition)' == ''">normal</TcEdition>
+    <TcOutSuffix Condition="'$(TcEdition)' == 'portable'">_portable</TcOutSuffix>
+    <TcOutSuffix Condition="'$(TcEdition)' != 'portable'"></TcOutSuffix>
+  </PropertyGroup>
+</Project>

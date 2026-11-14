@@ -3576,7 +3576,41 @@ public:
     // 'hWindow' NULL or invalid: ignored.
     // can be called from any thread
     virtual void WINAPI SetWindowClosesUnattended(HWND hWindow, BOOL closes) = 0;
+
+    // ------------------------------------------------------------------------
+    // the portable edition (feature 428, interface version 109)
+    //
+    // The portable edition of Tandem Commander needs no installation and never writes the Windows
+    // registry or the user's profile: its configuration (also every plugin's, through the
+    // registry interface as before) lives in a settings folder next to the program. A plugin that
+    // keeps files of its own, or shares kernel objects between processes, asks the program where
+    // and how. Contract: specs/428-portable-build/contracts/plugin-api-109.md
+
+    // TRUE in the portable edition of Tandem Commander
+    // can be called from any thread
+    virtual BOOL WINAPI IsPortableEdition() = 0;
+
+    // a folder for per-user data of the given kind (SALUSERDATA_xxx), as a full UTF-16 path
+    // without a trailing backslash, created if missing; FALSE (and buf[0] = 0) when 'bufSize'
+    // (in WCHARs) is too small or the folder cannot be created - a path is never cut
+    // can be called from any thread
+    virtual BOOL WINAPI GetUserDataFolderW(int kind, WCHAR* buf, int bufSize) = 0;
+
+    // a suffix for the names of kernel objects (mutexes, events, file mappings) a plugin shares
+    // between processes of ONE copy of the program - "" in the normal edition, "_P<16 hex digits>"
+    // in the portable one (copies from different folders never see each other); ASCII, at most 20
+    // characters + the terminator; FALSE when 'bufSize' is too small
+    // can be called from any thread
+    virtual BOOL WINAPI GetInstanceScopeSuffix(char* buf, int bufSize) = 0;
 };
+
+// kinds of GetUserDataFolderW (feature 428, interface version 109)
+// WebView2 user data folder: normal edition %LOCALAPPDATA%\Tandem Commander\WebView2, portable
+// edition a per-copy folder in %TEMP% that the program removes when the copy's last process exits
+#define SALUSERDATA_WEBVIEW2 1
+// the program's local data folder: normal edition %LOCALAPPDATA%\Tandem Commander, portable
+// edition <program folder>\settings
+#define SALUSERDATA_LOCAL 2
 
 #ifdef _MSC_VER
 #pragma pack(pop, enter_include_spl_gen)

@@ -1357,6 +1357,13 @@ void ShellAction(CFilesWindow* panel, CShellAction action, BOOL useSelection,
         }
         if (action == saCopyToClipboard && !SalShExtRegistered)
             TRACE_E("Copy&paste from archives is not possible, shell extension utils\\salextx86.dll or utils\\salextx64.dll is missing!");
+#ifdef TC_PORTABLE
+        // feature 428 (FR-006a): the portable edition never installs the Explorer integration - say so
+        // instead of doing nothing
+        if ((dragFiles || action == saCopyToClipboard) && !SalShExtRegistered)
+            SalMessageBox(MainWindow->HWindow, LoadStrU8(IDS_PORTABLE_NOSHELLEXT), SALAMANDER_TEXT_VERSION,
+                          MB_OK | MB_ICONINFORMATION);
+#endif
         // we cannot do any more actions in the archive yet
         return;
     }
@@ -1368,6 +1375,15 @@ void ShellAction(CFilesWindow* panel, CShellAction action, BOOL useSelection,
     {
         if (!SalShExtRegistered)
             TRACE_E("Drag&drop from file-systems is not possible, shell extension utils\\salextx86.dll or utils\\salextx64.dll is missing!");
+#ifdef TC_PORTABLE
+        if (!SalShExtRegistered && panel->GetPluginFS()->NotEmpty() &&
+            (panel->GetPluginFS()->IsServiceSupported(FS_SERVICE_MOVEFROMFS) ||
+             panel->GetPluginFS()->IsServiceSupported(FS_SERVICE_COPYFROMFS)))
+        { // feature 428 (FR-006a): the drag would work in the installed program - say why not here
+            SalMessageBox(MainWindow->HWindow, LoadStrU8(IDS_PORTABLE_NOSHELLEXT), SALAMANDER_TEXT_VERSION,
+                          MB_OK | MB_ICONINFORMATION);
+        }
+#endif
         if (!panel->GetPluginFS()->NotEmpty())
             TRACE_E("Unexpected situation in ShellAction(): panel->GetPluginFS() is empty!");
         return;

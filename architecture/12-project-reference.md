@@ -39,6 +39,11 @@ affected — in `CLAUDE.md`.
   and Open Salamander 5.0 keys are read only by the user-started settings
   import (feature 245: *Options → Import Settings from Salamander* and its
   one-time offer at the first start), read-only, into a snapshot
+- **Portable edition** (feature 428): `tandemcommander-<ver>-x64-portable.zip`,
+  attached to every release from the one after 0.3.0; never touches the
+  registry (its settings: `settings\` next to the exe), title suffix
+  `[portable]`, badge icon, link-only new-version check offered only for a
+  release carrying the ZIP, no shell extension, no jump list
 - **Version numbering**: Semantic Versioning `MAJOR.MINOR.PATCH` since feature
   343 — MINOR for a release with features, PATCH for fixes only; the one
   statement of the rule is `backlog/RELEASE.md` *Version numbering*
@@ -111,7 +116,35 @@ build.cmd full                  :: Complete build: also copies runtime data
                                 ::   enabled plugins auto-register in
                                 ::   Plugin Manager
 build.cmd full release          :: Complete Release x64 build
+build.cmd portable              :: the portable edition (feature 428), Debug,
+                                ::   into <Config>_x64_portable
+build.cmd full release portable :: Release portable edition + the ZIP
+                                ::   setup\output\tandemcommander-<ver>-x64-portable.zip
+build.cmd dist                  :: the complete signed release in one command:
+                                ::   installer + portable ZIP (see below)
 ```
+
+**Portable edition (feature 428)**: one source tree, two editions fixed at
+build time - MSBuild `TcEdition=portable` defines `TC_PORTABLE` for the core
+(`salamand` only; plugins ask the core at run time, interface 109) and puts
+every output root and `Intermediate` folder under the suffix `_portable`
+(`$(TcOutSuffix)`, `src/Directory.Build.props`; guarded by
+`tools/check_outdir_suffix.py`). The portable core keeps its configuration in
+a private registry hive (`RegLoadAppKeyW`) of a session folder
+`%TEMP%\TandemCommander-portable-<scope>` and persists it as text into
+`<program>\settings\tandemcommander.reg` (`src/portstore.*`); configuration
+code reaches the configuration only through `SalCfgBaseKey()` (HKCU in the
+normal edition), registry sites are classified by
+`tools/check_portable_regsites.py`. Named kernel objects shared by one copy
+carry `PortableScopedName()` / `GetInstanceScopeSuffix()`. The ZIP is made by
+`tools/portable/make_portable_zip.py` (sorted, commit-time stamps, refuses a
+normal-edition exe) and checked by `specs/428-portable-build/probe/zip_check.py`.
+**`build.cmd dist`** refuses without the certificate of
+`tools/codesign/codesign.cfg`, runs `full release rebuild sign setup`, then
+`full release rebuild sign portable`, stops at the first failure
+(`DIST FAILED at step <n>`, removing what that step wrote) and ends with
+`DIST OK` and both files with size and SHA-256 (`tools/portable/dist_summary.py`);
+`tools/release/release.py artifacts <ver>` checks both files before publishing.
 
 **Plugin build policy**: `plugins.cfg` in the repository root decides
 which plugins are compiled and shipped (`name=on|off`, one line per

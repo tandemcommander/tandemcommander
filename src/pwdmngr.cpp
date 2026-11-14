@@ -185,6 +185,61 @@ BOOL UnscramblePassword(char* password)
 // CChangeMasterPassword
 //
 
+#ifdef TC_PORTABLE
+
+// feature 428 (FR-015a, contracts/ui-identity.md): the note about passwords saved without a master
+// password in the portable edition - "Set Master Password..." / "Not Now" and "Do not show this
+// again" (kept in the configuration as PORTABLE_PWDNOTE_REG)
+#define PORTABLE_PWDNOTE_REG "Portable Password Note Shown"
+
+void PortableShowPasswordNote(HWND parent)
+{
+    CALL_STACK_MESSAGE1("PortableShowPasswordNote()");
+    if (PasswordManager.IsUsingMasterPassword())
+        return; // set meanwhile
+    DWORD dontShow = 0;
+    HKEY root;
+    if (SALAMANDER_ROOT_REG != NULL && OpenKeyAux(NULL, SalCfgBaseKey(), SALAMANDER_ROOT_REG, root))
+    {
+        if (!GetValueAux(NULL, root, PORTABLE_PWDNOTE_REG, REG_DWORD, &dontShow, sizeof(DWORD)))
+            dontShow = 0;
+        CloseKeyAux(root);
+    }
+    if (dontShow != 0)
+        return;
+
+    char setMaster[200], notNow[200], aliases[450], checkText[200];
+    lstrcpyn(setMaster, LoadStrU8(IDS_PORTABLE_PWDNOTE_SETMASTER), _countof(setMaster));
+    lstrcpyn(notNow, LoadStrU8(IDS_PORTABLE_PWDNOTE_CONTINUE), _countof(notNow));
+    lstrcpyn(checkText, LoadStrU8(IDS_PORTABLE_PWDNOTE_DONTSHOW), _countof(checkText));
+    _snprintf_s(aliases, _TRUNCATE, "%d\t%s\t%d\t%s", DIALOG_YES, setMaster, DIALOG_NO, notNow);
+    BOOL check = FALSE;
+    MSGBOXEX_PARAMS params;
+    memset(&params, 0, sizeof(params));
+    params.HParent = parent;
+    params.Text = LoadStrU8(IDS_PORTABLE_PWDNOTE);
+    params.Caption = SALAMANDER_TEXT_VERSION;
+    params.Flags = MB_YESNO | MB_ICONINFORMATION | MSGBOXEX_ESCAPEENABLED; // Esc and the close box = Not Now
+    params.CheckBoxText = checkText;
+    params.CheckBoxValue = &check;
+    params.AliasBtnNames = aliases;
+    int res = SalMessageBoxEx(&params);
+    if (check && SALAMANDER_ROOT_REG != NULL && CreateKeyAux(NULL, SalCfgBaseKey(), SALAMANDER_ROOT_REG, root))
+    {
+        DWORD one = 1;
+        SetValueAux(NULL, root, PORTABLE_PWDNOTE_REG, REG_DWORD, &one, sizeof(DWORD));
+        CloseKeyAux(root);
+    }
+    if (res == IDYES)
+    {
+        CChangeMasterPassword dlg(parent, &PasswordManager);
+        if (dlg.Execute() == IDOK)
+            PasswordManager.NotifyAboutMasterPasswordChange(parent); // the saved passwords get encrypted now
+    }
+}
+
+#endif // TC_PORTABLE
+
 CChangeMasterPassword::CChangeMasterPassword(HWND hParent, CPasswordManager* pwdManager)
     : CCommonDialog(HLanguage, IDD_CHANGE_MASTERPWD, IDD_CHANGE_MASTERPWD, hParent)
 {
@@ -556,6 +611,13 @@ BOOL CPasswordManager::EncryptPassword(const char* plainPassword, BYTE** encrypt
         TRACE_E("CPasswordManager::EncryptPassword(): plainPassword == NULL || encryptedPassword == NULL || encryptedPasswordSize == NULL!");
         return FALSE;
     }
+#ifdef TC_PORTABLE
+    // feature 428 (FR-015a): a password stored without a master password travels with the portable
+    // folder - the user is told once, when the main window is free (never inside this call: it also
+    // runs on worker threads and while the configuration is saved); the password is stored either way
+    if (!encrypt && !UseMasterPassword && plainPassword[0] != 0)
+        PortableStore_RequestPasswordNote();
+#endif
 
     // always scramble the password to mitigate the risk of a short password length
     char* scrambledPassword = (char*)malloc(lstrlen(plainPassword) + SCRAMBLE_LENGTH_EXTENSION); // reserve room for scrambling (the password becomes longer)

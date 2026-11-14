@@ -233,6 +233,42 @@ void CUpdateNoticeDialog::FitVersionFont(int ctrlID)
 
 void CUpdateNoticeDialog::ApplyForm()
 {
+#ifdef TC_PORTABLE
+    // feature 428 (contracts/update-check-portable.md): no level list - the portable edition never
+    // downloads or installs, so "When a new version is found" means nothing there (the identity of
+    // the General page, which hides it too). The buttons take the list's place and the window
+    // gets shorter by as much; this runs once, before the buttons are laid out (they keep their top).
+    HWND levelLabel = GetDlgItem(HWindow, IDC_UPDN_LEVELLABEL);
+    HWND levelList = GetDlgItem(HWindow, IDC_UPDN_LEVEL);
+    HWND okBtn = GetDlgItem(HWindow, IDOK);
+    if (levelLabel != NULL && levelList != NULL && okBtn != NULL && (GetWindowLong(levelLabel, GWL_STYLE) & WS_VISIBLE) != 0)
+    {
+        RECT lr, br;
+        GetWindowRect(levelLabel, &lr);
+        GetWindowRect(okBtn, &br);
+        int delta = br.top - lr.top;
+        ShowWindow(levelLabel, SW_HIDE);
+        ShowWindow(levelList, SW_HIDE);
+        if (delta > 0)
+        {
+            static const int buttons[] = {IDC_UPDN_DLINSTALL, IDOK, IDCANCEL, IDC_UPDN_SKIP};
+            for (int i = 0; i < (int)_countof(buttons); i++)
+            {
+                HWND h = GetDlgItem(HWindow, buttons[i]);
+                RECT r;
+                if (h != NULL && GetWindowRect(h, &r))
+                {
+                    MapWindowPoints(NULL, HWindow, (POINT*)&r, 2);
+                    SetWindowPos(h, NULL, r.left, r.top - delta, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+                }
+            }
+            RECT wr;
+            GetWindowRect(HWindow, &wr);
+            SetWindowPos(HWindow, NULL, 0, 0, wr.right - wr.left, wr.bottom - wr.top - delta,
+                         SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+        }
+    }
+#endif
     // feature 421: what this copy and this release allow
     Eligible = UpdInstall_IsEligible(NULL);
     DliOffered = Form == unfClassic && UpdInstall_DownloadInstallOffered(Release);
@@ -249,7 +285,11 @@ void CUpdateNoticeDialog::ApplyForm()
         SetDlgItemTextW(HWindow, IDC_UPDN_HINT, LoadStrW(IDS_UPDATE_HINT_DLI));
     }
     else if (!Eligible) // feature 421: say why this copy offers only the browser download
+#ifdef TC_PORTABLE // feature 428: how a portable copy is updated
+        SetDlgItemTextW(HWindow, IDC_UPDN_HINT, LoadStrW(IDS_UPDATE_HINT_PORTABLE_EDITION));
+#else
         SetDlgItemTextW(HWindow, IDC_UPDN_HINT, LoadStrW(IDS_UPDATE_HINT_PORTABLE));
+#endif
     // feature 422: no "Install When I Close" - nothing is installed when the program closes
     HWND dlInstall = GetDlgItem(HWindow, IDC_UPDN_DLINSTALL);
     if (dlInstall != NULL && !DliOffered)
@@ -709,7 +749,11 @@ CUpdateNoticeDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 return TRUE; // otherwise the user was told; the window stays
             }
             char url[SALUPD_URL_MAX];
+#ifdef TC_PORTABLE // feature 428 (FR-017): the release page, where the portable archive is - never the installer
+            if (SalUpdReleaseNotesUrl(Release.Version, url, sizeof(url)) && UpdateCheck_OpenUrl(HWindow, url))
+#else
             if (SalUpdInstallerUrl(Release.Version, url, sizeof(url)) && UpdateCheck_OpenUrl(HWindow, url))
+#endif
                 DestroyWindow(HWindow);
             return TRUE; // on failure the window stays (the user was told and offered the address)
         }

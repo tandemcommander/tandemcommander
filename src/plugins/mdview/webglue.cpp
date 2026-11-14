@@ -220,6 +220,10 @@ void MdCleanupOldUserDataFolder()
     static LONG done = 0;
     if (InterlockedCompareExchange(&done, 1, 0) != 0)
         return;
+    // feature 428: the portable edition touches nothing in the profile - not even this clean-up of
+    // an old folder (it belongs to the installed program)
+    if (SalamanderGeneral->IsPortableEdition())
+        return;
     wchar_t path[MAX_PATH] = {0};
     if (FAILED(SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, path)))
         return;

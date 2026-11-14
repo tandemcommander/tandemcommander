@@ -120,6 +120,16 @@ private:
 // browser tree and gains nothing from any keeper.
 std::wstring TcWebUserDataFolder();
 
+// feature 428: the folder the program names for this process (CSalamanderGeneralAbstract::
+// GetUserDataFolderW(SALUSERDATA_WEBVIEW2), interface 109) - set once at the plugin's entry,
+// before any viewer or keeper creates an environment; TcWebUserDataFolder() then returns it. In the
+// portable edition it is the copy's session folder in %TEMP% (removed at exit), never the profile.
+void TcWebSetUserDataFolder(const wchar_t* folder);
+// feature 428 (review): the portable edition got no folder from the program - no environment is
+// created at all (never the profile's folder, never one next to the executable)
+void TcWebRefuseUserDataFolder();
+bool TcWebUserDataFolderRefused();
+
 // architecture/11-webview2-integration.md S2.2: THE browser-arguments set.
 // AdditionalBrowserArguments take effect only for the environment that STARTS
 // the shared browser process; every later environment's arguments are silently

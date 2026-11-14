@@ -1178,7 +1178,7 @@ void CAssociations::ReadAssociations(BOOL showWaitWnd)
     // Windows 2000 a novejsi maji jeste "Open With..." asociace ulozeny pro kazdeho usera zvlast
     // v klici HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts
     HKEY explorerFileExts;
-    if (HANDLES_Q(RegOpenKey(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts",
+    if (HANDLES_Q(RegOpenKey(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts", // portable: system read
                              &explorerFileExts)) != ERROR_SUCCESS)
     {
         explorerFileExts = NULL;

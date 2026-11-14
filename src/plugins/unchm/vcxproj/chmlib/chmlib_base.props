@@ -4,7 +4,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros"></PropertyGroup>
   <PropertyGroup>
-    <OutDir>$(OPENSAL_BUILD_DIR)tandemcommander\$(Configuration)_$(ShortPlatform)\plugins\unchm\</OutDir>
+    <OutDir>$(OPENSAL_BUILD_DIR)tandemcommander\$(Configuration)_$(ShortPlatform)$(TcOutSuffix)\plugins\unchm\</OutDir>
     <IntDir>$(OutDir)Intermediate\chmlib\</IntDir>
     <IgnoreImportLibrary>true</IgnoreImportLibrary>
     <GenerateManifest>false</GenerateManifest>

@@ -66,6 +66,7 @@ param(
     [string]$OutFile,
     [string[]]$Only,
     [switch]$NoWallpaper,
+    [switch]$PortableSettings,
     [int[]]$NotifyCodes = @(9, 1)
 )
 $ErrorActionPreference = 'Stop'
@@ -134,6 +135,9 @@ $CommentA = 'Plain comment'
 $Py = 'python'
 $PilCheck = Join-Path $PSScriptRoot 'pilcheck.py'
 $WpDir = Join-Path $env:LOCALAPPDATA 'Tandem Commander'
+# feature 428: -PortableSettings = the portable edition keeps the picture in <program>\settings; the profile's file must not change
+$WpProfileFile = Join-Path $WpDir 'PictView_Wallpaper.bmp'
+if ($PortableSettings) { $WpDir = Join-Path (Split-Path $Exe) 'settings' }
 $WpFile = Join-Path $WpDir 'PictView_Wallpaper.bmp'
 $WpLog = $Root + '\wallpaper_dryrun.log'
 $DavPort = 18111
@@ -1014,7 +1018,12 @@ try {
     Run-Cmt 'cmt-gif' 'GIF' 'gif' $CommentU { param($f) [pscustomobject]@{ Ok = ($f.com -eq $hu); Text = ("GIF comment {0} (want {1}; unchanged by 111)" -f $f.com, $hu) } }
     Run-View 'view-fail' $true
     Run-View 'view-ok' $false
+    $wpProfileBefore = if ([IO.File]::Exists($WpProfileFile)) { [IO.File]::GetLastWriteTimeUtc($WpProfileFile).Ticks } else { 0 }
     Run-Wallpaper
+    if ($PortableSettings) {
+        $wpProfileAfter = if ([IO.File]::Exists($WpProfileFile)) { [IO.File]::GetLastWriteTimeUtc($WpProfileFile).Ticks } else { 0 }
+        Row 'wp-portable' 'PROFILE' (V ($wpProfileAfter -eq $wpProfileBefore)) ('the profile''s ' + $WpProfileFile + ' untouched (feature 428): ' + ($wpProfileAfter -eq $wpProfileBefore))
+    }
     if (-not $Only) {
         foreach ($nd in @('Delete into the Recycle Bin (a local file, no Shift): the same code path as the \\localhost rows (only FOF_ALLOWUNDO differs) - not driven, it would put probe files into the user''s Recycle Bin',
                           'the real SystemParametersInfo(SPI_SETDESKWALLPAPER) and the HKCU\Control Panel\Desktop writes: never driven (the hidden desktop shares the user''s wallpaper); code review + the dry-run log')) { Row 'nd' 'ROUTE' 'NOT DRIVEN' $nd }

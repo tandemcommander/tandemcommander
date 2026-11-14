@@ -64,6 +64,18 @@ already been used in the session.
    `...\Tandem Commander\mdview.WebView2`; 065 renames it and removes the
    old folder best-effort at first view.)
 
+   **The portable edition (feature 428)** keeps the rule "one folder per copy" but the folder is
+   `%TEMP%\TandemCommander-portable-<scope>\WebView2` (the copy's session folder, removed when its
+   last process exits and, after a crash, at the next start of a portable copy): the engine data
+   (27 MB / 373 files measured) never lands on the user's stick or in the profile. The folder is
+   never spelled out by a plugin: the host asks the core once per process -
+   `SalamanderGeneral->GetUserDataFolderW(SALUSERDATA_WEBVIEW2, …)` (interface 109) - and hands
+   it to the shared host with **`TcWebSetUserDataFolder()`** (`src/common/webhost/webhost.h`)
+   before the first environment is created; without that call (an older core) `webhost.cpp`
+   falls back to the path above. mdview's 065 clean-up of the old folder is skipped in the
+   portable edition (it would touch the profile). A new WebView2 plugin MUST make the same call
+   at its entry point.
+
 2. **One browser-arguments set** — `AdditionalBrowserArguments` apply only
    when the browser process *starts*; arguments passed by environments
    created after that are **silently ignored**. Since feature 081 the set has

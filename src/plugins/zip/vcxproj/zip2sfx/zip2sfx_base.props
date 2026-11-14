@@ -4,7 +4,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros"></PropertyGroup>
   <PropertyGroup>
-    <OutDir>$(OPENSAL_BUILD_DIR)tandemcommander\$(Configuration)_$(ShortPlatform)\plugins\zip\$(ProjectName)\</OutDir>
+    <OutDir>$(OPENSAL_BUILD_DIR)tandemcommander\$(Configuration)_$(ShortPlatform)$(TcOutSuffix)\plugins\zip\$(ProjectName)\</OutDir>
     <IntDir>$(OutDir)Intermediate\</IntDir>
     <GenerateManifest>false</GenerateManifest>
     <EmbedManifest>false</EmbedManifest>

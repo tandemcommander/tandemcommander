@@ -168,6 +168,57 @@ static BOOL FcPathAppendW(WCHAR* path, const WCHAR* more, int size)
 
 #define FC_MAX_ARGS 4 // fcremote.exe [-w|--wait] first second
 
+// feature 428: the names of the channel of the program this fcremote.exe belongs to
+// (..\..\..\tandemcommander.exe). The portable edition's executable carries the RCDATA
+// SALPORTABLE_EDITION_RESOURCE, and its File Comparator listens on names with the scope of its
+// folder (remote.cpp, FcScopedName) - so fcremote.exe of a portable copy reaches only that copy,
+// and fcremote.exe of an installed program never a portable one (FR-011a).
+static void FcChannelNames(HINSTANCE hInstance, char* channel, char* started)
+{
+    lstrcpyA(channel, MessageCenterName);
+    lstrcpyA(started, StartedEventName);
+    const int size = 32768;
+    WCHAR* dir = (WCHAR*)FcAlloc(size * sizeof(WCHAR));
+    if (dir == NULL)
+        return;
+    DWORD got = GetModuleFileNameW(hInstance, dir, size);
+    if (got > 0 && got < (DWORD)size)
+    {
+        FcPathRemoveFileSpecW(dir); // fcremote.exe
+        FcPathRemoveFileSpecW(dir); // filecomp
+        FcPathRemoveFileSpecW(dir); // plugins
+        WCHAR* exe = (WCHAR*)FcAlloc(size * sizeof(WCHAR));
+        if (exe != NULL)
+        {
+            lstrcpyW(exe, dir);
+            if (FcPathAppendW(exe, L"tandemcommander.exe", size))
+            {
+                HMODULE h = LoadLibraryExW(exe, NULL, LOAD_LIBRARY_AS_DATAFILE | LOAD_LIBRARY_AS_IMAGE_RESOURCE);
+                if (h != NULL)
+                {
+                    BOOL portable = FindResourceW(h, SALPORTABLE_EDITION_RESOURCE, (LPCWSTR)RT_RCDATA) != NULL;
+                    FreeLibrary(h);
+                    if (portable)
+                    {
+                        char scope[17];
+                        int len = lstrlenW(dir);
+                        if (len == 2 && dir[1] == L':') // a drive root: the folder is "X:\"
+                        {
+                            dir[2] = L'\\';
+                            dir[3] = 0;
+                        }
+                        SalPortableFolderScope(dir, scope);
+                        wsprintfA(channel, "%s_P%s", MessageCenterName, scope);
+                        wsprintfA(started, "%s_P%s", StartedEventName, scope);
+                    }
+                }
+            }
+            FcFree(exe);
+        }
+    }
+    FcFree(dir);
+}
+
 int RemoteCompareFiles(HINSTANCE hInstance, const WCHAR* lpCmdLine)
 {
     WCHAR* argv[FC_MAX_ARGS];
@@ -242,9 +293,12 @@ int RemoteCompareFiles(HINSTANCE hInstance, const WCHAR* lpCmdLine)
     HANDLE receiver = NULL;
     BOOL firstTry = TRUE;
     int ret = -1;
+    char channel[64];
+    char startedName[64];
+    FcChannelNames(hInstance, channel, startedName);
     while (1)
     {
-        CMessageCenter mc(MessageCenterName, TRUE);
+        CMessageCenter mc(channel, TRUE);
         if (!mc.IsGood())
         {
             // a File Comparator of an older version is listening (channel version 1): it would
@@ -284,7 +338,7 @@ int RemoteCompareFiles(HINSTANCE hInstance, const WCHAR* lpCmdLine)
                             {
                                 launched = TRUE;
                                 HANDLE started =
-                                    CreateEvent(NULL, TRUE, FALSE, StartedEventName);
+                                    CreateEvent(NULL, TRUE, FALSE, startedName);
                                 WaitForSingleObject(started, 5000);
                                 CloseHandle(started);
                                 CloseHandle(pi.hProcess);

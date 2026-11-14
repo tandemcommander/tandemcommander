@@ -279,6 +279,13 @@ static BOOL UpdiProgramFolderU8(char* buf, int bufSize, WCHAR* exeW, int exeWSiz
 
 BOOL UpdInstall_IsEligible(BOOL* allUsers)
 {
+#ifdef TC_PORTABLE
+    // feature 428 (FR-017): the portable edition never downloads or runs an installer - not even when
+    // its folder happens to be an installation's folder; no uninstall entry is read
+    if (allUsers != NULL)
+        *allUsers = FALSE;
+    return FALSE;
+#endif
     if (!UpdiEligibleKnown)
     {
         UpdiEligibleKnown = TRUE;
@@ -297,7 +304,7 @@ BOOL UpdInstall_IsEligible(BOOL* allUsers)
                 BOOL all = wcsncmp(seam, L"ALLUSERS:", 9) == 0;
                 BOOL cur = wcsncmp(seam, L"CURRENTUSER:", 12) == 0;
                 if ((all || cur) &&
-                    UpdiEntryNamesFolder(HKEY_CURRENT_USER, seam + (all ? 9 : 12), 0, folderU8))
+                    UpdiEntryNamesFolder(HKEY_CURRENT_USER, seam + (all ? 9 : 12), 0, folderU8)) // portable: system read (compiled out: UpdInstall_IsEligible is FALSE in TC_PORTABLE)
                 {
                     UpdiEligible = TRUE;
                     UpdiAllUsers = all;
@@ -313,7 +320,7 @@ BOOL UpdInstall_IsEligible(BOOL* allUsers)
                 UpdiEligible = TRUE;
                 UpdiAllUsers = TRUE;
             }
-            else if (UpdiEntryNamesFolder(HKEY_CURRENT_USER, UPDINST_UNINSTALL_KEY, 0, folderU8))
+            else if (UpdiEntryNamesFolder(HKEY_CURRENT_USER, UPDINST_UNINSTALL_KEY, 0, folderU8)) // portable: system read (compiled out: UpdInstall_IsEligible is FALSE in TC_PORTABLE)
             {
                 UpdiEligible = TRUE;
                 UpdiAllUsers = FALSE;

@@ -16,7 +16,14 @@ CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "manifest.xml"
 
 #include "plugins\\shared\\versinfo.rc2"
 
+#ifdef TC_PORTABLE
+// feature 428: the portable edition - the program icon with the portable badge (tools\brand\gen_icons.py),
+// and the marker fcremote.exe looks for to know that its program is the portable edition
+IDI_SALAMANDER ICON "res\\salamand_portable.ico"
+TC_PORTABLE_EDITION RCDATA { "portable\0" }
+#else
 IDI_SALAMANDER ICON "res\\salamand.ico"
+#endif
 IDI_UPPERDIR ICON "res\\updir.ico"
 IDI_ARCHIVE ICON "res\\archive.ico"
 IDI_PLUGIN ICON "res\\plugin.ico"

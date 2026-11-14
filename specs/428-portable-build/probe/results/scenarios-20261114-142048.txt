@@ -1,0 +1,8 @@
+feature 428 scenarios probe, 2026-11-14T14:19:20
+PASS   kill: 20 kills during a save - the file always complete, every key and the mark kept bad after runs []; 338 keys at the start; kills during a write (temporary file left) 13, files rewritten 4
+PASS   kill: the kills landed in saves - files rewritten before the kill in at least 3 runs, a write cut in at least 1 rewritten 4, write cut 13 (of 20)
+PASS   kill: the killed process leaves its session folder ['TandemCommander-portable-c56aa66cf9ae4697']
+PASS   kill: the next start shows no restored / damaged message ["[#32770 ''] "]
+PASS   kill: no temporary file left after a normal start []
+PASS   kill: the next start removed the crashed session folder (SC-004, FR-007) []
+RESULT: PASS

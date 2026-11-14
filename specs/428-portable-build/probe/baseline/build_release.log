@@ -1,0 +1,1556 @@
+NOTE: OPENSAL_BUILD_DIR not set, defaulting to E:\Projects\tandemcommander\build\
+Plugins: 20 enabled, 11 disabled
+Languages: 8 enabled, 3 disabled
+           off: chinesesimplified, russian, ukrainian
+check_update_pin: OK (a3d05ccf5ca13eaff49cc7f64d1832f0e6ef6733 of 1 pinned)
+
+============================================================
+ Open Salamander Build
+============================================================
+ Configuration : Release x64
+ Mode          : build
+ Plugin policy : 20 plugins enabled (plugins.cfg)
+ Lang policy   : 8 of 11 languages enabled (languages.cfg)
+ Full build    : runtime data files + plugins.ver
+ Output        : E:\Projects\tandemcommander\build\tandemcommander\Release_x64\
+ MSBuild       : C:\Program Files\Microsoft Visual Studio\2022\Community\Msbuild\Current\Bin\MSBuild.exe
+============================================================
+
+MSBuild verze 17.10.4+10fbfbf2e pro .NET Framework
+Vytváření sestavení bylo zahájeno 14.11.2026 10:40:45.
+
+     1>Projekt E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf v uzlu 1 (počet cílů: build).
+     1>ValidateSolutionConfiguration:
+         Probíhá vytváření konfigurace řešení Release|x64.
+       ValidateProjects:
+         Projekt saltests není vybrán k sestavování v konfiguraci řešení Release|x64.
+         Projekt salextx86 není vybrán k sestavování v konfiguraci řešení Release|x64.
+         Projekt salextx64 není vybrán k sestavování v konfiguraci řešení Release|x64.
+         Projekt salopen není vybrán k sestavování v konfiguraci řešení Release|x64.
+         Projekt zip2sfx není vybrán k sestavování v konfiguraci řešení Release|x64.
+         Projekt tserver není vybrán k sestavování v konfiguraci řešení Release|x64.
+         Projekt sfx7zip není vybrán k sestavování v konfiguraci řešení Release|x64.
+         Projekt setup není vybrán k sestavování v konfiguraci řešení Release|x64.
+         Projekt translator není vybrán k sestavování v konfiguraci řešení Release|x64.
+         Projekt remove není vybrán k sestavování v konfiguraci řešení Release|x64.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\diskmap\vcxproj\lang_diskmap.vcxproj (5) v uzlu 9 (výchozí cíle).
+     5>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+       InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\diskmap\lang\Intermediate\lang_diskmap.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\diskmap\lang\Intermediate\lang_diskmap.tlog\unsuccessfulbuild.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\dbviewer\vcxproj\lang_dbviewer.vcxproj (6) v uzlu 15 (výchozí cíle).
+     6>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\ftp\vcxproj\lang_ftp.vcxproj (9) v uzlu 3 (výchozí cíle).
+     9>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\filecomp\vcxproj\lang_filecomp.vcxproj (4) v uzlu 2 (výchozí cíle).
+     4>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+       InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\filecomp\lang\Intermediate\lang_filecomp.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\filecomp\lang\Intermediate\lang_filecomp.tlog\unsuccessfulbuild.
+     9>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\ftp\lang\Intermediate\lang_ftp.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\peviewer\vcxproj\lang_peviewer.vcxproj (2) v uzlu 11 (výchozí cíle).
+     2>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     9>InitializeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\ftp\lang\Intermediate\lang_ftp.tlog\unsuccessfulbuild.
+     6>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\dbviewer\lang\Intermediate\lang_dbviewer.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\dbviewer\lang\Intermediate\lang_dbviewer.tlog\unsuccessfulbuild.
+     2>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\peviewer\lang\Intermediate\lang_peviewer.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\peviewer\lang\Intermediate\lang_peviewer.tlog\unsuccessfulbuild.
+     5>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+       ResourceCompile:
+         Všechny výstupy jsou aktuální.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\folders\vcxproj\lang_folders.vcxproj (8) v uzlu 10 (výchozí cíle).
+     8>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     4>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+     6>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+     9>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+       ResourceCompile:
+         Všechny výstupy jsou aktuální.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\checksum\vcxproj\lang_checksum.vcxproj (13) v uzlu 7 (výchozí cíle).
+    13>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\regedt\vcxproj\lang_regedt.vcxproj (7) v uzlu 8 (výchozí cíle).
+     7>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     6>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+     4>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\7zip\vcxproj\lang_7zip.vcxproj (3) v uzlu 12 (výchozí cíle).
+     3>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\vcxproj\lang.vcxproj (14) v uzlu 6 (výchozí cíle).
+    14>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    13>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\checksum\lang\Intermediate\lang_checksum.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\checksum\lang\Intermediate\lang_checksum.tlog\unsuccessfulbuild.
+    14>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\lang\Intermediate\lang.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\pictview\vcxproj\lang_pictview.vcxproj (15) v uzlu 16 (výchozí cíle).
+    15>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    14>InitializeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\lang\Intermediate\lang.tlog\unsuccessfulbuild.
+     5>Link:
+         Všechny výstupy jsou aktuální.
+    15>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\pictview\lang\Intermediate\lang_pictview.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+     5>Link:
+         lang_diskmap.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\diskmap\lang\english.slg
+    15>InitializeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\pictview\lang\Intermediate\lang_pictview.tlog\unsuccessfulbuild.
+     8>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\folders\lang\Intermediate\lang_folders.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\folders\lang\Intermediate\lang_folders.tlog\unsuccessfulbuild.
+     7>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\regedt\lang\Intermediate\lang_regedt.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+     9>Link:
+         Všechny výstupy jsou aktuální.
+     6>Link:
+         Všechny výstupy jsou aktuální.
+         lang_dbviewer.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\dbviewer\lang\english.slg
+     9>Link:
+         lang_ftp.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\ftp\lang\english.slg
+    13>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+     5>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\diskmap\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\diskmap\vcxproj\lang_diskmap.vcxproj]
+       VcpkgTripletSelection:
+         Using normalized configuration "Release"
+     3>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\7zip\lang\Intermediate\lang_7zip.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+     7>InitializeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\regedt\lang\Intermediate\lang_regedt.tlog\unsuccessfulbuild.
+     3>InitializeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\7zip\lang\Intermediate\lang_7zip.tlog\unsuccessfulbuild.
+    14>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+       ResourceCompile:
+         Všechny výstupy jsou aktuální.
+     4>Link:
+         Všechny výstupy jsou aktuální.
+     5>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\diskmap\lang\Intermediate\lang_diskmap.tlog\unsuccessfulbuild.
+     4>Link:
+         lang_filecomp.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\filecomp\lang\english.slg
+     5>FinalizeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\diskmap\lang\Intermediate\lang_diskmap.tlog\lang_diskmap.lastbuildstate.
+     5>Sestavení projektu E:\Projects\tandemcommander\src\plugins\diskmap\vcxproj\lang_diskmap.vcxproj (s výchozími cíli) bylo dokončeno.
+     3>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+     2>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+    13>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+     8>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+     7>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+     6>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\dbviewer\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\dbviewer\vcxproj\lang_dbviewer.vcxproj]
+    15>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+       ResourceCompile:
+         Všechny výstupy jsou aktuální.
+     9>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\ftp\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\ftp\vcxproj\lang_ftp.vcxproj]
+     4>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\filecomp\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\filecomp\vcxproj\lang_filecomp.vcxproj]
+     6>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\dbviewer\lang\Intermediate\lang_dbviewer.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\dbviewer\lang\Intermediate\lang_dbviewer.tlog\lang_dbviewer.lastbuildstate.
+     6>Sestavení projektu E:\Projects\tandemcommander\src\plugins\dbviewer\vcxproj\lang_dbviewer.vcxproj (s výchozími cíli) bylo dokončeno.
+     3>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+     8>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    14>Link:
+         Všechny výstupy jsou aktuální.
+         lang.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\lang\english.slg
+    13>Link:
+         Všechny výstupy jsou aktuální.
+     7>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+     2>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    13>Link:
+         lang_checksum.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\checksum\lang\english.slg
+     4>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\filecomp\lang\Intermediate\lang_filecomp.tlog\unsuccessfulbuild.
+    15>Link:
+         Všechny výstupy jsou aktuální.
+     4>FinalizeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\filecomp\lang\Intermediate\lang_filecomp.tlog\lang_filecomp.lastbuildstate.
+     4>Sestavení projektu E:\Projects\tandemcommander\src\plugins\filecomp\vcxproj\lang_filecomp.vcxproj (s výchozími cíli) bylo dokončeno.
+    15>Link:
+         lang_pictview.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\pictview\lang\english.slg
+    13>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\checksum\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\checksum\vcxproj\lang_checksum.vcxproj]
+    14>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\vcxproj\lang.vcxproj]
+    15>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\pictview\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\pictview\vcxproj\lang_pictview.vcxproj]
+     8>Link:
+         Všechny výstupy jsou aktuální.
+     9>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\ftp\lang\Intermediate\lang_ftp.tlog\unsuccessfulbuild.
+     8>Link:
+         lang_folders.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\folders\lang\english.slg
+     9>FinalizeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\ftp\lang\Intermediate\lang_ftp.tlog\lang_ftp.lastbuildstate.
+     9>Sestavení projektu E:\Projects\tandemcommander\src\plugins\ftp\vcxproj\lang_ftp.vcxproj (s výchozími cíli) bylo dokončeno.
+    14>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\lang\Intermediate\lang.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\lang\Intermediate\lang.tlog\lang.lastbuildstate.
+    14>Sestavení projektu E:\Projects\tandemcommander\src\vcxproj\lang.vcxproj (s výchozími cíli) bylo dokončeno.
+    15>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\pictview\lang\Intermediate\lang_pictview.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\pictview\lang\Intermediate\lang_pictview.tlog\lang_pictview.lastbuildstate.
+    15>Sestavení projektu E:\Projects\tandemcommander\src\plugins\pictview\vcxproj\lang_pictview.vcxproj (s výchozími cíli) bylo dokončeno.
+     2>Link:
+         Všechny výstupy jsou aktuální.
+         lang_peviewer.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\peviewer\lang\english.slg
+    13>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\checksum\lang\Intermediate\lang_checksum.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\checksum\lang\Intermediate\lang_checksum.tlog\lang_checksum.lastbuildstate.
+    13>Sestavení projektu E:\Projects\tandemcommander\src\plugins\checksum\vcxproj\lang_checksum.vcxproj (s výchozími cíli) bylo dokončeno.
+     3>Link:
+         Všechny výstupy jsou aktuální.
+         lang_7zip.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\7zip\lang\english.slg
+     7>Link:
+         Všechny výstupy jsou aktuální.
+         lang_regedt.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\regedt\lang\english.slg
+     8>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\folders\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\folders\vcxproj\lang_folders.vcxproj]
+     2>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\peviewer\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\peviewer\vcxproj\lang_peviewer.vcxproj]
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\filecomp\vcxproj\filecomp.vcxproj (11) v uzlu 5 (výchozí cíle).
+    11>Probíhá sestavení projektu E:\Projects\tandemcommander\src\plugins\filecomp\vcxproj\filecomp.vcxproj (11) – E:\Projects\tandemcommander\src\plugins\filecomp\vcxproj\fcremote\fcremote.vcxproj (16) v uzlu 5 (výchozí cíle).
+    16>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+       InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\filecomp\Intermediate\fcremote\fcremote.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\filecomp\Intermediate\fcremote\fcremote.tlog\unsuccessfulbuild.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\7zip\vcxproj\7ZA\7za.dll.vcxproj (17) v uzlu 13 (výchozí cíle).
+    17>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     3>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\7zip\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\7zip\vcxproj\lang_7zip.vcxproj]
+     2>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\peviewer\lang\Intermediate\lang_peviewer.tlog\unsuccessfulbuild.
+    17>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\7zip\Intermediate\7za\7za.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\7zip\Intermediate\7za\7za.tlog\unsuccessfulbuild.
+     7>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\regedt\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\regedt\vcxproj\lang_regedt.vcxproj]
+     2>FinalizeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\peviewer\lang\Intermediate\lang_peviewer.tlog\lang_peviewer.lastbuildstate.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\renamer\vcxproj\lang_renamer.vcxproj (19) v uzlu 14 (výchozí cíle).
+    19>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     2>Sestavení projektu E:\Projects\tandemcommander\src\plugins\peviewer\vcxproj\lang_peviewer.vcxproj (s výchozími cíli) bylo dokončeno.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\tar\vcxproj\lang_tar.vcxproj (18) v uzlu 4 (výchozí cíle).
+    18>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     8>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\folders\lang\Intermediate\lang_folders.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\folders\lang\Intermediate\lang_folders.tlog\lang_folders.lastbuildstate.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\undelete\vcxproj\lang_undelete.vcxproj (21) v uzlu 15 (výchozí cíle).
+    21>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     8>Sestavení projektu E:\Projects\tandemcommander\src\plugins\folders\vcxproj\lang_folders.vcxproj (s výchozími cíli) bylo dokončeno.
+    19>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\renamer\lang\Intermediate\lang_renamer.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+    16>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+    19>InitializeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\renamer\lang\Intermediate\lang_renamer.tlog\unsuccessfulbuild.
+    16>ComputeStdModulesCompileInputs:
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    18>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\tar\lang\Intermediate\lang_tar.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\tar\lang\Intermediate\lang_tar.tlog\unsuccessfulbuild.
+    21>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\undelete\lang\Intermediate\lang_undelete.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\undelete\lang\Intermediate\lang_undelete.tlog\unsuccessfulbuild.
+    16>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+       ClCompile:
+         Všechny výstupy jsou aktuální.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\uncab\vcxproj\lang_uncab.vcxproj (22) v uzlu 9 (výchozí cíle).
+    22>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     7>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\regedt\lang\Intermediate\lang_regedt.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\regedt\lang\Intermediate\lang_regedt.tlog\lang_regedt.lastbuildstate.
+     7>Sestavení projektu E:\Projects\tandemcommander\src\plugins\regedt\vcxproj\lang_regedt.vcxproj (s výchozími cíli) bylo dokončeno.
+    16>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+     3>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\7zip\lang\Intermediate\lang_7zip.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\7zip\lang\Intermediate\lang_7zip.tlog\lang_7zip.lastbuildstate.
+    22>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\uncab\lang\Intermediate\lang_uncab.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\uncab\lang\Intermediate\lang_uncab.tlog\unsuccessfulbuild.
+     3>Sestavení projektu E:\Projects\tandemcommander\src\plugins\7zip\vcxproj\lang_7zip.vcxproj (s výchozími cíli) bylo dokončeno.
+    18>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+    21>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+    18>VcpkgTripletSelection:
+         Using normalized configuration "Release"
+    16>Link:
+         Všechny výstupy jsou aktuální.
+    18>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    16>Link:
+         fcremote.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\filecomp\fcremote.exe
+    19>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\uniso\vcxproj\lang_uniso.vcxproj (23) v uzlu 2 (výchozí cíle).
+    23>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    19>VcpkgTripletSelection:
+         Using normalized configuration "Release"
+    22>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+    21>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    23>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\uniso\lang\Intermediate\lang_uniso.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\uniso\lang\Intermediate\lang_uniso.tlog\unsuccessfulbuild.
+    18>Link:
+         Všechny výstupy jsou aktuální.
+         lang_tar.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\tar\lang\english.slg
+    22>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    19>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    21>Link:
+         Všechny výstupy jsou aktuální.
+         lang_undelete.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\undelete\lang\english.slg
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\pictview\vcxproj\exif\exif.vcxproj (26) v uzlu 6 (výchozí cíle).
+    26>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    18>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\tar\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\tar\vcxproj\lang_tar.vcxproj]
+       InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\pictview\Intermediate\exif\exif.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\pictview\Intermediate\exif\exif.tlog\unsuccessfulbuild.
+    22>Link:
+         Všechny výstupy jsou aktuální.
+         lang_uncab.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\uncab\lang\english.slg
+    16>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\filecomp\Intermediate\fcremote\fcremote.exe.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\filecomp\vcxproj\fcremote\fcremote.vcxproj]
+    17>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+    19>Link:
+         Všechny výstupy jsou aktuální.
+    23>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+    22>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\uncab\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\uncab\vcxproj\lang_uncab.vcxproj]
+    19>Link:
+         lang_renamer.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\renamer\lang\english.slg
+    21>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\undelete\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\undelete\vcxproj\lang_undelete.vcxproj]
+    23>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    16>PostBuildEvent:
+         call ..\..\..\..\..\tools\codesign\sign_with_retry.cmd "E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\filecomp\fcremote.exe"
+         :VCEnd
+    22>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\uncab\lang\Intermediate\lang_uncab.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\uncab\lang\Intermediate\lang_uncab.tlog\lang_uncab.lastbuildstate.
+    26>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    22>Sestavení projektu E:\Projects\tandemcommander\src\plugins\uncab\vcxproj\lang_uncab.vcxproj (s výchozími cíli) bylo dokončeno.
+    18>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\tar\lang\Intermediate\lang_tar.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\tar\lang\Intermediate\lang_tar.tlog\lang_tar.lastbuildstate.
+    18>Sestavení projektu E:\Projects\tandemcommander\src\plugins\tar\vcxproj\lang_tar.vcxproj (s výchozími cíli) bylo dokončeno.
+    21>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\undelete\lang\Intermediate\lang_undelete.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\undelete\lang\Intermediate\lang_undelete.tlog\lang_undelete.lastbuildstate.
+    19>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\renamer\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\renamer\vcxproj\lang_renamer.vcxproj]
+    21>Sestavení projektu E:\Projects\tandemcommander\src\plugins\undelete\vcxproj\lang_undelete.vcxproj (s výchozími cíli) bylo dokončeno.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\zip\vcxproj\lang_zip.vcxproj (27) v uzlu 3 (výchozí cíle).
+    27>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+       InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\zip\lang\Intermediate\lang_zip.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\zip\lang\Intermediate\lang_zip.tlog\unsuccessfulbuild.
+    23>Link:
+         Všechny výstupy jsou aktuální.
+         lang_uniso.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\uniso\lang\english.slg
+    23>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\uniso\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\uniso\vcxproj\lang_uniso.vcxproj]
+    19>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\renamer\lang\Intermediate\lang_renamer.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\renamer\lang\Intermediate\lang_renamer.tlog\lang_renamer.lastbuildstate.
+    19>Sestavení projektu E:\Projects\tandemcommander\src\plugins\renamer\vcxproj\lang_renamer.vcxproj (s výchozími cíli) bylo dokončeno.
+    27>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+    26>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+    27>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    23>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\uniso\lang\Intermediate\lang_uniso.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\uniso\lang\Intermediate\lang_uniso.tlog\lang_uniso.lastbuildstate.
+    23>Sestavení projektu E:\Projects\tandemcommander\src\plugins\uniso\vcxproj\lang_uniso.vcxproj (s výchozími cíli) bylo dokončeno.
+    27>Link:
+         Všechny výstupy jsou aktuální.
+         lang_zip.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\zip\lang\english.slg
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\sftp\vcxproj\lang_sftp.vcxproj (31) v uzlu 7 (výchozí cíle).
+    31>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+       InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\sftp\lang\Intermediate\lang_sftp.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\sftp\lang\Intermediate\lang_sftp.tlog\unsuccessfulbuild.
+    27>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\zip\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\zip\vcxproj\lang_zip.vcxproj]
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\codeview\vcxproj\lang_codeview.vcxproj (33) v uzlu 15 (výchozí cíle).
+    33>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\folders\vcxproj\folders.vcxproj (30) v uzlu 10 (výchozí cíle).
+    30>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+       InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\folders\Intermediate\folders.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\folders\Intermediate\folders.tlog\unsuccessfulbuild.
+    33>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\codeview\lang\Intermediate\lang_codeview.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\codeview\lang\Intermediate\lang_codeview.tlog\unsuccessfulbuild.
+    26>ClCompile:
+         Všechny výstupy jsou aktuální.
+    33>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+    31>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\mdview\vcxproj\lang_mdview.vcxproj (32) v uzlu 1 (výchozí cíle).
+    32>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    31>VcpkgTripletSelection:
+         Using normalized configuration "Release"
+    33>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    31>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    26>ClCompile:
+         Všechny výstupy jsou aktuální.
+    30>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+    27>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\zip\lang\Intermediate\lang_zip.tlog\unsuccessfulbuild.
+    30>ComputeStdModulesCompileInputs:
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    27>FinalizeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\zip\lang\Intermediate\lang_zip.tlog\lang_zip.lastbuildstate.
+    27>Sestavení projektu E:\Projects\tandemcommander\src\plugins\zip\vcxproj\lang_zip.vcxproj (s výchozími cíli) bylo dokončeno.
+    26>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    33>Link:
+         Všechny výstupy jsou aktuální.
+         lang_codeview.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\codeview\lang\english.slg
+    32>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\mdview\lang\Intermediate\lang_mdview.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\mdview\lang\Intermediate\lang_mdview.tlog\unsuccessfulbuild.
+    31>Link:
+         Všechny výstupy jsou aktuální.
+    33>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\codeview\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\codeview\vcxproj\lang_codeview.vcxproj]
+       Link:
+         lang_sftp.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\sftp\lang\english.slg
+    33>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\codeview\lang\Intermediate\lang_codeview.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\codeview\lang\Intermediate\lang_codeview.tlog\lang_codeview.lastbuildstate.
+    33>Sestavení projektu E:\Projects\tandemcommander\src\plugins\codeview\vcxproj\lang_codeview.vcxproj (s výchozími cíli) bylo dokončeno.
+    31>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\sftp\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\sftp\vcxproj\lang_sftp.vcxproj]
+    26>Link:
+         Všechny výstupy jsou aktuální.
+    32>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\diskmap\vcxproj\diskmap.vcxproj (10) v uzlu 4 (výchozí cíle).
+    10>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    30>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+    26>Link:
+         exif.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\pictview\exif.dll
+    31>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\sftp\lang\Intermediate\lang_sftp.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\sftp\lang\Intermediate\lang_sftp.tlog\lang_sftp.lastbuildstate.
+    31>Sestavení projektu E:\Projects\tandemcommander\src\plugins\sftp\vcxproj\lang_sftp.vcxproj (s výchozími cíli) bylo dokončeno.
+    10>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\diskmap\Intermediate\diskmap.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\diskmap\Intermediate\diskmap.tlog\unsuccessfulbuild.
+    30>ClCompile:
+         Všechny výstupy jsou aktuální.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\checksum\vcxproj\checksum.vcxproj (25) v uzlu 16 (výchozí cíle).
+    25>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    26>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\pictview\Intermediate\exif\exif.dll.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\pictview\vcxproj\exif\exif.vcxproj]
+    30>ClCompile:
+         Všechny výstupy jsou aktuální.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\vcxproj\sqlite\sqlite.vcxproj (43) v uzlu 9 (výchozí cíle).
+    43>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    25>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\checksum\Intermediate\checksum.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\checksum\Intermediate\checksum.tlog\unsuccessfulbuild.
+    30>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    26>PostBuildEvent:
+         call ..\..\..\..\..\tools\codesign\sign_with_retry.cmd "E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\pictview\exif.dll"
+         :VCEnd
+    43>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\utils\..\plugins\Intermediate\sqlite\Intermediate\sqlite.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\utils\..\plugins\Intermediate\sqlite\Intermediate\sqlite.tlog\unsuccessfulbuild.
+    16>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\filecomp\Intermediate\fcremote\fcremote.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\filecomp\Intermediate\fcremote\fcremote.tlog\fcremote.lastbuildstate.
+    16>Sestavení projektu E:\Projects\tandemcommander\src\plugins\filecomp\vcxproj\fcremote\fcremote.vcxproj (s výchozími cíli) bylo dokončeno.
+    17>ClCompile:
+         Všechny výstupy jsou aktuální.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\portables\vcxproj\lang_portables.vcxproj (44) v uzlu 3 (výchozí cíle).
+    44>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+       InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\portables\lang\Intermediate\lang_portables.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\uniso\vcxproj\uniso.vcxproj (42) v uzlu 12 (výchozí cíle).
+    42>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    44>InitializeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\portables\lang\Intermediate\lang_portables.tlog\unsuccessfulbuild.
+    42>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\uniso\Intermediate\uniso.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\uniso\Intermediate\uniso.tlog\unsuccessfulbuild.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\tar\vcxproj\tar.vcxproj (40) v uzlu 16 (výchozí cíle).
+    40>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    43>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    40>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\tar\Intermediate\tar.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\tar\Intermediate\tar.tlog\unsuccessfulbuild.
+    44>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+    43>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+    32>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\ftp\vcxproj\ftp.vcxproj (35) v uzlu 8 (výchozí cíle).
+    35>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    11>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    44>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+         Všechny výstupy jsou aktuální.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\dbviewer\vcxproj\dbviewer.vcxproj (28) v uzlu 11 (výchozí cíle).
+    28>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+       InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\dbviewer\Intermediate\dbviewer.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\dbviewer\Intermediate\dbviewer.tlog\unsuccessfulbuild.
+    35>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\ftp\Intermediate\ftp.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\ftp\Intermediate\ftp.tlog\unsuccessfulbuild.
+    30>Link:
+         Všechny výstupy jsou aktuální.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\sftp\vcxproj\sftp.vcxproj (34) v uzlu 12 (výchozí cíle).
+    34>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\portables\vcxproj\portables.vcxproj (46) v uzlu 14 (výchozí cíle).
+    46>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    25>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    30>Link:
+         folders.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\folders\folders.spl
+    46>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\portables\Intermediate\portables.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\portables\Intermediate\portables.tlog\unsuccessfulbuild.
+    34>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\sftp\Intermediate\sftp.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\sftp\Intermediate\sftp.tlog\unsuccessfulbuild.
+    43>ClCompile:
+         Všechny výstupy jsou aktuální.
+    30>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\folders\Intermediate\folders.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\folders\vcxproj\folders.vcxproj]
+    44>Link:
+         Všechny výstupy jsou aktuální.
+         lang_portables.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\portables\lang\english.slg
+    43>ClCompile:
+         Všechny výstupy jsou aktuální.
+    25>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+    11>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\filecomp\Intermediate\filecomp.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\filecomp\Intermediate\filecomp.tlog\unsuccessfulbuild.
+    43>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    46>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    30>PostBuildEvent:
+         call ..\..\..\..\tools\codesign\sign_with_retry.cmd "E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\folders\folders.spl"
+         :VCEnd
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\peviewer\vcxproj\peviewer.vcxproj (37) v uzlu 4 (výchozí cíle).
+    37>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    17>ClCompile:
+         Všechny výstupy jsou aktuální.
+    37>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\peviewer\Intermediate\peviewer.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\peviewer\Intermediate\peviewer.tlog\unsuccessfulbuild.
+    44>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\portables\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\portables\vcxproj\lang_portables.vcxproj]
+    42>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    25>ClCompile:
+         Všechny výstupy jsou aktuální.
+    44>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\portables\lang\Intermediate\lang_portables.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\portables\lang\Intermediate\lang_portables.tlog\lang_portables.lastbuildstate.
+    44>Sestavení projektu E:\Projects\tandemcommander\src\plugins\portables\vcxproj\lang_portables.vcxproj (s výchozími cíli) bylo dokončeno.
+    17>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    43>Link:
+         Všechny výstupy jsou aktuální.
+    46>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+    25>ClCompile:
+         Všechny výstupy jsou aktuální.
+    43>Link:
+         sqlite.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\utils\sqlite.dll
+    11>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    43>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\Intermediate\sqlite\Intermediate\sqlite.dll.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\vcxproj\sqlite\sqlite.vcxproj]
+    32>Link:
+         Všechny výstupy jsou aktuální.
+    42>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+    46>ClCompile:
+         Všechny výstupy jsou aktuální.
+    35>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    32>Link:
+         lang_mdview.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\mdview\lang\english.slg
+    25>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    43>PostBuildEvent:
+         call ..\..\..\tools\codesign\sign_with_retry.cmd "E:\Projects\tandemcommander\build\tandemcommander\Release_x64\utils\sqlite.dll"
+         :VCEnd
+    46>ClCompile:
+         Všechny výstupy jsou aktuální.
+    42>ClCompile:
+         Všechny výstupy jsou aktuální.
+    46>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    11>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+    42>ClCompile:
+         Všechny výstupy jsou aktuální.
+    25>Link:
+         Všechny výstupy jsou aktuální.
+         checksum.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\checksum\checksum.spl
+    11>ClCompile:
+         Všechny výstupy jsou aktuální.
+    42>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    25>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\checksum\Intermediate\checksum.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\checksum\vcxproj\checksum.vcxproj]
+    17>Link:
+         Všechny výstupy jsou aktuální.
+    32>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\mdview\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\mdview\vcxproj\lang_mdview.vcxproj]
+    11>ClCompile:
+         Všechny výstupy jsou aktuální.
+    46>Link:
+         Všechny výstupy jsou aktuální.
+         portables.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\portables\portables.spl
+    28>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+    35>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+    28>ComputeStdModulesCompileInputs:
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    35>VcpkgTripletSelection:
+         Using normalized configuration "Release"
+    11>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    40>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    32>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\mdview\lang\Intermediate\lang_mdview.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\mdview\lang\Intermediate\lang_mdview.tlog\lang_mdview.lastbuildstate.
+    32>Sestavení projektu E:\Projects\tandemcommander\src\plugins\mdview\vcxproj\lang_mdview.vcxproj (s výchozími cíli) bylo dokončeno.
+    17>Link:
+         7za.dll.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\7zip\7za.dll
+    46>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\portables\Intermediate\portables.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\portables\vcxproj\portables.vcxproj]
+    42>Link:
+         Všechny výstupy jsou aktuální.
+         uniso.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\uniso\uniso.spl
+    35>ClCompile:
+         Všechny výstupy jsou aktuální.
+    46>PostBuildEvent:
+         call ..\..\..\..\tools\codesign\sign_with_retry.cmd "E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\portables\portables.spl"
+         :VCEnd
+    40>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+    42>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\uniso\Intermediate\uniso.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\uniso\vcxproj\uniso.vcxproj]
+    17>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\7zip\Intermediate\7za\7za.dll.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\7zip\vcxproj\7ZA\7za.dll.vcxproj]
+    35>ClCompile:
+         Všechny výstupy jsou aktuální.
+    11>Link:
+         Všechny výstupy jsou aktuální.
+    28>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+    40>ClCompile:
+         Všechny výstupy jsou aktuální.
+    11>Link:
+         filecomp.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\filecomp\filecomp.spl
+    17>PostBuildEvent:
+         call ..\..\..\..\..\tools\codesign\sign_with_retry.cmd "E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\7zip\7za.dll"
+         :VCEnd
+    35>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    40>ClCompile:
+         Všechny výstupy jsou aktuální.
+    11>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\filecomp\Intermediate\filecomp.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\filecomp\vcxproj\filecomp.vcxproj]
+    34>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    40>ClCompile:
+         Všechny výstupy jsou aktuální.
+    11>PostBuildEvent:
+         call ..\..\..\..\tools\codesign\sign_with_retry.cmd "E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\filecomp\filecomp.spl"
+         :VCEnd
+    40>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    35>Link:
+         Všechny výstupy jsou aktuální.
+         ftp.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\ftp\ftp.spl
+    40>Link:
+         Všechny výstupy jsou aktuální.
+    34>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+    40>Link:
+         tar.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\tar\tar.spl
+    35>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\ftp\Intermediate\ftp.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\ftp\vcxproj\ftp.vcxproj]
+    28>ClCompile:
+         Všechny výstupy jsou aktuální.
+    40>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\tar\Intermediate\tar.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\tar\vcxproj\tar.vcxproj]
+    25>PostBuildEvent:
+         call ..\..\..\..\tools\codesign\sign_with_retry.cmd "E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\checksum\checksum.spl"
+         :VCEnd
+    28>ClCompile:
+         Všechny výstupy jsou aktuální.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\zip\vcxproj\zip.vcxproj (45) v uzlu 8 (výchozí cíle).
+    45>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+       InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\zip\Intermediate\zip.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\zip\Intermediate\zip.tlog\unsuccessfulbuild.
+    34>ClCompile:
+         Všechny výstupy jsou aktuální.
+    28>ClCompile:
+         Všechny výstupy jsou aktuální.
+       ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    35>PostBuildEvent:
+         call ..\..\..\..\tools\codesign\sign_with_retry.cmd "E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\ftp\ftp.spl"
+         :VCEnd
+    34>ClCompile:
+         Všechny výstupy jsou aktuální.
+         Všechny výstupy jsou aktuální.
+         Všechny výstupy jsou aktuální.
+    28>Link:
+         Všechny výstupy jsou aktuální.
+    34>ClCompile:
+         Všechny výstupy jsou aktuální.
+    28>Link:
+         dbviewer.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\dbviewer\dbviewer.spl
+    34>ClCompile:
+         Všechny výstupy jsou aktuální.
+         Všechny výstupy jsou aktuální.
+    28>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\dbviewer\Intermediate\dbviewer.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\dbviewer\vcxproj\dbviewer.vcxproj]
+       ClCompile:
+         Všechny výstupy jsou aktuální.
+         Všechny výstupy jsou aktuální.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\undelete\vcxproj\undelete.vcxproj (41) v uzlu 11 (výchozí cíle).
+    41>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+       InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\undelete\Intermediate\undelete.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\undelete\Intermediate\undelete.tlog\unsuccessfulbuild.
+    34>ClCompile:
+         Všechny výstupy jsou aktuální.
+    30>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\folders\Intermediate\folders.tlog\unsuccessfulbuild.
+    28>PostBuildEvent:
+         call ..\..\..\..\tools\codesign\sign_with_retry.cmd "E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\dbviewer\dbviewer.spl"
+         :VCEnd
+    30>FinalizeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\folders\Intermediate\folders.tlog\folders.lastbuildstate.
+    43>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\utils\..\plugins\Intermediate\sqlite\Intermediate\sqlite.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\utils\..\plugins\Intermediate\sqlite\Intermediate\sqlite.tlog\sqlite.lastbuildstate.
+    30>Sestavení projektu E:\Projects\tandemcommander\src\plugins\folders\vcxproj\folders.vcxproj (s výchozími cíli) bylo dokončeno.
+    43>Sestavení projektu E:\Projects\tandemcommander\src\vcxproj\sqlite\sqlite.vcxproj (s výchozími cíli) bylo dokončeno.
+    34>ClCompile:
+         Všechny výstupy jsou aktuální.
+    26>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\pictview\Intermediate\exif\exif.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\pictview\Intermediate\exif\exif.tlog\exif.lastbuildstate.
+    26>Sestavení projektu E:\Projects\tandemcommander\src\plugins\pictview\vcxproj\exif\exif.vcxproj (s výchozími cíli) bylo dokončeno.
+    46>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\portables\Intermediate\portables.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\portables\Intermediate\portables.tlog\portables.lastbuildstate.
+    46>Sestavení projektu E:\Projects\tandemcommander\src\plugins\portables\vcxproj\portables.vcxproj (s výchozími cíli) bylo dokončeno.
+    11>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\filecomp\Intermediate\filecomp.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\filecomp\Intermediate\filecomp.tlog\filecomp.lastbuildstate.
+    11>Sestavení projektu E:\Projects\tandemcommander\src\plugins\filecomp\vcxproj\filecomp.vcxproj (s výchozími cíli) bylo dokončeno.
+    34>ClCompile:
+         Všechny výstupy jsou aktuální.
+    17>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\7zip\Intermediate\7za\7za.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\7zip\Intermediate\7za\7za.tlog\7za.lastbuildstate.
+    25>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\checksum\Intermediate\checksum.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\checksum\Intermediate\checksum.tlog\checksum.lastbuildstate.
+    17>Sestavení projektu E:\Projects\tandemcommander\src\plugins\7zip\vcxproj\7ZA\7za.dll.vcxproj (s výchozími cíli) bylo dokončeno.
+    25>Sestavení projektu E:\Projects\tandemcommander\src\plugins\checksum\vcxproj\checksum.vcxproj (s výchozími cíli) bylo dokončeno.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\vcxproj\salamand.vcxproj (20) v uzlu 1 (výchozí cíle).
+    20>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\uncab\vcxproj\uncab.vcxproj (47) v uzlu 15 (výchozí cíle).
+    47>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    34>ClCompile:
+         Všechny výstupy jsou aktuální.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\codeview\vcxproj\codeview.vcxproj (36) v uzlu 9 (výchozí cíle).
+    36>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    40>PostBuildEvent:
+         call ..\..\..\..\tools\codesign\sign_with_retry.cmd "E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\tar\tar.spl"
+         :VCEnd
+    20>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\Intermediate\salamand.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\Intermediate\salamand.tlog\unsuccessfulbuild.
+    47>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\uncab\Intermediate\uncab.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\uncab\Intermediate\uncab.tlog\unsuccessfulbuild.
+    36>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\codeview\Intermediate\codeview.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\codeview\Intermediate\codeview.tlog\unsuccessfulbuild.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\regedt\vcxproj\regedt.vcxproj (38) v uzlu 14 (výchozí cíle).
+    38>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+       InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\regedt\Intermediate\regedt.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\regedt\Intermediate\regedt.tlog\unsuccessfulbuild.
+    34>ClCompile:
+         Všechny výstupy jsou aktuální.
+         Všechny výstupy jsou aktuální.
+    10>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    35>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\ftp\Intermediate\ftp.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\ftp\Intermediate\ftp.tlog\ftp.lastbuildstate.
+    35>Sestavení projektu E:\Projects\tandemcommander\src\plugins\ftp\vcxproj\ftp.vcxproj (s výchozími cíli) bylo dokončeno.
+    34>ClCompile:
+         Všechny výstupy jsou aktuální.
+    36>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\renamer\vcxproj\renamer.vcxproj (39) v uzlu 2 (výchozí cíle).
+    39>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    34>ClCompile:
+         Všechny výstupy jsou aktuální.
+    39>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\renamer\Intermediate\renamer.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\renamer\Intermediate\renamer.tlog\unsuccessfulbuild.
+    34>ClCompile:
+         Všechny výstupy jsou aktuální.
+    10>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+    45>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+    34>ClCompile:
+         Všechny výstupy jsou aktuální.
+    45>ComputeStdModulesCompileInputs:
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+    34>ClCompile:
+         Všechny výstupy jsou aktuální.
+    45>ComputeStdModulesCompileInputs:
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    36>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+    10>ClCompile:
+         Všechny výstupy jsou aktuální.
+    34>ClCompile:
+         Všechny výstupy jsou aktuální.
+    36>ClCompile:
+         Všechny výstupy jsou aktuální.
+    10>ClCompile:
+         Všechny výstupy jsou aktuální.
+    39>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    34>ClCompile:
+         Všechny výstupy jsou aktuální.
+    10>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    36>ClCompile:
+         Všechny výstupy jsou aktuální.
+    45>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+    34>ClCompile:
+         Všechny výstupy jsou aktuální.
+         Všechny výstupy jsou aktuální.
+    36>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    39>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+    45>ClCompile:
+         Všechny výstupy jsou aktuální.
+    34>ClCompile:
+         Všechny výstupy jsou aktuální.
+    10>Link:
+         Všechny výstupy jsou aktuální.
+         diskmap.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\diskmap\diskmap.spl
+    34>ClCompile:
+         Všechny výstupy jsou aktuální.
+    45>ClCompile:
+         Všechny výstupy jsou aktuální.
+    28>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\dbviewer\Intermediate\dbviewer.tlog\unsuccessfulbuild.
+    47>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+    28>FinalizeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\dbviewer\Intermediate\dbviewer.tlog\dbviewer.lastbuildstate.
+    47>ComputeStdModulesCompileInputs:
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    28>Sestavení projektu E:\Projects\tandemcommander\src\plugins\dbviewer\vcxproj\dbviewer.vcxproj (s výchozími cíli) bylo dokončeno.
+    36>Link:
+         Všechny výstupy jsou aktuální.
+         codeview.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\codeview\codeview.spl
+    34>ClCompile:
+         Všechny výstupy jsou aktuální.
+    39>ClCompile:
+         Všechny výstupy jsou aktuální.
+    45>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    10>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\diskmap\Intermediate\diskmap.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\diskmap\vcxproj\diskmap.vcxproj]
+    34>ClCompile:
+         Všechny výstupy jsou aktuální.
+    40>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\tar\Intermediate\tar.tlog\unsuccessfulbuild.
+    41>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+    40>FinalizeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\tar\Intermediate\tar.tlog\tar.lastbuildstate.
+    41>ComputeStdModulesCompileInputs:
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    40>Sestavení projektu E:\Projects\tandemcommander\src\plugins\tar\vcxproj\tar.vcxproj (s výchozími cíli) bylo dokončeno.
+    36>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\codeview\Intermediate\codeview.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\codeview\vcxproj\codeview.vcxproj]
+    39>ClCompile:
+         Všechny výstupy jsou aktuální.
+    34>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    39>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    10>PostBuildEvent:
+         call ..\..\..\..\tools\codesign\sign_with_retry.cmd "E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\diskmap\diskmap.spl"
+         :VCEnd
+    20>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    47>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\pictview\vcxproj\pictview.vcxproj (24) v uzlu 7 (výchozí cíle).
+    24>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+    41>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+    24>InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\pictview\Intermediate\pictview.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\pictview\Intermediate\pictview.tlog\unsuccessfulbuild.
+    45>Link:
+         Všechny výstupy jsou aktuální.
+         zip.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\zip\zip.spl
+    41>ClCompile:
+         Všechny výstupy jsou aktuální.
+    34>Link:
+         Všechny výstupy jsou aktuální.
+    39>Link:
+         Všechny výstupy jsou aktuální.
+    45>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\zip\Intermediate\zip.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\zip\vcxproj\zip.vcxproj]
+    34>Link:
+         sftp.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\sftp\sftp.spl
+    39>Link:
+         renamer.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\renamer\renamer.spl
+    41>ClCompile:
+         Všechny výstupy jsou aktuální.
+    24>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    41>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    39>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\renamer\Intermediate\renamer.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\renamer\vcxproj\renamer.vcxproj]
+    34>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\sftp\Intermediate\sftp.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\sftp\vcxproj\sftp.vcxproj]
+    45>PostBuildEvent:
+         call ..\..\..\..\tools\codesign\sign_with_retry.cmd "E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\zip\zip.spl"
+         :VCEnd
+    38>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    42>PostBuildEvent:
+         call ..\..\..\..\tools\codesign\sign_with_retry.cmd "E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\uniso\uniso.spl"
+         :VCEnd
+    24>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+    41>Link:
+         Všechny výstupy jsou aktuální.
+    47>ClCompile:
+         Všechny výstupy jsou aktuální.
+    41>Link:
+         undelete.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\undelete\undelete.spl
+    38>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+    41>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\undelete\Intermediate\undelete.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\undelete\vcxproj\undelete.vcxproj]
+    24>ClCompile:
+         Všechny výstupy jsou aktuální.
+    38>ClCompile:
+         Všechny výstupy jsou aktuální.
+    47>ClCompile:
+         Všechny výstupy jsou aktuální.
+       ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    24>ClCompile:
+         Všechny výstupy jsou aktuální.
+    38>ClCompile:
+         Všechny výstupy jsou aktuální.
+    24>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    38>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    47>Link:
+         Všechny výstupy jsou aktuální.
+         uncab.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\uncab\uncab.spl
+    24>Link:
+         Všechny výstupy jsou aktuální.
+    10>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\diskmap\Intermediate\diskmap.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\diskmap\Intermediate\diskmap.tlog\diskmap.lastbuildstate.
+    24>Link:
+         pictview.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\pictview\pictview.spl
+    38>Link:
+         Všechny výstupy jsou aktuální.
+    10>Sestavení projektu E:\Projects\tandemcommander\src\plugins\diskmap\vcxproj\diskmap.vcxproj (s výchozími cíli) bylo dokončeno.
+    38>Link:
+         regedt.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\regedt\regedt.spl
+    47>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\uncab\Intermediate\uncab.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\uncab\vcxproj\uncab.vcxproj]
+    37>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+    24>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\pictview\Intermediate\pictview.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\pictview\vcxproj\pictview.vcxproj]
+       ComputeStdModulesCompileInputs:
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+    38>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\regedt\Intermediate\regedt.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\regedt\vcxproj\regedt.vcxproj]
+    41>PostBuildEvent:
+         call ..\..\..\..\tools\codesign\sign_with_retry.cmd "E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\undelete\undelete.spl"
+         :VCEnd
+    47>PostBuildEvent:
+         call ..\..\..\..\tools\codesign\sign_with_retry.cmd "E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\uncab\uncab.spl"
+         :VCEnd
+    37>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+    24>PostBuildEvent:
+         call ..\..\..\..\tools\codesign\sign_with_retry.cmd "E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\pictview\pictview.spl"
+         :VCEnd
+    39>PostBuildEvent:
+         call ..\..\..\..\tools\codesign\sign_with_retry.cmd "E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\renamer\renamer.spl"
+         :VCEnd
+    37>ClCompile:
+         Všechny výstupy jsou aktuální.
+    45>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\zip\Intermediate\zip.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\zip\Intermediate\zip.tlog\zip.lastbuildstate.
+    45>Sestavení projektu E:\Projects\tandemcommander\src\plugins\zip\vcxproj\zip.vcxproj (s výchozími cíli) bylo dokončeno.
+    42>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\uniso\Intermediate\uniso.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\uniso\Intermediate\uniso.tlog\uniso.lastbuildstate.
+    42>Sestavení projektu E:\Projects\tandemcommander\src\plugins\uniso\vcxproj\uniso.vcxproj (s výchozími cíli) bylo dokončeno.
+    37>ClCompile:
+         Všechny výstupy jsou aktuální.
+    38>PostBuildEvent:
+         call ..\..\..\..\tools\codesign\sign_with_retry.cmd "E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\regedt\regedt.spl"
+         :VCEnd
+    34>PostBuildEvent:
+         call ..\..\..\..\tools\codesign\sign_with_retry.cmd "E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\sftp\sftp.spl"
+         :VCEnd
+    37>ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    20>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+    37>Link:
+         Všechny výstupy jsou aktuální.
+         peviewer.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\peviewer\peviewer.spl
+    37>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\peviewer\Intermediate\peviewer.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\peviewer\vcxproj\peviewer.vcxproj]
+    20>ClCompile:
+         Všechny výstupy jsou aktuální.
+    39>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\renamer\Intermediate\renamer.tlog\unsuccessfulbuild.
+    24>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\pictview\Intermediate\pictview.tlog\unsuccessfulbuild.
+    47>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\uncab\Intermediate\uncab.tlog\unsuccessfulbuild.
+    39>FinalizeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\renamer\Intermediate\renamer.tlog\renamer.lastbuildstate.
+    41>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\undelete\Intermediate\undelete.tlog\unsuccessfulbuild.
+    24>FinalizeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\pictview\Intermediate\pictview.tlog\pictview.lastbuildstate.
+    47>FinalizeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\uncab\Intermediate\uncab.tlog\uncab.lastbuildstate.
+    41>FinalizeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\undelete\Intermediate\undelete.tlog\undelete.lastbuildstate.
+    39>Sestavení projektu E:\Projects\tandemcommander\src\plugins\renamer\vcxproj\renamer.vcxproj (s výchozími cíli) bylo dokončeno.
+    24>Sestavení projektu E:\Projects\tandemcommander\src\plugins\pictview\vcxproj\pictview.vcxproj (s výchozími cíli) bylo dokončeno.
+    47>Sestavení projektu E:\Projects\tandemcommander\src\plugins\uncab\vcxproj\uncab.vcxproj (s výchozími cíli) bylo dokončeno.
+    41>Sestavení projektu E:\Projects\tandemcommander\src\plugins\undelete\vcxproj\undelete.vcxproj (s výchozími cíli) bylo dokončeno.
+    37>PostBuildEvent:
+         call ..\..\..\..\tools\codesign\sign_with_retry.cmd "E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\peviewer\peviewer.spl"
+         :VCEnd
+    36>PostBuildEvent:
+         call ..\..\..\..\tools\codesign\sign_with_retry.cmd "E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\codeview\codeview.spl"
+         :VCEnd
+    38>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\regedt\Intermediate\regedt.tlog\unsuccessfulbuild.
+    34>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\sftp\Intermediate\sftp.tlog\unsuccessfulbuild.
+    38>FinalizeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\regedt\Intermediate\regedt.tlog\regedt.lastbuildstate.
+    34>FinalizeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\sftp\Intermediate\sftp.tlog\sftp.lastbuildstate.
+    38>Sestavení projektu E:\Projects\tandemcommander\src\plugins\regedt\vcxproj\regedt.vcxproj (s výchozími cíli) bylo dokončeno.
+    34>Sestavení projektu E:\Projects\tandemcommander\src\plugins\sftp\vcxproj\sftp.vcxproj (s výchozími cíli) bylo dokončeno.
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\7zip\vcxproj\7zip.vcxproj (12) v uzlu 14 (výchozí cíle).
+    12>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+       InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\7zip\Intermediate\7zip.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\7zip\Intermediate\7zip.tlog\unsuccessfulbuild.
+    20>ClCompile:
+         Všechny výstupy jsou aktuální.
+         Všechny výstupy jsou aktuální.
+    12>VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+    20>ClCompile:
+         Všechny výstupy jsou aktuální.
+         Všechny výstupy jsou aktuální.
+       ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    12>ClCompile:
+         Všechny výstupy jsou aktuální.
+         Všechny výstupy jsou aktuální.
+         Všechny výstupy jsou aktuální.
+       ResourceCompile:
+         Všechny výstupy jsou aktuální.
+    36>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\codeview\Intermediate\codeview.tlog\unsuccessfulbuild.
+    37>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\peviewer\Intermediate\peviewer.tlog\unsuccessfulbuild.
+    36>FinalizeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\codeview\Intermediate\codeview.tlog\codeview.lastbuildstate.
+    37>FinalizeBuildStatus:
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\peviewer\Intermediate\peviewer.tlog\peviewer.lastbuildstate.
+    36>Sestavení projektu E:\Projects\tandemcommander\src\plugins\codeview\vcxproj\codeview.vcxproj (s výchozími cíli) bylo dokončeno.
+    37>Sestavení projektu E:\Projects\tandemcommander\src\plugins\peviewer\vcxproj\peviewer.vcxproj (s výchozími cíli) bylo dokončeno.
+    12>Link:
+         Všechny výstupy jsou aktuální.
+         7zip.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\7zip\7zip.spl
+    20>Link:
+         Všechny výstupy jsou aktuální.
+    12>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\7zip\Intermediate\7zip.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\7zip\vcxproj\7zip.vcxproj]
+    12>PostBuildEvent:
+         call ..\..\..\..\tools\codesign\sign_with_retry.cmd "E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\7zip\7zip.spl"
+         :VCEnd
+    20>Link:
+         salamand.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\tandemcommander.exe
+    20>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\Intermediate\tandemcommander.exe.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\vcxproj\salamand.vcxproj]
+       PostBuildEvent:
+         call ..\..\tools\codesign\sign_with_retry.cmd "E:\Projects\tandemcommander\build\tandemcommander\Release_x64\tandemcommander.exe"
+         :VCEnd
+     1>Probíhá sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (1) – E:\Projects\tandemcommander\src\plugins\mdview\vcxproj\mdview.vcxproj (29) v uzlu 16 (výchozí cíle).
+    29>PrepareForBuild:
+         Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+       InitializeBuildStatus:
+         Probíhá vytváření souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\mdview\Intermediate\mdview.tlog\unsuccessfulbuild v důsledku zadání AlwaysCreate.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\mdview\Intermediate\mdview.tlog\unsuccessfulbuild.
+    12>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\7zip\Intermediate\7zip.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\7zip\Intermediate\7zip.tlog\7zip.lastbuildstate.
+    12>Sestavení projektu E:\Projects\tandemcommander\src\plugins\7zip\vcxproj\7zip.vcxproj (s výchozími cíli) bylo dokončeno.
+    20>FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\Intermediate\salamand.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\Intermediate\salamand.tlog\salamand.lastbuildstate.
+    20>Sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.vcxproj (s výchozími cíli) bylo dokončeno.
+    29>ComputeStdModulesCompileInputs:
+         Reading library manifest file 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\modules.json' which provides data for library 'microsoft/STL'.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.ixx' from library 'microsoft/STL' to be built with this project.
+         Adding module source 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\modules\std.compat.ixx' from library 'microsoft/STL' to be built with this project.
+       VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Programs\vcpkg\installed\x64-windows\"
+         Using normalized configuration "Release"
+       ClCompile:
+         Všechny výstupy jsou aktuální.
+         Všechny výstupy jsou aktuální.
+         Všechny výstupy jsou aktuální.
+         Všechny výstupy jsou aktuální.
+       ResourceCompile:
+         Všechny výstupy jsou aktuální.
+       Link:
+         Všechny výstupy jsou aktuální.
+         mdview.vcxproj -> E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\mdview\mdview.spl
+    29>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\mdview\Intermediate\mdview.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\mdview\vcxproj\mdview.vcxproj]
+       PostBuildEvent:
+         call ..\..\..\..\tools\codesign\sign_with_retry.cmd "E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\mdview\mdview.spl"
+         :VCEnd
+       FinalizeBuildStatus:
+         Probíhá odstraňování souboru E:\Projects\tandemcommander\build\obj\Release_x64\plugins\mdview\Intermediate\mdview.tlog\unsuccessfulbuild.
+         Probíhá aktualizace časového razítka pro E:\Projects\tandemcommander\build\obj\Release_x64\plugins\mdview\Intermediate\mdview.tlog\mdview.lastbuildstate.
+    29>Sestavení projektu E:\Projects\tandemcommander\src\plugins\mdview\vcxproj\mdview.vcxproj (s výchozími cíli) bylo dokončeno.
+     1>Sestavení projektu E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (počet cílů: build) bylo dokončeno.
+
+Vytváření sestavení bylo úspěšně dokončeno.
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\diskmap\vcxproj\lang_diskmap.vcxproj" (výchozí cíl) (5) ->
+       (cíl CreateRecipeFile) -> 
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\diskmap\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\diskmap\vcxproj\lang_diskmap.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\dbviewer\vcxproj\lang_dbviewer.vcxproj" (výchozí cíl) (6) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\dbviewer\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\dbviewer\vcxproj\lang_dbviewer.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\ftp\vcxproj\lang_ftp.vcxproj" (výchozí cíl) (9) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\ftp\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\ftp\vcxproj\lang_ftp.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\filecomp\vcxproj\lang_filecomp.vcxproj" (výchozí cíl) (4) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\filecomp\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\filecomp\vcxproj\lang_filecomp.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\checksum\vcxproj\lang_checksum.vcxproj" (výchozí cíl) (13) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\checksum\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\checksum\vcxproj\lang_checksum.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\vcxproj\lang.vcxproj" (výchozí cíl) (14) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\vcxproj\lang.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\pictview\vcxproj\lang_pictview.vcxproj" (výchozí cíl) (15) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\pictview\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\pictview\vcxproj\lang_pictview.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\folders\vcxproj\lang_folders.vcxproj" (výchozí cíl) (8) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\folders\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\folders\vcxproj\lang_folders.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\peviewer\vcxproj\lang_peviewer.vcxproj" (výchozí cíl) (2) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\peviewer\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\peviewer\vcxproj\lang_peviewer.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\7zip\vcxproj\lang_7zip.vcxproj" (výchozí cíl) (3) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\7zip\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\7zip\vcxproj\lang_7zip.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\regedt\vcxproj\lang_regedt.vcxproj" (výchozí cíl) (7) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\regedt\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\regedt\vcxproj\lang_regedt.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\tar\vcxproj\lang_tar.vcxproj" (výchozí cíl) (18) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\tar\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\tar\vcxproj\lang_tar.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\filecomp\vcxproj\filecomp.vcxproj" (výchozí cíl) (11) ->
+       "E:\Projects\tandemcommander\src\plugins\filecomp\vcxproj\fcremote\fcremote.vcxproj" (výchozí cíl) (16) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\filecomp\Intermediate\fcremote\fcremote.exe.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\filecomp\vcxproj\fcremote\fcremote.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\uncab\vcxproj\lang_uncab.vcxproj" (výchozí cíl) (22) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\uncab\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\uncab\vcxproj\lang_uncab.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\undelete\vcxproj\lang_undelete.vcxproj" (výchozí cíl) (21) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\undelete\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\undelete\vcxproj\lang_undelete.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\renamer\vcxproj\lang_renamer.vcxproj" (výchozí cíl) (19) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\renamer\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\renamer\vcxproj\lang_renamer.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\uniso\vcxproj\lang_uniso.vcxproj" (výchozí cíl) (23) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\uniso\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\uniso\vcxproj\lang_uniso.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\zip\vcxproj\lang_zip.vcxproj" (výchozí cíl) (27) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\zip\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\zip\vcxproj\lang_zip.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\codeview\vcxproj\lang_codeview.vcxproj" (výchozí cíl) (33) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\codeview\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\codeview\vcxproj\lang_codeview.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\sftp\vcxproj\lang_sftp.vcxproj" (výchozí cíl) (31) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\sftp\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\sftp\vcxproj\lang_sftp.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\pictview\vcxproj\exif\exif.vcxproj" (výchozí cíl) (26) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\pictview\Intermediate\exif\exif.dll.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\pictview\vcxproj\exif\exif.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\folders\vcxproj\folders.vcxproj" (výchozí cíl) (30) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\folders\Intermediate\folders.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\folders\vcxproj\folders.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\portables\vcxproj\lang_portables.vcxproj" (výchozí cíl) (44) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\portables\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\portables\vcxproj\lang_portables.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\vcxproj\sqlite\sqlite.vcxproj" (výchozí cíl) (43) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\Intermediate\sqlite\Intermediate\sqlite.dll.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\vcxproj\sqlite\sqlite.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\checksum\vcxproj\checksum.vcxproj" (výchozí cíl) (25) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\checksum\Intermediate\checksum.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\checksum\vcxproj\checksum.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\mdview\vcxproj\lang_mdview.vcxproj" (výchozí cíl) (32) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\mdview\lang\Intermediate\english.slg.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\mdview\vcxproj\lang_mdview.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\portables\vcxproj\portables.vcxproj" (výchozí cíl) (46) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\portables\Intermediate\portables.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\portables\vcxproj\portables.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\uniso\vcxproj\uniso.vcxproj" (výchozí cíl) (42) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\uniso\Intermediate\uniso.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\uniso\vcxproj\uniso.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\7zip\vcxproj\7ZA\7za.dll.vcxproj" (výchozí cíl) (17) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\7zip\Intermediate\7za\7za.dll.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\7zip\vcxproj\7ZA\7za.dll.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\filecomp\vcxproj\filecomp.vcxproj" (výchozí cíl) (11) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\filecomp\Intermediate\filecomp.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\filecomp\vcxproj\filecomp.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\ftp\vcxproj\ftp.vcxproj" (výchozí cíl) (35) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\ftp\Intermediate\ftp.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\ftp\vcxproj\ftp.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\tar\vcxproj\tar.vcxproj" (výchozí cíl) (40) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\tar\Intermediate\tar.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\tar\vcxproj\tar.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\dbviewer\vcxproj\dbviewer.vcxproj" (výchozí cíl) (28) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\dbviewer\Intermediate\dbviewer.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\dbviewer\vcxproj\dbviewer.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\diskmap\vcxproj\diskmap.vcxproj" (výchozí cíl) (10) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\diskmap\Intermediate\diskmap.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\diskmap\vcxproj\diskmap.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\codeview\vcxproj\codeview.vcxproj" (výchozí cíl) (36) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\codeview\Intermediate\codeview.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\codeview\vcxproj\codeview.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\zip\vcxproj\zip.vcxproj" (výchozí cíl) (45) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\zip\Intermediate\zip.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\zip\vcxproj\zip.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\renamer\vcxproj\renamer.vcxproj" (výchozí cíl) (39) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\renamer\Intermediate\renamer.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\renamer\vcxproj\renamer.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\sftp\vcxproj\sftp.vcxproj" (výchozí cíl) (34) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\sftp\Intermediate\sftp.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\sftp\vcxproj\sftp.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\undelete\vcxproj\undelete.vcxproj" (výchozí cíl) (41) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\undelete\Intermediate\undelete.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\undelete\vcxproj\undelete.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\uncab\vcxproj\uncab.vcxproj" (výchozí cíl) (47) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\uncab\Intermediate\uncab.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\uncab\vcxproj\uncab.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\pictview\vcxproj\pictview.vcxproj" (výchozí cíl) (24) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\pictview\Intermediate\pictview.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\pictview\vcxproj\pictview.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\regedt\vcxproj\regedt.vcxproj" (výchozí cíl) (38) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\regedt\Intermediate\regedt.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\regedt\vcxproj\regedt.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\peviewer\vcxproj\peviewer.vcxproj" (výchozí cíl) (37) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\peviewer\Intermediate\peviewer.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\peviewer\vcxproj\peviewer.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\7zip\vcxproj\7zip.vcxproj" (výchozí cíl) (12) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\7zip\Intermediate\7zip.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\7zip\vcxproj\7zip.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\vcxproj\salamand.vcxproj" (výchozí cíl) (20) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\Intermediate\tandemcommander.exe.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\vcxproj\salamand.vcxproj]
+
+
+       E:\Projects\tandemcommander\src\vcxproj\salamand.gen.slnf (build cíl) (1) ->
+       "E:\Projects\tandemcommander\src\plugins\mdview\vcxproj\mdview.vcxproj" (výchozí cíl) (29) ->
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(2563,5): warning : Remote deployment might be slow/inefficient. Část cesty E:\Projects\tandemcommander\build\tandemcommander\Release_x64\plugins\mdview\Intermediate\mdview.spl.recipe nebyla nalezena. [E:\Projects\tandemcommander\src\plugins\mdview\vcxproj\mdview.vcxproj]
+
+    46 upozornění
+    Počet chyb: 0
+
+Uplynulý čas 00:00:01.16
+
+Populating runtime layout: E:\Projects\tandemcommander\build\tandemcommander\Release_x64
+  plugins.ver version 14132740: 20 plugins registered for auto-install
+Building language modules: 21 module(s) x 8 language(s)
+  language modules built: 0
+  up to date (skipped)   : 168
+  languages skipped (off): 3  -- chinesesimplified, russian, ukrainian
+  language modules built: 189 (all shipped languages)
+
+  NOTE: unrar additionally needs unrar.dll at runtime (not in repo);
+        pictview runs on the built-in Windows imaging (WIC)
+        engine since feature 006.
+
+  Visual C++ runtime 14.40.33807: 4 file(s) copied from C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Redist\MSVC\14.40.33807\x64\Microsoft.VC143.CRT
+runtime closure OK: 218 module(s) scanned, 59 runtime import(s), shipped: concrt140.dll, msvcp140.dll, vcruntime140.dll, vcruntime140_1.dll
+
+Cleaning release output tree (removing build scaffolding): E:\Projects\tandemcommander\build\tandemcommander\Release_x64
+
+============================================================
+ BUILD SUCCEEDED
+ Configuration : Release x64
+ Duration      : 0 min 5 sec
+ Output        : E:\Projects\tandemcommander\build\tandemcommander\Release_x64\
+ Plugins       : 20 registered in plugins.ver (version 14132740)
+ Languages     : 189 language modules
+ Runtime       : 4 file(s) shipped, closure OK
+============================================================
+

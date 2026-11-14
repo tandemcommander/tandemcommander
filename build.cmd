@@ -18,6 +18,12 @@ setlocal enabledelayedexpansion
 ::   setup           Release only: after the build (and signing, if
 ::                   requested), compile the Inno Setup installer via
 ::                   setup\build_setup.cmd (signed iff 'sign' was given)
+::   portable        Build the portable edition (feature 428) into
+::                   <Config>_x64_portable next to the normal tree; with
+::                   'full release' also the ZIP in setup\output\
+::   dist            The whole release in one command (feature 428): the
+::                   signed normal edition + installer, then the signed
+::                   portable edition + ZIP; takes no other argument
 ::   help            Show this help message
 
 if /i "%~1"=="help" goto :show_help
@@ -34,14 +40,52 @@ set "BUILD_PLATFORM=x64"
 set "BUILD_FULL=0"
 set "BUILD_SIGN=0"
 set "BUILD_SETUP=0"
+set "BUILD_PORTABLE=0"
+set "BUILD_DIST=0"
+set "BUILD_ARGC=0"
 
 :: Parse all arguments (order-independent)
 for %%a in (%*) do (
+    set /a BUILD_ARGC+=1
     if /i "%%~a"=="rebuild" set "BUILD_TARGET=rebuild"
     if /i "%%~a"=="release" set "BUILD_CONFIG=Release"
     if /i "%%~a"=="full" set "BUILD_FULL=1"
     if /i "%%~a"=="sign" set "BUILD_SIGN=1"
     if /i "%%~a"=="setup" set "BUILD_SETUP=1"
+    if /i "%%~a"=="portable" set "BUILD_PORTABLE=1"
+    if /i "%%~a"=="dist" set "BUILD_DIST=1"
+)
+
+:: Feature 428: 'dist' is the whole release in one command and takes nothing else.
+:: (Measured: an "exit /b 1" in a parenthesized block that also holds a "goto" returns 0 to the
+:: caller - the error and the jump are therefore two separate statements.)
+if "%BUILD_DIST%"=="1" if not "%BUILD_ARGC%"=="1" (
+    echo ERROR: 'dist' takes no other arguments - it builds the complete signed release.
+    echo   Example: build.cmd dist
+    exit /b 1
+)
+if "%BUILD_DIST%"=="1" goto :dist
+
+:: Feature 428: the portable edition. An installer packages the normal edition only, and a
+:: Release portable build exists to make the ZIP, which needs the complete tree ('full').
+if "%BUILD_PORTABLE%"=="1" if "%BUILD_SETUP%"=="1" (
+    echo ERROR: an installer packages the normal edition; 'portable' and 'setup' cannot be combined.
+    echo   Examples: build.cmd full release sign setup     ^(installer^)
+    echo             build.cmd full release sign portable  ^(portable ZIP^)
+    exit /b 1
+)
+if "%BUILD_PORTABLE%"=="1" if /i "%BUILD_CONFIG%"=="Release" if not "%BUILD_FULL%"=="1" (
+    echo ERROR: the portable ZIP needs 'full' ^(plugins, languages, runtime data^).
+    echo   Example: build.cmd full release portable
+    exit /b 1
+)
+set "OUT_SUFFIX="
+set "MSBUILD_EDITION="
+set "LANGS_EDITION="
+if "%BUILD_PORTABLE%"=="1" (
+    set "OUT_SUFFIX=_portable"
+    set "MSBUILD_EDITION=/p:TcEdition=portable"
+    set "LANGS_EDITION=portable"
 )
 
 :: Code signing and the installer package the Release output; Debug builds
@@ -143,7 +187,7 @@ if "%PREREQ_FAIL%"=="1" (
 :: duplicate entry, unlisted plugin) stops the build before MSBuild
 :: runs. See specs\007-plugin-build-policy\ for the contract.
 
-set "OUT_DIR=%OPENSAL_BUILD_DIR%tandemcommander\%BUILD_CONFIG%_%BUILD_PLATFORM%"
+set "OUT_DIR=%OPENSAL_BUILD_DIR%tandemcommander\%BUILD_CONFIG%_%BUILD_PLATFORM%%OUT_SUFFIX%"
 set "PLUGINS_STAGE_LOG=%TEMP%\opensal_plugins_stage.txt"
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0src\vcxproj\gen_plugins_filter.ps1" -Config "%~dp0plugins.cfg" -Solution "%~dp0src\vcxproj\salamand.sln" -OutSlnf "%~dp0src\vcxproj\salamand.gen.slnf" -PluginsRoot "%~dp0src\plugins" -OutputPluginsDir "%OUT_DIR%\plugins" > "%PLUGINS_STAGE_LOG%" 2>&1
 set "PLUGINS_STAGE_EXIT=%errorlevel%"
@@ -262,6 +306,25 @@ if errorlevel 1 (
     exit /b 1
 )
 
+:: Feature 428: every project writes into the output tree of its edition - an output root
+:: spelled without $(TcOutSuffix) would let the portable build overwrite the normal tree.
+python "%~dp0tools\check_outdir_suffix.py"
+if errorlevel 1 (
+    echo.
+    echo Output tree check FAILED - see the lines above.
+    exit /b 1
+)
+
+:: Feature 428: the portable edition keeps its configuration in a private hive reached through
+:: SalCfgBaseKey(); a configuration site that names HKEY_CURRENT_USER would write the user's
+:: registry - every HKEY_CURRENT_USER of the core must be classified.
+python "%~dp0tools\check_portable_regsites.py"
+if errorlevel 1 (
+    echo.
+    echo Portable registry-site check FAILED - see the lines above.
+    exit /b 1
+)
+
 :: ============================================================
 :: Display build configuration
 :: ============================================================
@@ -271,13 +334,14 @@ echo ============================================================
 echo  Open Salamander Build
 echo ============================================================
 echo  Configuration : %BUILD_CONFIG% %BUILD_PLATFORM%
+if "%BUILD_PORTABLE%"=="1" echo  Edition       : portable ^(TcEdition=portable, feature 428^)
 echo  Mode          : %BUILD_TARGET%
 echo  Plugin policy : %ENABLED_COUNT% plugins enabled ^(plugins.cfg^)
 echo  Lang policy   : %ENABLED_LANGS% of %REGISTERED_LANGS% languages enabled ^(languages.cfg^)
 if "%BUILD_FULL%"=="1" echo  Full build    : runtime data files + plugins.ver
 if "%BUILD_SIGN%"=="1" echo  Code signing  : requested ^(tools\codesign\codesign.cfg^)
 if "%BUILD_SETUP%"=="1" echo  Installer     : requested ^(setup\build_setup.cmd^)
-echo  Output        : %OPENSAL_BUILD_DIR%tandemcommander\%BUILD_CONFIG%_%BUILD_PLATFORM%\
+echo  Output        : %OUT_DIR%\
 echo  MSBuild       : %MSBUILD_PATH%
 echo ============================================================
 echo.
@@ -291,7 +355,7 @@ set "START_TIME=%time%"
 
 pushd "%~dp0src\vcxproj"
 
-"%MSBUILD_PATH%" salamand.gen.slnf /t:%BUILD_TARGET% "/p:Configuration=%BUILD_CONFIG%" /p:Platform=%BUILD_PLATFORM% /m:%NUMBER_OF_PROCESSORS%
+"%MSBUILD_PATH%" salamand.gen.slnf /t:%BUILD_TARGET% "/p:Configuration=%BUILD_CONFIG%" /p:Platform=%BUILD_PLATFORM% %MSBUILD_EDITION% /m:%NUMBER_OF_PROCESSORS%
 
 set "BUILD_EXIT=%errorlevel%"
 
@@ -367,6 +431,20 @@ if %BUILD_EXIT% equ 0 if "%BUILD_SIGN%"=="1" (
     )
 )
 
+:: Portable package (feature 428): 'full release portable' ends with the ZIP, made after signing so
+:: it carries the signed binaries (specs\428-portable-build\contracts\package-layout.md).
+set "ZIP_RESULT="
+if %BUILD_EXIT% equ 0 if "%BUILD_PORTABLE%"=="1" if /i "%BUILD_CONFIG%"=="Release" if "%BUILD_FULL%"=="1" (
+    echo.
+    python "%~dp0tools\portable\make_portable_zip.py" "%OUT_DIR%"
+    if errorlevel 1 (
+        set "ZIP_RESULT=FAILED"
+        set "BUILD_EXIT=1"
+    ) else (
+        set "ZIP_RESULT=OK"
+    )
+)
+
 :: Installer (feature 050, FR-015): 'setup' chains the Inno Setup compile
 :: after a successful build - signed iff 'sign' was requested too.
 set "SETUP_RESULT="
@@ -424,7 +502,7 @@ if %BUILD_EXIT% equ 0 (
 )
 echo  Configuration : %BUILD_CONFIG% %BUILD_PLATFORM%
 echo  Duration      : %DUR_M% min %DUR_S% sec
-echo  Output        : %OPENSAL_BUILD_DIR%tandemcommander\%BUILD_CONFIG%_%BUILD_PLATFORM%\
+echo  Output        : %OUT_DIR%\
 if %BUILD_EXIT% equ 0 if "%BUILD_FULL%"=="1" (
     echo  Plugins       : %PLUG_COUNT% registered in plugins.ver ^(version %NEW_VER%^)
     echo  Languages     : %LANG_COUNT% language modules
@@ -432,6 +510,7 @@ if %BUILD_EXIT% equ 0 if "%BUILD_FULL%"=="1" (
 if defined RUNTIME_RESULT echo  Runtime       : %RUNTIME_RESULT%
 if defined SIGN_RESULT echo  Code signing  : %SIGN_RESULT%
 if defined SETUP_RESULT echo  Installer     : %SETUP_RESULT% ^(setup\output\^)
+if defined ZIP_RESULT echo  Portable ZIP  : %ZIP_RESULT% ^(where: the make_portable_zip line above^)
 echo ============================================================
 echo.
 
@@ -448,7 +527,7 @@ exit /b %BUILD_EXIT%
 :: already knows, so all built plugins appear in Plugin Manager.
 
 :populate_runtime
-set "OUT_DIR=%OPENSAL_BUILD_DIR%tandemcommander\%BUILD_CONFIG%_%BUILD_PLATFORM%"
+set "OUT_DIR=%OPENSAL_BUILD_DIR%tandemcommander\%BUILD_CONFIG%_%BUILD_PLATFORM%%OUT_SUFFIX%"
 echo.
 echo Populating runtime layout: %OUT_DIR%
 
@@ -504,7 +583,7 @@ if errorlevel 1 exit /b 1
 :: Build the translated language modules from the committed .slt files
 :: (feature 038). The solution build above produces only english.slg per
 :: module; this step turns each translation into its own .slg.
-call "%~dp0src\vcxproj\build_langs.cmd" %BUILD_CONFIG%
+call "%~dp0src\vcxproj\build_langs.cmd" %BUILD_CONFIG% %LANGS_EDITION%
 if errorlevel 1 (
     echo ERROR: language module build failed.
     exit /b 1
@@ -595,6 +674,60 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "$out='%OUT_DIR%'; if (Te
 exit /b 0
 
 :: ============================================================
+:: dist: the whole release in one command (feature 428)
+:: ============================================================
+:: 1. refuses without a signing certificate (a release is never unsigned);
+:: 2. the normal edition, signed, with the signed installer
+::    (= build.cmd full release rebuild sign setup);
+:: 3. the portable edition, signed, with the signed ZIP
+::    (= build.cmd full release rebuild sign portable);
+:: stops at the first failure, removes a release file the failing step left behind, and at the
+:: end lists both release files with size and SHA-256 (tools\portable\dist_summary.py).
+:: See specs\428-portable-build\contracts\build-cli.md.
+
+:dist
+findstr /r /i /c:"^ *thumbprint *= *[0-9a-f][0-9a-f]*" "%~dp0tools\codesign\codesign.cfg" >nul 2>&1
+if errorlevel 1 (
+    echo ERROR: 'dist' builds a signed release - tools\codesign\codesign.cfg names no certificate.
+    exit /b 1
+)
+where python >nul 2>&1
+if errorlevel 1 (
+    echo ERROR: Python 3.x is a build prerequisite ^(not on PATH^).
+    exit /b 1
+)
+if not defined OPENSAL_BUILD_DIR set "OPENSAL_BUILD_DIR=%~dp0build\"
+python "%~dp0tools\portable\dist_summary.py" --start
+if errorlevel 1 exit /b 1
+echo.
+echo ============================================================
+echo  DIST step 1 of 2: normal edition + installer ^(full release rebuild sign setup^)
+echo ============================================================
+call "%~f0" full release rebuild sign setup
+set "DIST_EXIT=%errorlevel%"
+if not "%DIST_EXIT%"=="0" (
+    python "%~dp0tools\portable\dist_summary.py" --remove-partial setup
+    echo.
+    echo DIST FAILED at step 1: normal edition + installer ^(exit code %DIST_EXIT%^)
+    exit /b %DIST_EXIT%
+)
+echo.
+echo ============================================================
+echo  DIST step 2 of 2: portable edition + ZIP ^(full release rebuild sign portable^)
+echo ============================================================
+call "%~f0" full release rebuild sign portable
+set "DIST_EXIT=%errorlevel%"
+if not "%DIST_EXIT%"=="0" (
+    python "%~dp0tools\portable\dist_summary.py" --remove-partial portable
+    echo.
+    echo DIST FAILED at step 2: portable edition + ZIP ^(exit code %DIST_EXIT%^)
+    python "%~dp0tools\portable\dist_summary.py" --built-before-failure
+    exit /b %DIST_EXIT%
+)
+python "%~dp0tools\portable\dist_summary.py"
+exit /b %errorlevel%
+
+:: ============================================================
 :: Help
 :: ============================================================
 
@@ -618,6 +751,15 @@ echo                    tools\codesign\codesign.cfg (timestamped, verified);
 echo                    idempotent - already-signed files are skipped
 echo   setup            Release only: compile the Inno Setup installer after
 echo                    the build (signed when 'sign' is also given)
+echo   portable         The portable edition (no installation, no registry):
+echo                    builds into ^<Config^>_x64_portable next to the normal
+echo                    tree; 'full release portable' also makes the ZIP
+echo                    setup\output\tandemcommander-^<ver^>-x64-portable.zip
+echo                    (signed contents with 'sign'); not with 'setup'
+echo   dist             The complete release in one command: the signed
+echo                    installer and the signed portable ZIP; needs the
+echo                    certificate of tools\codesign\codesign.cfg; no other
+echo                    arguments
 echo   help             Show this help message
 echo.
 echo   Arguments can be combined in any order.
@@ -636,5 +778,8 @@ echo   build.cmd full             Complete Debug build (plugins in Plugin Manage
 echo   build.cmd full release     Complete Release build
 echo   build.cmd full release sign        Complete signed Release build
 echo   build.cmd full release sign setup  Complete signed release + installer
+echo   build.cmd portable                 Debug portable edition (development)
+echo   build.cmd full release sign portable  Signed portable edition + ZIP
+echo   build.cmd dist                     The whole release: installer + ZIP
 echo.
 exit /b 0

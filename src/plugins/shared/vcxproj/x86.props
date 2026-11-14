@@ -5,7 +5,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
     <ShortPlatform>x86</ShortPlatform>
-    <SalPath>$(OPENSAL_BUILD_DIR)tandemcommander\$(Configuration)_$(ShortPlatform)\tandemcommander.exe</SalPath>
+    <SalPath>$(OPENSAL_BUILD_DIR)tandemcommander\$(Configuration)_$(ShortPlatform)$(TcOutSuffix)\tandemcommander.exe</SalPath>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>

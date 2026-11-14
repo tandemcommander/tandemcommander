@@ -620,7 +620,7 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
         if (res != DIALOG_IGNORE)
         {
             HKEY hSalamander;
-            if (OpenKey(HKEY_CURRENT_USER, SalamanderConfigurationRoots[0], hSalamander)) // write data only if a configuration exists in the registry (hich should almost always be the cas)
+            if (OpenKey(SalCfgBaseKey(), SalamanderConfigurationRoots[0], hSalamander)) // write data only if a configuration exists in the registry (hich should almost always be the cas)
             {
                 HKEY actKey;
                 if (OpenKey(hSalamander, SALAMANDER_CONFIG_REG, actKey)) // write data only if a configuration exists in the registry (hich should almost always be the cas)
@@ -812,6 +812,26 @@ static BOOL BuildBugReportPath(WCHAR* path)
     static WCHAR name[64];
     static const WCHAR subDir[] = L"\\Tandem Commander";
 
+#ifdef TC_PORTABLE
+    // feature 428: the portable edition keeps its bug reports in settings\BugReports next to the
+    // program (computed at start-up; reading it here allocates nothing)
+    static const WCHAR bugSub[] = L"\\BugReports";
+    const WCHAR* settings = PortableStore_SettingsDirW();
+    if (settings == NULL || settings[0] == 0)
+        return FALSE;
+    int len = lstrlenW(settings);
+    if (len + (int)(sizeof(bugSub) / sizeof(WCHAR)) >= MAX_PATH)
+    {
+        lstrcpynW(path, settings, MAX_PATH);
+        return FALSE;
+    }
+    lstrcpyW(dir, settings);
+    CreateDirectoryW(dir, NULL);
+    lstrcatW(dir, bugSub);
+    lstrcpyW(path, dir);
+    CreateDirectoryW(dir, NULL);
+    (void)subDir;
+#else
     lstrcpyW(path, L"%LOCALAPPDATA%");
     lstrcatW(path, subDir);
     if (SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, SHGFP_TYPE_CURRENT, dir) != S_OK)
@@ -824,6 +844,7 @@ static BOOL BuildBugReportPath(WCHAR* path)
     lstrcatW(dir, subDir);
     lstrcpyW(path, dir);
     CreateDirectoryW(dir, NULL); // ERROR_ALREADY_EXISTS is fine; any other failure surfaces at CreateFile
+#endif
 
     SYSTEMTIME lt;
     GetLocalTime(&lt);

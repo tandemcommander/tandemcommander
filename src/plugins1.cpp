@@ -2458,7 +2458,7 @@ BOOL CPluginData::InitDLL(HWND parent, BOOL quiet, BOOL waitCursor, BOOL release
                         LoadSaveToRegistryMutex.Enter();
                         HKEY hSal;
                         if (SALAMANDER_ROOT_REG != NULL &&
-                            OpenKey(HKEY_CURRENT_USER, SALAMANDER_ROOT_REG, hSal))
+                            OpenKey(SalCfgBaseKey(), SALAMANDER_ROOT_REG, hSal))
                         {
                             HKEY actKey;
                             if (OpenKey(hSal, SALAMANDER_PLUGINSCONFIG, actKey))
@@ -2938,7 +2938,7 @@ BOOL CPluginData::Remove(HWND parent, int index, BOOL canDelPluginRegKey)
             LoadSaveToRegistryMutex.Enter();
             HKEY salamander;
             if (SALAMANDER_ROOT_REG != NULL &&
-                OpenKey(HKEY_CURRENT_USER, SALAMANDER_ROOT_REG, salamander))
+                OpenKey(SalCfgBaseKey(), SALAMANDER_ROOT_REG, salamander))
             {
                 HKEY actKey;
                 if (OpenKey(salamander, SALAMANDER_PLUGINSCONFIG, actKey))
@@ -2956,7 +2956,7 @@ BOOL CPluginData::Remove(HWND parent, int index, BOOL canDelPluginRegKey)
             if (shouldDelete)
             {
                 if (SALAMANDER_ROOT_REG != NULL &&
-                    CreateKey(HKEY_CURRENT_USER, SALAMANDER_ROOT_REG, salamander)) // ensure write permissions
+                    CreateKey(SalCfgBaseKey(), SALAMANDER_ROOT_REG, salamander)) // ensure write permissions
                 {
                     HKEY actKey;
                     if (CreateKey(salamander, SALAMANDER_PLUGINSCONFIG, actKey))
@@ -3061,7 +3061,7 @@ void CPluginData::CallLoadOrSaveConfiguration(BOOL load,
             LoadSaveToRegistryMutex.Enter();
             HKEY salamander;
             if (SALAMANDER_ROOT_REG != NULL &&
-                OpenKey(HKEY_CURRENT_USER, SALAMANDER_ROOT_REG, salamander))
+                OpenKey(SalCfgBaseKey(), SALAMANDER_ROOT_REG, salamander))
             {
                 HKEY actKey;
                 if (OpenKey(salamander, SALAMANDER_PLUGINSCONFIG, actKey))
@@ -3101,10 +3101,10 @@ void CPluginData::CallLoadOrSaveConfiguration(BOOL load,
             LoadSaveToRegistryMutex.Enter();
             HKEY salamander;
             if (SALAMANDER_ROOT_REG != NULL &&
-                OpenKeyAux(NULL, HKEY_CURRENT_USER, SALAMANDER_ROOT_REG, salamander)) // check whether the Salamander key exists at all (otherwise nothing is saved)
+                OpenKeyAux(NULL, SalCfgBaseKey(), SALAMANDER_ROOT_REG, salamander)) // check whether the Salamander key exists at all (otherwise nothing is saved)
             {                                                                         // OpenKeyAux, because we do not want a Load Configuration message
                 CloseKeyAux(salamander);
-                if (CreateKey(HKEY_CURRENT_USER, SALAMANDER_ROOT_REG, salamander))
+                if (CreateKey(SalCfgBaseKey(), SALAMANDER_ROOT_REG, salamander))
                 {
                     BOOL cfgIsOK = TRUE;
                     BOOL deleteSALAMANDER_SAVE_IN_PROGRESS = !IsSetSALAMANDER_SAVE_IN_PROGRESS;
@@ -3174,10 +3174,10 @@ BOOL CPluginData::Unload(HWND parent, BOOL ask)
                     BOOL salKeyDoesNotExist = FALSE;
                     HKEY salamander;
                     if (SALAMANDER_ROOT_REG != NULL &&
-                        OpenKeyAux(NULL, HKEY_CURRENT_USER, SALAMANDER_ROOT_REG, salamander)) // check whether the Salamander key exists at all (otherwise nothing is saved)
+                        OpenKeyAux(NULL, SalCfgBaseKey(), SALAMANDER_ROOT_REG, salamander)) // check whether the Salamander key exists at all (otherwise nothing is saved)
                     {                                                                         // OpenKeyAux because we do not want a Load Configuration message
                         CloseKeyAux(salamander);
-                        if (CreateKey(HKEY_CURRENT_USER, SALAMANDER_ROOT_REG, salamander))
+                        if (CreateKey(SalCfgBaseKey(), SALAMANDER_ROOT_REG, salamander))
                         {
                             BOOL cfgIsOK = TRUE;
                             BOOL deleteSALAMANDER_SAVE_IN_PROGRESS = !IsSetSALAMANDER_SAVE_IN_PROGRESS;

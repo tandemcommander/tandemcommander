@@ -2206,7 +2206,7 @@ BOOL CheckOnlyOneInstance(const CCommandLineParams* cmdLineParams)
     LoadSaveToRegistryMutex.Enter();
     HKEY salamander;
     if (SALAMANDER_ROOT_REG != NULL &&
-        OpenKey(HKEY_CURRENT_USER, SALAMANDER_ROOT_REG, salamander))
+        OpenKey(SalCfgBaseKey(), SALAMANDER_ROOT_REG, salamander))
     {
         HKEY actKey;
         if (OpenKey(salamander, SALAMANDER_CONFIG_REG, actKey))
@@ -2233,7 +2233,7 @@ BOOL CheckOnlyOneInstance(const char *leftPath, const char *rightPath, const cha
   LoadSaveToRegistryMutex.Enter();
   HKEY salamander;
   if (SALAMANDER_ROOT_REG != NULL &&
-      OpenKey(HKEY_CURRENT_USER, SALAMANDER_ROOT_REG, salamander))
+      OpenKey(SalCfgBaseKey(), SALAMANDER_ROOT_REG, salamander))
   {
     HKEY actKey;
     if (OpenKey(salamander, SALAMANDER_CONFIG_REG, actKey))
@@ -3046,7 +3046,7 @@ BOOL ExportConfiguration(HWND hParent, const char* fileName, BOOL clearKeyBefore
 
     BOOL ret = FALSE;
     char keyName[MAX_PATH];
-    _snprintf_s(keyName, _TRUNCATE, "HKEY_CURRENT_USER\\%s", SALAMANDER_ROOT_REG);
+    _snprintf_s(keyName, _TRUNCATE, "HKEY_CURRENT_USER\\%s", SALAMANDER_ROOT_REG); // portable: reglib name (the system registry maps it to SalCfgBaseKey())
     CSalamanderRegistryExAbstract* sysReg = REG_SysRegistryFactory();
     CSalamanderRegistryExAbstract* memReg = REG_MemRegistryFactory();
     if (sysReg != NULL && memReg != NULL)
@@ -3081,7 +3081,7 @@ BOOL ExportConfiguration(HWND hParent, const char* fileName, BOOL clearKeyBefore
 // ****************************************************************************
 
 BOOL ImportConfiguration(HWND hParent, const char* fileName, BOOL ignoreIfNotExists,
-                         BOOL autoImportConfig, BOOL* importCfgFromFileWasSkipped)
+                         BOOL autoImportConfig, BOOL* importCfgFromFileWasSkipped, BOOL checkOnly)
 {
     TRACE_I("ImportConfiguration(): begin");
     DWORD err = 0;
@@ -3176,7 +3176,7 @@ BOOL ImportConfiguration(HWND hParent, const char* fileName, BOOL ignoreIfNotExi
         if (verIsOK)
         {
             HKEY key;
-            if (memReg->OpenKey(HKEY_CURRENT_USER, SalamanderConfigurationRoots[0], key))
+            if (memReg->OpenKey(HKEY_CURRENT_USER, SalamanderConfigurationRoots[0], key)) // portable: memory registry (a name, not the user's registry)
                 memReg->CloseKey(key);
             else
             {
@@ -3189,7 +3189,9 @@ BOOL ImportConfiguration(HWND hParent, const char* fileName, BOOL ignoreIfNotExi
         if (RPE_KEY_OUTSIDE_ROOT == regerr || RPE_NOT_REG_FILE == regerr)
             TRACE_E("ImportConfiguration(): refused, not our configuration only: " << fileName);
         memReg->Release();
-        if (verIsOK && RPE_OK == regerr) // both the config version and the file itself look OK; import it into the registry
+        if (checkOnly && verIsOK && RPE_OK == regerr) // feature 428: the file would import - nothing written
+            ret = TRUE;
+        else if (verIsOK && RPE_OK == regerr) // both the config version and the file itself look OK; import it into the registry
         {
             CSalamanderRegistryExAbstract* sysReg = REG_SysRegistryFactory();
 

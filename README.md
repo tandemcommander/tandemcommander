@@ -33,6 +33,10 @@ winget upgrade tandemcommander
 
 It installs for all users, into `Program Files`, and asks for administrator rights the same way the installer does.
 
+### Portable edition
+
+Each release from the one after 0.3.0 also offers `tandemcommander-<version>-x64-portable.zip`: unpack it anywhere you can write (a USB stick, a folder, a network share) and run `tandemcommander.exe`. It needs no installation and keeps nothing of its own in the registry: settings, plugin settings, histories and saved passwords are kept in the `settings` folder next to the program, so copying the folder takes everything to another PC. The title bar says `[portable]`; it has no Explorer integration and never downloads updates (the new-version check opens the release page). `README-portable.txt` in the ZIP has the details; what it stores is in [`PRIVACY.md`](PRIVACY.md) (*Portable edition*).
+
 Upgrading from 0.1.x: at the first start of 0.2.0 the settings are copied once to a key that no longer changes with the version (see the note on naming below). Going back to 0.1.x afterwards is not supported.
 
 ## Why This Project Exists — A Personal Note
@@ -83,6 +87,8 @@ build.cmd release        :: Release x64 build
 build.cmd full           :: complete build: app + plugins + language modules,
                          ::   plus runtime data files and plugin registration
 build.cmd full release   :: complete Release x64 build
+build.cmd portable       :: the portable edition (Debug) into <Config>_x64_portable
+build.cmd full release portable :: Release portable edition + its ZIP
 ```
 
 Arguments can be combined in any order (`build.cmd help` shows the full usage). All third-party dependencies are vendored under `src/common/dep/`; the build restores no NuGet packages.
@@ -107,6 +113,9 @@ build.cmd full release sign          :: complete Release build, then sign every
 build.cmd full release sign setup    :: one-command signed release: signed build
                                      ::   + signed Inno Setup installer
                                      ::   (sign and setup require release)
+build.cmd dist                       :: the complete signed release in one
+                                     ::   command: the signed installer and the
+                                     ::   portable ZIP of signed binaries
 setup\build_setup.cmd                :: unsigned installer from an existing
                                      ::   Release tree (development test)
 setup\build_setup.cmd sign           :: sign the Release tree if needed, then

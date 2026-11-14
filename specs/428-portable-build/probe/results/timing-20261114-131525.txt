@@ -1,0 +1,22 @@
+feature 428 timing probe, 2026-11-14T13:14:00
+  run 0 portable start 0.583 s, exit 1.286 s
+  run 0 normal   start 0.430 s, exit 1.209 s
+  run 1 portable start 0.456 s, exit 1.247 s
+  run 1 normal   start 0.431 s, exit 1.176 s
+  run 2 portable start 0.449 s, exit 1.241 s
+  run 2 normal   start 0.431 s, exit 1.177 s
+  run 3 portable start 0.449 s, exit 1.243 s
+  run 3 normal   start 0.434 s, exit 1.182 s
+  run 4 portable start 0.450 s, exit 1.240 s
+  run 4 normal   start 0.433 s, exit 1.186 s
+  run 5 portable start 0.451 s, exit 1.240 s
+  run 5 normal   start 0.430 s, exit 1.174 s
+  run 6 portable start 0.449 s, exit 1.244 s
+  run 6 normal   start 0.437 s, exit 1.193 s
+  run 7 portable start 0.450 s, exit 1.236 s
+  run 7 normal   start 0.432 s, exit 1.178 s
+PASS   SC-009 start-up: portable median within 10 % of the installed edition portable 0.450 s, installed 0.432 s (+4.2 %)
+PASS   SC-009 exit with save: portable median within 10 % of the installed edition portable 1.241 s, installed 1.178 s (+5.3 %)
+PASS   two runs without a change leave settings	andemcommander.reg and its .bak untouched time stamp same True, bytes same True, .bak same True
+PASS   the installed edition's key restored         19c222e0a142bef9 -> 19c222e0a142bef9
+RESULT: PASS

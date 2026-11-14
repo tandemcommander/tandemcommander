@@ -1,0 +1,144 @@
+﻿
+== gate: RESULT: PASS (expected PASS)
+RESULT: PASS
+== notrace-portable: RESULT: PASS (expected PASS)
+PASS   the installed edition's settings are not read (no sentinel prefix in the title) 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   session folder created in %TEMP%             ['TandemCommander-portable-815d853611879586']
+PASS   Configuration opened and closed with OK      Konfigurace; no other window
+PASS   WebView2 data in the session folder          a session folder had WebView2 while a viewer was open
+PASS   session 1 ended normally                     ["[SalamanderSaveBits 'Tandem Commander'] ", "[SalamanderSaveBits 'Tandem Commander'] "]
+PASS   session folder removed at exit               []
+PASS   settings file written with the toggled value (1; the default is 0) C:\Users\pavel\AppData\Local\Temp\tc428\notrace\portable\TC\settings\tandemcommander.reg = 1
+PASS   no registry key of ours changed              4 changes outside the noise, 0 of them ours, 4 the WebView2 runtime's
+PASS   no change in shell / start-up / uninstall / environment / Control Panel keys none
+PASS   no changed value anywhere in HKCU names the program or its folder (Windows' own records aside) none
+PASS   no profile change by the program             2 entries; 1 the WebView2 runtime's (its jump list); 1 the temporary folder's time stamp
+PASS   installed edition's key unchanged            91ea32462f76bb614184abb458e0f126e6ac48f599bf2daa2510019eb6ef8511
+PASS   second start: the setting is kept            value 1 -> 1
+PASS   second start: session folder removed         []
+PASS   second start: no window but the main one     ["[#32770 ''] "]
+RESULT: PASS
+== notrace-normal (negative control): RESULT: FAIL (expected FAIL)
+FAIL   the installed edition's settings are not read (no sentinel prefix in the title) 'SENTINEL428 - docs - Tandem Commander 0.3.0 (x64) ST'
+PASS   Configuration opened and closed with OK      Konfigurace; no other window
+PASS   session 1 ended normally                     no window
+FAIL   no registry key of ours changed              286 changes outside the noise, 285 of them ours, 0 the WebView2 runtime's
+PASS   no change in shell / start-up / uninstall / environment / Control Panel keys none
+FAIL   no changed value anywhere in HKCU names the program or its folder (Windows' own records aside) HKCU\Software\Tandem Commander\Settings\Configuration\ChangeDir History :: 5, HKCU\Software\Tandem Commander\Settings\Configuration\ChangeDir History :: 8, HKCU\Software\Tandem Commander\Settings\Configuration\ChangeDir History :: 17, HKCU\Software\Tandem Commander\Settings\Configuration\Copy History :: 5, HKCU\Software\Tandem Commander\Settings\Configuration\Look In History :: 1, HKCU\Software\Tandem Commander\Settings\Configuration\Look In History :: 2
+FAIL   no profile change by the program             1 entries; 0 the WebView2 runtime's (its jump list); 0 the temporary folder's time stamp
+FAIL   installed edition's key unchanged            f0c8aca0713ded10cf122fcdb2f2c5a0e1f5fed84224462d6cd0864ea41947c7
+RESULT: FAIL
+== scenarios: RESULT: FAIL (expected PASS)
+PASS   move: panel path inside the folder stored as $(PortableDir) title 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'; absolute path outside Default Directories: none
+PASS   move: started at the non-ASCII path, the panel opens the moved docs, the second setting kept title 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'; windows ["[SalamanderSaveBits 'Tandem Commander'] "]
+PASS   move: started at Z:\TC, the panel opens the moved docs title 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'; windows ["[#32770 ''] ", "[SalamanderSaveBits 'Tandem Commander'] "]
+PASS   move: no message or error box at the moved start []
+PASS   move: the file still says $(PortableDir)\docs and the second setting, no old path elsewhere 161204 characters; the old place only in Default Directories
+PASS   fail: settings exist before the failure rows C:\Users\pavel\AppData\Local\Temp\tc428\scenarios\fail\TC\settings\tandemcommander.reg
+PASS   fail: unwritable folder - told once at start ["[#32770 'Tandem Commander 0.3.0 (x64)'] Tandem Commander nemůže uložit nastavení do této složky:\nC:\\Users\\pavel\\AppData\\Local\\Temp\\tc428\\scenarios\\fail\\TC\\settings\n\nProgram funguje dál, ale změny provedené v této relaci se neuloží. Složka přenosné verze je jen pro čtení, plná nebo už 
+PASS   fail: unwritable folder - no second message (save, exit) []
+PASS   fail: unwritable folder - settings file unchanged C:\Users\pavel\AppData\Local\Temp\tc428\scenarios\fail\TC\settings\tandemcommander.reg
+PASS   fail: unwritable folder - nothing saved anywhere else (installed key, profile folders) key same True; profile entries none
+PASS   fail: unwritable folder - session folder removed []
+PASS   fail: damaged file - the .bak used (its mark is in the new file) and the user told messages ["[#32770 'Tandem Commander 0.3.0 (x64)'] Soubor s nastavením v této složce nelze přečíst:\nC:\\Users\\pavel\\AppData\\Local\\Temp\\tc428\\scenarios\\fail\\TC\\settings\n\nTandem Commander místo něj p; kept aside ['tandemcommander.reg.damaged-20261114-134235']
+PASS   fail: both damaged - defaults (no mark), the user told, both kept aside messages ["[#32770 'Tandem Commander 0.3.0 (x64)'] Soubory s nastavením v této složce nelze přečíst:\nC:\\Users\\pavel\\AppData\\Local\\Temp\\tc428\\scenarios\\fail\\TC\\settings\n\nTandem Commander se spustí ; kept aside ['tandemcommander.reg.bak.damaged-20261114-134242', 'tandemcommander.reg.damaged-20261114-134242']
+PASS   kill: 20 kills during a save - the file always complete, every key and the mark kept bad after runs []; 338 keys at the start; kills during a write (temporary file left) 20, files rewritten 4
+PASS   kill: the kills landed in saves - files rewritten before the kill in at least 3 runs, a write cut in at least 1 rewritten 4, write cut 20 (of 20)
+PASS   kill: the killed process leaves its session folder ['TandemCommander-portable-2a644812be213c14']
+PASS   kill: the next start shows no restored / damaged message ["[#32770 ''] "]
+FAIL   kill: no temporary file left after a normal start ['tandemcommander.reg.bak~RFa256ac82.TMP']
+PASS   kill: the next start removed the crashed session folder (SC-004, FR-007) []
+PASS   two: both processes of the copy run, one session folder alive True / True; sessions ['TandemCommander-portable-d15fc1ca38e1e309']
+PASS   two: the first exit leaves the session to the second second alive True; sessions ['TandemCommander-portable-d15fc1ca38e1e309']
+PASS   two: the second process's change is saved; the last exit removes the session folder value 0 -> 1; sessions []
+PASS   side: the normal edition and portable A run side by side pids 38024 / 15260
+PASS   side: portable B (another folder) opens its own window pid 3832 alive True
+PASS   side: portable A again - hands over to the running A and ends second A ended True, first A alive True, normal alive True
+PASS   side: the configuration key restored         19c222e0a142bef9bf8496b2b217195ebbd940f85ce8dad955a74c6dfa2f7991
+RESULT: FAIL
+== import: RESULT: PASS (expected PASS)
+PASS   setup: SRC's file names its folder $(PortableDir)\docs 322328 bytes
+PASS   I1 command: the file is kept as settings\import.reg (a byte copy) boxes ["QUESTION [#32770 'Otázka'] Konfigurace z tohoto souboru se naimportuje při příštím spuštění programu Tandem Commander (pokud nebude otevřené žádné jiné okno této přenosné kopie):\nC:\\Users\\pavel\\AppData\\Local\\Temp\\tc428\\import\\src\\TC\\settings\\tandemcommander.reg\n\nDo té doby zůstává současné nastavení. Chcete Tandem Commander z"]
+PASS   I1 command: the question was asked (a Yes / No box naming the file) ["QUESTION [#32770 'Otázka'] Konfigurace z tohoto souboru se naimportuje při příštím spuštění programu Tandem Commander (pokud nebude otevřené žádné jiné okno této přenosné kopie):\nC:\\Users\\pavel\\AppData\\Local\\Temp\\tc428\\import\\src\\TC\\settings\\tandemcommander.reg\n\nDo té doby zůstává so
+PASS   I1 exit: import.reg stays, DST's file has no Only One Instance = 1 value 0; file changed by the exit save: True
+PASS   I2 next start: imported - import.reg gone, Only One Instance = 1, no error box boxes none
+PASS   I2 next start: $(PortableDir) expanded to DST (title docs, file keeps the token, no SRC path) title 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'; SRC paths none
+PASS   I3 joined start: import.reg stays while another process of the copy runs second process ended (Only One Instance): True
+PASS   I3 lone start afterwards: imported (import.reg gone), no error box boxes none
+PASS   I5 Export Configuration from the portable copy: absolute paths, no $(PortableDir), our root key 161355 characters; boxes ["[#32770 'Otázka'] Exportovaný soubor s konfigurací bude vytv", "[#32770 'Informace'] Chcete-li exportovanou konfiguraci použ", "[#32770 'Informace'] Konfigurace byla úspěšně exportována. |"]
+PASS   I6 the installed edition's export imports into the portable copy (its mark arrives) boxes none
+PASS   I4 refused file: an error box, no question, no import.reg boxes ["[#32770 'Chyba'] Nelze importovat zadaný soubor. Nejedná se o soubor s konfigurací.\n\nSoubor: C:\\Users\\pavel\\AppData\\Local\\Temp\\tc428\\import\\bad.reg | OK"]
+PASS   the installed edition's key is unchanged (SHA-256 of its export) 19c222e0a142bef9 -> 19c222e0a142bef9
+RESULT: PASS
+== identity: RESULT: PASS (expected PASS)
+PASS   I portable exe: IDI_SALAMANDER = salamand_portable.ico 7 images in the exe, 7 in the .ico
+PASS   I normal exe: IDI_SALAMANDER = salamand.ico (no badge) 7 images
+PASS   T czech: title says [portable]               'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A czech: the label shows the language's text, not cut at its edge 'Přenosná verze – nastavení se ukládá do této složky:': ink up to x 253 of 419, y 12 of 13
+PASS   S default: About screenshot                  specs\428-portable-build\evidence\about_portable_default.png (451 x 355)
+PASS   S dark: About screenshot                     specs\428-portable-build\evidence\about_portable_dark.png (451 x 355)
+PASS   A czech: the link closes the box and the panel shows settings title 'settings - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A czech: the panel the link opened is the copy's settings folder stored panel paths: ['"Path"="\\\\System Volume Information"', '"Path"="Local Settings\\\\Temporary Internet Files"']
+PASS   T german: title says [portable]              'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A german: the label shows the language's text, not cut at its edge 'Portable-Version – ihre Einstellungen werden in diesem Ordner gespeichert:': ink up to x 358 of 419, y 12 of 13
+PASS   S de-default: About screenshot               specs\428-portable-build\evidence\about_portable_de-default.png (451 x 355)
+PASS   A german: the link closes the box and the panel shows settings title 'settings - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A german: the panel the link opened is the copy's settings folder stored panel paths: ['"Path"="\\\\System Volume Information"', '"Path"="Local Settings\\\\Temporary Internet Files"']
+PASS   T french: title says [portable]              'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A french: the label shows the language's text, not cut at its edge 'Édition portable – ses paramètres sont conservés dans ce dossier :': ink up to x 318 of 419, y 12 of 13
+PASS   A french: the link closes the box and the panel shows settings title 'settings - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A french: the panel the link opened is the copy's settings folder stored panel paths: ['"Path"="\\\\System Volume Information"', '"Path"="Local Settings\\\\Temporary Internet Files"']
+PASS   T dutch: title says [portable]               'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A dutch: the label shows the language's text, not cut at its edge 'Draagbare versie – de instellingen worden in deze map bewaard:': ink up to x 308 of 419, y 12 of 13
+PASS   A dutch: the link closes the box and the panel shows settings title 'settings - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A dutch: the panel the link opened is the copy's settings folder stored panel paths: ['"Path"="\\\\System Volume Information"', '"Path"="Local Settings\\\\Temporary Internet Files"']
+PASS   T hungarian: title says [portable]           'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A hungarian: the label shows the language's text, not cut at its edge 'Hordozható kiadás – beállításai ebben a mappában találhatók:': ink up to x 294 of 419, y 12 of 13
+PASS   A hungarian: the link closes the box and the panel shows settings title 'settings - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A hungarian: the panel the link opened is the copy's settings folder stored panel paths: ['"Path"="\\\\System Volume Information"', '"Path"="Local Settings\\\\Temporary Internet Files"']
+PASS   T romanian: title says [portable]            'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A romanian: the label shows the language's text, not cut at its edge 'Ediția portabilă – setările sale sunt păstrate în acest folder:': ink up to x 280 of 419, y 12 of 13
+PASS   A romanian: the link closes the box and the panel shows settings title 'settings - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A romanian: the panel the link opened is the copy's settings folder stored panel paths: ['"Path"="\\\\System Volume Information"', '"Path"="Local Settings\\\\Temporary Internet Files"']
+PASS   T slovak: title says [portable]              'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A slovak: the label shows the language's text, not cut at its edge 'Prenosná verzia – jej nastavenia sú uložené v tomto priečinku:': ink up to x 297 of 419, y 12 of 13
+PASS   A slovak: the link closes the box and the panel shows settings title 'settings - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A slovak: the panel the link opened is the copy's settings folder stored panel paths: ['"Path"="\\\\System Volume Information"', '"Path"="Local Settings\\\\Temporary Internet Files"']
+PASS   T spanish: title says [portable]             'docs - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A spanish: the label shows the language's text, not cut at its edge 'Edición portátil: su configuración se guarda en esta carpeta:': ink up to x 286 of 419, y 12 of 13
+PASS   A spanish: the link closes the box and the panel shows settings title 'settings - Tandem Commander 0.3.0 (x64) [portable] ST'
+PASS   A spanish: the panel the link opened is the copy's settings folder stored panel paths: ['"Path"="\\\\System Volume Information"', '"Path"="Local Settings\\\\Temporary Internet Files"']
+PASS   A: the settings folder exists after the runs C:\Users\pavel\AppData\Local\Temp\tc428\identity\copy\TC\settings
+PASS   X FR-006a: Ctrl+C in a ZIP panel says the Explorer integration is not available title 'x.zip - Tandem Commander 0.3.0 (x64) [portable] ST'; box [#32770 'Tandem Commander 0.3.0 (x64)'] Para arrastrar o copiar archivos desde un archivo comprimido o un sistema de archivos de un complemento a otro programa es necesaria la integración con el Explo
+PASS   T normal: no [portable] in the title         'docs - Tandem Commander 0.3.0 (x64) ST'
+PASS   A normal: About has no portable lines        label None, link None
+PASS   the installed edition's key is as before (restored) 19c222e0a142bef9 -> 19c222e0a142bef9
+NOT DRIVEN: High Contrast About (a system setting), the badge on a real taskbar in Light / Dark, the taskbar grouping by executable path (person checks)
+RESULT: PASS
+== update: RESULT: PASS (expected PASS)
+PASS   U1 with-portable: the notification offers 9.9.9 with the portable hint ['Tandem Commander | &Download | Remind Me &Later | &Skip This Version | &Check for a new version at start-up | A new version is available | Installed version | 0.3.0 | Available version | 9.9.9 | Released 14. října 2026 | This is the portable edition. To update it, download the new portable archive from the release page, unpack it next to this copy and copy the settings folder into the new one.']
+PASS   U1 with-portable: no Download & Install, no Install Now, no level list Tandem Commander | &Download | Remind Me &Later | &Skip This Version | &Check for a new version at start-up | A new version is available | Installed version | 0.3.0 | Available version | 9.9.9 | Released 14. října 2026 | This is the portable edition. To update it, download the new portable archive f
+PASS   U4 General page: the level list and its label are hidden dialog True, list visible False, label visible False
+PASS   U2 newer: the release is not offered (no window names 9.9.9); the check reports it could not check ['Check for New Version | Could not check for a new version: the release server gave an unexpected answer.\n\nTry again later, or visit tandemcommander.org. | OK']
+PASS   U3 portable-not-uploaded: the release is not offered (no window names 9.9.9); the check reports it could not check ['Check for New Version | Could not check for a new version: the release server gave an unexpected answer.\n\nTry again later, or visit tandemcommander.org. | OK']
+PASS   U5 the server saw only version requests (nothing downloaded) 7 requests: ['/end/newer', '/end/portable-not-uploaded', '/end/with-portable', '/latest/newer', '/latest/portable-not-uploaded', '/latest/with-portable', '/stop']
+PASS   U5 no new file in %LOCALAPPDATA%\Tandem Commander\Updates [] -> []
+PASS   the installed edition's key is unchanged     19c222e0a142bef9 -> 19c222e0a142bef9
+RESULT: PASS
+== pwdnote: RESULT: PASS (expected PASS)
+PASS   N5 without the seam: no note                 
+PASS   N1 the note appears with Set Master Password / Not Now / a check box [#32770 'Tandem Commander 0.3.0 (x64)'] Toto je přenosná verze: hesla, která ukládá, jsou v její složce a putují s ní. Bez hlavního hesla je může přečíst kdokoli, kdo se ke složce dostane (například když ztratíte flash disk).
+PASS   N1 'Not Now' closes it, no second note in the session closed True, again None
+PASS   N1 not ticked: nothing stored                None
+PASS   N2 shown again; ticked + Not Now -> stored in the settings file ticked True, value dword:00000001
+PASS   N3 the next start: no note                   
+PASS   N4 Set Master Password opens the master-password dialog [#32770 'Změnit hlavní heslo'] &Aktuální heslo: | &Nové heslo: | &Ověření hesla: | Ujistěte se prosím, že si pamatujete hlavní heslo, které jste nastavili. Pokud zapomenete hlavní heslo, nebudete moci
+PASS   the installed edition's key is unchanged     19c222e0a142bef9 -> 19c222e0a142bef9
+RESULT: PASS
+== timing: RESULT: PASS (expected PASS)
+PASS   SC-009 start-up: portable median within 10 % of the installed edition portable 0.458 s, installed 0.428 s (+7.0 %)
+PASS   SC-009 exit with save: portable median within 10 % of the installed edition portable 1.279 s, installed 1.179 s (+8.4 %)
+PASS   two runs without a change leave the settings file and its .bak untouched time stamp same True, bytes same True, .bak same True
+PASS   the installed edition's key restored         19c222e0a142bef9 -> 19c222e0a142bef9
+RESULT: PASS
+probes not as expected: 1

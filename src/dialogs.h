@@ -878,6 +878,12 @@ protected:
 
     // feature 123: fills the line under the version from the stored update state
     void RefreshUpdateLine();
+
+#ifdef TC_PORTABLE
+    // feature 428 (FR-015): "Portable edition" and the settings folder as a link, two lines added
+    // under the version (the controls below move down, the box grows)
+    void AddPortableLines();
+#endif
 };
 
 //

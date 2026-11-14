@@ -397,6 +397,8 @@
     </ClCompile>
     <ClCompile Include="..\updinstall.cpp">
     </ClCompile>
+    <ClCompile Include="..\portstore.cpp">
+    </ClCompile>
     <ClCompile Include="..\edtlbwnd.cpp">
     </ClCompile>
     <ClCompile Include="..\execute.cpp">
@@ -914,6 +916,10 @@
     <ClInclude Include="..\common\salupdinstall.h">
     </ClInclude>
     <ClInclude Include="..\updinstall.h">
+    </ClInclude>
+    <ClInclude Include="..\portstore.h">
+    </ClInclude>
+    <ClInclude Include="..\common\salportable.h">
     </ClInclude>
     <ClInclude Include="..\updhttp.h">
     </ClInclude>

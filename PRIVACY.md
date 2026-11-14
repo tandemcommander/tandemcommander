@@ -13,12 +13,14 @@ of Tandem Commander is the latest, and when there is a newer one it downloads
 that version's installer from GitHub, so that you can install it with one click,
 or installs it right away if you choose so (see *Checking for a new version*). What it
 stores — settings, history and, if you choose, saved passwords — stays in
-your Windows user profile.
+your Windows user profile; the portable edition keeps it in its own folder
+instead and downloads no update (see *Portable edition*).
 
-This statement covers the program and its installer as distributed by the
-Tandem Commander project, including the plugins that come with it. It does not
-cover the website tandemcommander.org, the GitHub repository, the Windows
-Package Manager catalogue, or plugins obtained from anywhere else.
+This statement covers the program, its installer and its portable ZIP as
+distributed by the Tandem Commander project, including the plugins that come
+with it. It does not cover the website tandemcommander.org, the GitHub
+repository, the Windows Package Manager catalogue, or plugins obtained from
+anywhere else.
 
 The locations below can be opened by typing them into the address bar of
 Windows File Explorer (for example `%LOCALAPPDATA%\Tandem Commander`); the
@@ -429,6 +431,67 @@ distributed program — among them an old update-checker plugin that would
 contact the website of the original Open Salamander (it has nothing to do
 with the check for a new version described above). They are not installed,
 and loading such a plugin yourself is outside this statement.
+
+## Portable edition
+
+The portable edition (the ZIP `tandemcommander-<version>-x64-portable.zip`,
+offered from the version after 0.3.0; its title bar says `[portable]`) is the
+same program, with these differences in what it stores:
+
+- **Nothing in the registry.** It writes no registry key or value of its
+  own, and it reads no settings of an installed Tandem Commander (only the
+  import of settings from Altap Salamander or Open Salamander, when you
+  start it, reads theirs, as described above). While it
+  runs, its settings are held in a private file in the session folder
+  described below; they are saved into the folder `settings` next to
+  `tandemcommander.exe`: the file `tandemcommander.reg` (a text file in the
+  Registry Editor's format, with everything the sections above describe as
+  stored in the registry key, the saved passwords in their stored form
+  included) and the previous copy `tandemcommander.reg.bak`. Two commands
+  still change a Windows setting because that is what you ask them to do:
+  PictView's *Set as Wallpaper* (below) and, in a Registry Editor plugin
+  panel, **Commands → Open Folder → Active Folder**, which sets the key the
+  Windows Registry Editor opens at (see *Settings and history*).
+- **Files go into `settings` too**, not into your profile: crash reports
+  (`settings\BugReports`), the backups the settings import makes
+  (`settings\Backups`), the default place for exported configurations, the
+  PictView wallpaper picture (`settings\PictView_Wallpaper.bmp`) and the
+  background PictView remembers (`settings\PictView wallpaper.ini`, instead
+  of the three `Prev...` values). *Set as Wallpaper* still changes the
+  Windows desktop background, as you asked; while the picture is on a drive
+  that is removed, Windows cannot show it. *Options → Import Configuration*
+  keeps a copy of the file you choose as `settings\import.reg` until the next
+  start imports it (it can contain saved passwords in their stored form). A
+  settings file the program could not read is kept beside it under a name
+  ending `.damaged-` and the date and time, and is never deleted by the
+  program.
+- **The session folder.** While a portable copy runs, it keeps a folder
+  `TandemCommander-portable-` and sixteen characters in your temporary
+  folder (`%TEMP%`), with the settings being used and the viewer engine
+  data (see *Viewer engine data*). The program deletes it when its last
+  window closes; after a crash, the next start of a portable copy deletes
+  it.
+- **The check for a new version** sends the same single request as the
+  installed program (see *Checking for a new version*) and keeps its values
+  in the settings file. It tells you only about a release that offers the
+  portable ZIP, and *Download* opens that release's page in your web
+  browser: the portable edition never downloads or installs an update, and
+  it keeps no `Updates` folder.
+- **No Explorer integration and no jump list**: the program registers no
+  shell extension and creates no taskbar jump list.
+
+Windows itself, as for any program you run, can record that the program ran
+(for example its list of recently used programs and its prefetch files). When
+the Markdown Viewer or the Code Viewer opens, the Microsoft Edge WebView2
+runtime writes its own state under
+`HKEY_CURRENT_USER\Software\Microsoft\EdgeWebView` and
+`HKEY_CURRENT_USER\Software\Microsoft\EdgeUpdate` and keeps a taskbar jump
+list of its own; that is the runtime's behaviour for every program that uses
+it, outside the program's control.
+
+To remove the portable edition and everything it stores, delete its folder
+(and, after a crash, any `TandemCommander-portable-...` folder left in
+`%TEMP%`).
 
 ## Installing and uninstalling
 

@@ -26,7 +26,8 @@
 class CUpdateLink : public CHyperLink
 {
 public:
-    CUpdateLink(HWND hDlg, int ctrlID) : CHyperLink(hDlg, ctrlID) {}
+    // feature 428: also the About box's settings-folder link (its own flags: the path ellipsis)
+    CUpdateLink(HWND hDlg, int ctrlID, DWORD flags = STF_UNDERLINE | STF_HYPERLINK_COLOR) : CHyperLink(hDlg, ctrlID, flags) {}
 
 protected:
     virtual LRESULT WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam);

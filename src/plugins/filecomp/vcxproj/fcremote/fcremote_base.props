@@ -4,7 +4,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros"></PropertyGroup>
   <PropertyGroup>
-    <OutDir>$(OPENSAL_BUILD_DIR)tandemcommander\$(Configuration)_$(ShortPlatform)\plugins\filecomp\</OutDir>
+    <OutDir>$(OPENSAL_BUILD_DIR)tandemcommander\$(Configuration)_$(ShortPlatform)$(TcOutSuffix)\plugins\filecomp\</OutDir>
     <IntDir>$(OutDir)Intermediate\fcremote\</IntDir>
     <GenerateManifest>false</GenerateManifest>
     <EmbedManifest>false</EmbedManifest>

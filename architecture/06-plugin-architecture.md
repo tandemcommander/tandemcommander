@@ -274,7 +274,7 @@ would corrupt memory; the migration path is a rebuild against the 104
 SDK - see `doc/plugin-vnext-migration.md` and
 `specs/004-long-paths-unicode/contracts/plugin-interface-vnext.md`.
 
-## Plugin Interfaces 105-108 (additions only)
+## Plugin Interfaces 105-109 (additions only)
 
 Every version after 104 is a pure append at the end of a core-implemented
 class (`CSalamanderGeneralAbstract`; 108: `CSalamanderPluginEntryAbstract`)
@@ -290,6 +290,22 @@ version history is the comment block above `LAST_VERSION_OF_SALAMANDER` in
 | 106 | 049 | `ThemeSubclassPropSheetFrame` | `specs/049-dark-mode-stabilization/contracts/plugin-theme-api-v106.md` |
 | 107 | 088 | unattended close: `IsUnattendedClose`, `SetWindowClosesUnattended`; `SAL_MAX_PATH_UTF8` and `CSalMaxPathBuffer` in `spl_base.h`; corrected buffer sizes in the comments | `specs/088-plugin-interface-107/contracts/plugin-api-v107.md` |
 | 108 | 245 | settings import from Altap Salamander / Open Salamander: `CSalamanderPluginEntryAbstract::SetPluginSettingsImport`, `CPluginSettingsImportAbstract` (plugin), `CSalamanderSettingsImportAbstract` (core), `SALIMPORT_*` | `specs/245-settings-import-salamander/contracts/plugin-api-v108.md` |
+| 109 | 428 | the portable edition: `IsPortableEdition`, `GetUserDataFolderW` (`SALUSERDATA_WEBVIEW2`, `SALUSERDATA_LOCAL`), `GetInstanceScopeSuffix` | `specs/428-portable-build/contracts/plugin-api-109.md` |
+
+**Portable edition (109).** The portable edition (feature 428) keeps the
+whole configuration in a private registry hive the core maps in place of
+`HKEY_CURRENT_USER`, so a plugin's `LoadConfiguration` / `SaveConfiguration`
+through the core's registry services works unchanged. What a plugin must not
+do is find its own places: a file it keeps goes into
+`GetUserDataFolderW(SALUSERDATA_LOCAL)` (`%LOCALAPPDATA%\Tandem Commander`, or
+`<program>\settings` in the portable edition), a WebView2 environment uses
+`GetUserDataFolderW(SALUSERDATA_WEBVIEW2)` (see `11-webview2-integration.md`),
+a kernel object shared between processes gets `GetInstanceScopeSuffix()`
+appended (copies of the portable edition in different folders never meet),
+and a direct `HKEY_CURRENT_USER` write outside the core's services is wrong in
+the portable edition (`IsPortableEdition()` - e.g. PictView keeps its
+previous-wallpaper backup in a file there). Call them only when
+`SalamanderVersion >= 109`.
 
 **Settings import (108).** A plugin that can merge its own settings from an
 older program registers a handler in every `SalamanderPluginEntry`

@@ -138,10 +138,10 @@ eRPE_ERROR Parse(LPTSTR buf, CSalamanderRegistryExAbstract* pRegistry, BOOL doNo
                 bDelete = TRUE;
                 line++;
             }
-            if (!_tcsnicmp(line, _T("HKEY_CURRENT_USER"), SizeOf(_T("HKEY_CURRENT_USER")) - 1))
+            if (!_tcsnicmp(line, _T("HKEY_CURRENT_USER"), SizeOf(_T("HKEY_CURRENT_USER")) - 1)) // portable: reglib name (the system registry maps it to SalCfgBaseKey())
             {
                 keyName = line + SizeOf(_T("HKEY_CURRENT_USER")) - 1;
-                hParentKey = HKEY_CURRENT_USER;
+                hParentKey = HKEY_CURRENT_USER; // portable: reglib name (the system registry maps it to SalCfgBaseKey())
             }
             else if (!_tcsnicmp(line, _T("HKEY_CLASSES_ROOT"), SizeOf(_T("HKEY_CLASSES_ROOT")) - 1))
             {
@@ -221,12 +221,12 @@ eRPE_ERROR Parse(LPTSTR buf, CSalamanderRegistryExAbstract* pRegistry, BOOL doNo
             if (onlyUnderHKCU != NULL)
             { // feature 263: never create, open or delete a key outside the allowed root
 #if defined(INSIDE_SALAMANDER) && !defined(_UNICODE)
-                if (hParentKey == HKEY_CURRENT_USER && !bDelete && SalRegKeyIsParentOfRoot(keyName, onlyUnderHKCU))
+                if (hParentKey == HKEY_CURRENT_USER && !bDelete && SalRegKeyIsParentOfRoot(keyName, onlyUnderHKCU)) // portable: reglib name (the system registry maps it to SalCfgBaseKey())
                 { // our own export writes the keys above the root too, without values: nothing to create
                     inParentOfRoot = TRUE;
                     continue;
                 }
-                if (hParentKey == HKEY_CURRENT_USER && legacyRoot != NULL && !SalRegKeyIsInsideRoot(keyName, onlyUnderHKCU))
+                if (hParentKey == HKEY_CURRENT_USER && legacyRoot != NULL && !SalRegKeyIsInsideRoot(keyName, onlyUnderHKCU)) // portable: reglib name (the system registry maps it to SalCfgBaseKey())
                 { // feature 343: a key of the 0.1.x root is imported under the version-free root
                     size_t need = strlen(onlyUnderHKCU) + strlen(keyName) + 1; // the rest is never longer than the name
                     char* mapped = (char*)realloc(mappedName.Text, need);
@@ -236,7 +236,7 @@ eRPE_ERROR Parse(LPTSTR buf, CSalamanderRegistryExAbstract* pRegistry, BOOL doNo
                     if (SalRegMapLegacyRoot(keyName, onlyUnderHKCU, legacyRoot, mapped, (int)need))
                         keyName = mapped;
                 }
-                if (hParentKey != HKEY_CURRENT_USER || !SalRegKeyIsInsideRoot(keyName, onlyUnderHKCU))
+                if (hParentKey != HKEY_CURRENT_USER || !SalRegKeyIsInsideRoot(keyName, onlyUnderHKCU)) // portable: reglib name (the system registry maps it to SalCfgBaseKey())
                 {
                     TRACE_E("Parse(): key outside the allowed root: " << (bDelete ? "[-" : "[") << line << "]");
                     return RPE_KEY_OUTSIDE_ROOT;

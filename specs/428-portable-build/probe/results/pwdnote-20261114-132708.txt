@@ -1,0 +1,12 @@
+feature 428 password-note probe, 2026-11-14T13:26:21
+PASS   N5 without the seam: no note                 
+PASS   N1 the note appears with Set Master Password / Not Now / a check box [#32770 'Tandem Commander 0.3.0 (x64)'] Toto je přenosná verze: hesla, která ukládá, jsou v její složce a putují s ní. Bez hlavního hesla je může přečíst kdokoli, kdo se ke složce dostane (například když ztratíte flash disk).
+
+Chcete nyní nastavit hl
+PASS   N1 'Not Now' closes it, no second note in the session closed True, again None
+PASS   N1 not ticked: nothing stored                None
+PASS   N2 shown again; ticked + Not Now -> stored in the settings file ticked True, value dword:00000001
+PASS   N3 the next start: no note                   
+PASS   N4 Set Master Password opens the master-password dialog [#32770 'Změnit hlavní heslo'] &Aktuální heslo: | &Nové heslo: | &Ověření hesla: | Ujistěte se prosím, že si pamatujete hlavní heslo, které jste nastavili. Pokud zapomenete hlavní heslo, nebudete moci
+PASS   the installed edition's key is unchanged     19c222e0a142bef9 -> 19c222e0a142bef9
+RESULT: PASS

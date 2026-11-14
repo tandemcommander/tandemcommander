@@ -236,7 +236,7 @@ void CLoadSaveToRegistryMutex::Init()
 
 void CLoadSaveToRegistryMutex::Enter()
 {
-    DebugCheck++;
+    InterlockedIncrement(&DebugCheck);
     if (Mutex != NULL)
     {
         if (WaitForSingleObject(Mutex, INFINITE) == WAIT_FAILED)
@@ -248,7 +248,7 @@ void CLoadSaveToRegistryMutex::Enter()
 
 void CLoadSaveToRegistryMutex::Leave()
 {
-    DebugCheck--;
+    InterlockedDecrement(&DebugCheck);
     if (Mutex != NULL)
     {
         if (!ReleaseMutex(Mutex))
@@ -867,6 +867,17 @@ void CCfgPageGeneral::Transfer(CTransferInfo& ti)
     // feature 420: what happens with a new version - the same pattern: read fresh, written at once
     // and only when the user changed it here
     HWND hLevel = GetDlgItem(HWindow, IDC_UPDATELEVEL);
+#ifdef TC_PORTABLE
+    // feature 428 (FR-017, Q-14): the portable edition never downloads or installs - the levels are
+    // not offered (only the check on / off above); they are the last controls of the page, so hiding
+    // them leaves no gap
+    if (hLevel != NULL && ti.Type == ttDataToWindow)
+    {
+        ShowWindow(hLevel, SW_HIDE);
+        ShowWindow(GetDlgItem(HWindow, IDC_UPDATELEVEL_LABEL), SW_HIDE);
+    }
+    hLevel = NULL;
+#endif
     if (hLevel != NULL)
     {
         if (ti.Type == ttDataToWindow)

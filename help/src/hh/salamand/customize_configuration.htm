@@ -69,6 +69,25 @@ message box. Then it will import the configuration from the file to registry.
 instead: it reads the old program's settings without changing them, shows a
 preview and adds only what you choose.</p>
 
+<h3>The portable edition</h3>
+<p>The portable edition of Tandem Commander (its title bar says <i>[portable]</i>)
+never uses the Windows Registry. Its configuration, the settings of every plugin
+and saved passwords are kept in the file <i>settings\tandemcommander.reg</i>
+in the folder of the program (the previous copy as <i>tandemcommander.reg.bak</i>);
+Help/About shows that folder and opens it. Save Configuration and Export
+Configuration work as described above, with this file in place of the registry.
+Copy the whole folder of the program to take everything to another computer;
+paths to files inside that folder keep working when the drive letter changes.</p>
+
+<p>To import a configuration into the portable edition, do not open the file with
+Registry Editor (that would change the registry of an installed Tandem Commander,
+not the portable copy). Use Options/Import Configuration instead: choose the file,
+the portable edition checks it at once and keeps a copy as
+<i>settings\import.reg</i>; the configuration is imported the next time it starts
+while no other window of the same portable copy is open (it offers to close now).
+A file exported by an installed Tandem Commander or by another portable copy can be
+imported this way.</p>
+
 <h4>Remarks</h4>
 <p>Open Salamander's configuration is stored in the Windows Registry:
 'HKEY_CURRENT_USER\Software\Open Salamander\X', where X is Open

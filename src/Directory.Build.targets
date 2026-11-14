@@ -27,13 +27,16 @@
   live object/PCH cache after every build. Nothing errors; builds just become
   from-scratch forever. If you rename the output directory again, grep for the
   old segment across *.props/*.targets/*.vcxproj and confirm zero hits remain.
+  Feature 428: the token carries $(TcOutSuffix) (src\Directory.Build.props), so the portable
+  edition's Release intermediates go to obj\<Config>_<Platform>_portable\ - their own cache,
+  never shared with the normal edition's; tools\check_outdir_suffix.py guards the spelling.
   (src\plugins\pictview\vcxproj\salpvenv_base.props hardcodes _x64 while
   importing x86.props, so its IntDir never matches this token: a dormant
   instance of exactly that drift. Its project is not in salamand.sln.)
 -->
 <Project>
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-    <IntDir>$(IntDir.Replace('tandemcommander\$(Configuration)_$(ShortPlatform)\', 'obj\$(Configuration)_$(ShortPlatform)\'))</IntDir>
+    <IntDir>$(IntDir.Replace('tandemcommander\$(Configuration)_$(ShortPlatform)$(TcOutSuffix)\', 'obj\$(Configuration)_$(ShortPlatform)$(TcOutSuffix)\'))</IntDir>
   </PropertyGroup>
   <!--
     Feature 050: keep linker byproducts out of the shipped Release tree.

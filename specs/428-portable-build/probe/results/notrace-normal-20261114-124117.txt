@@ -1,0 +1,84 @@
+feature 428 no-trace probe, normal edition, 2026-11-14T12:39:29
+copy: C:\Users\pavel\AppData\Local\Temp\tc428\notrace\normal\TC
+configuration key of the installed edition: present, SHA-256 19c222e0a142bef9bf8496b2b217195ebbd940f85ce8dad955a74c6dfa2f7991
+noise in 20 s without the program: 0 registry keys, 0 profile entries
+start dialogs: ["[#32770 ''] ", "[SalamanderSaveBits 'Tandem Commander'] "]
+PASS   Configuration opened and closed with OK      Konfigurace; no other window
+    after F3, no new window; windows: (hidden) [Touch Tooltip Window 'Tooltip'] 
+    after F3, no new window; windows: [UAC_InputIndicatorOverlayWnd ''] 
+    after F3, no new window; windows: [UAC Input Indicator ''] 
+    after F3, no new window; windows: [TandemCommanderMainWindowVer01 'docs - Tandem Commander 0.3.0 (x64) ST'] 
+    after F3, no new window; windows: (hidden) [SocketsHiddenWindowClass 'HiddenSocketsWindow'] 
+    after F3, no new window; windows: (hidden) [ComboLBox ''] 
+    after F3, no new window; windows: (hidden) [WorkerW ''] 
+    after F3, no new window; windows: (hidden) [WorkerW ''] 
+    after F3, no new window; windows: (hidden) [CicLoaderWndClass ''] 
+    after F3, no new window; windows: (hidden) [CiceroUIWndFrame 'CiceroUIWndFrame'] 
+    after F3, no new window; windows: (hidden) [CiceroUIWndFrame 'TF_FloatingLangBar_WndTitle'] 
+    after F3, no new window; windows: (hidden) [MSCTFIME UI 'MSCTFIME UI'] 
+    after F3, no new window; windows: (hidden) [IME 'Default IME'] 
+    after F3, no new window; windows: (hidden) [IME 'Default IME'] 
+    after F3, no new window; windows: (hidden) [IME 'Default IME'] 
+    after F3, no new window; windows: (hidden) [Touch Tooltip Window 'Tooltip'] 
+    after F3, no new window; windows: [UAC_InputIndicatorOverlayWnd ''] 
+    after F3, no new window; windows: [UAC Input Indicator ''] 
+    after F3, no new window; windows: [TandemCommanderMainWindowVer01 'docs - Tandem Commander 0.3.0 (x64) ST'] 
+    after F3, no new window; windows: (hidden) [SocketsHiddenWindowClass 'HiddenSocketsWindow'] 
+    after F3, no new window; windows: (hidden) [ComboLBox ''] 
+    after F3, no new window; windows: (hidden) [WorkerW ''] 
+    after F3, no new window; windows: (hidden) [WorkerW ''] 
+    after F3, no new window; windows: (hidden) [CicLoaderWndClass ''] 
+    after F3, no new window; windows: (hidden) [CiceroUIWndFrame 'CiceroUIWndFrame'] 
+    after F3, no new window; windows: (hidden) [CiceroUIWndFrame 'TF_FloatingLangBar_WndTitle'] 
+    after F3, no new window; windows: (hidden) [MSCTFIME UI 'MSCTFIME UI'] 
+    after F3, no new window; windows: (hidden) [IME 'Default IME'] 
+    after F3, no new window; windows: (hidden) [IME 'Default IME'] 
+    after F3, no new window; windows: (hidden) [IME 'Default IME'] 
+viewers: [None, None]
+PASS   session 1 ended normally                     no window
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Alternative Viewers
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Alternative Viewers\1
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Colors\Panel Items Hilighting
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Colors\Panel Items Hilighting\1
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Colors\Panel Items Hilighting\2
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Configuration
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Configuration\ChangeDir History
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Configuration\Command History
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Configuration\Copy History
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Configuration\Create Directory History
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Configuration\File List History
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Configuration\Find Ignore
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Configuration\Find Ignore\1
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Configuration\Find Ignore\2
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Configuration\Grep History
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Configuration\Look In History
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Configuration\Named History
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Configuration\Quick Rename History
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Default Directories
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Editors
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Editors\1
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Hot Paths
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Left Panel
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Left Panel\Tabs
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Left Panel\Tabs\0
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Left Panel\Tabs\1
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Packers & Unpackers\Archive Association
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Packers & Unpackers\Archive Association\1
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Packers & Unpackers\Archive Association\2
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Packers & Unpackers\Archive Association\3
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Packers & Unpackers\Archive Association\4
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Packers & Unpackers\Archive Association\5
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Packers & Unpackers\Archive Association\6
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Packers & Unpackers\Archive Association\7
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Packers & Unpackers\Archive Association\8
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Packers & Unpackers\Custom Packers
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Packers & Unpackers\Custom Packers\1
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Packers & Unpackers\Custom Packers\2
+    registry change (not noise): HKCU\Software\Tandem Commander\Settings\Packers & Unpackers\Custom Packers\3
+    profile change (not noise): C:\Users\pavel\AppData\Roaming\Microsoft\Windows\Recent\CustomDestinations\4c50d40ef0c803a8.customDestinations-ms
+FAIL   no registry key of ours changed              285 changes outside the noise, 285 of them ours, 0 the WebView2 runtime's
+FAIL   no profile change by the program             1 entries; 0 the WebView2 runtime's (its jump list); 0 the temporary folder's time stamp
+FAIL   installed edition's key unchanged            828f2102465533021dd2940b049986fb0bcea59845bd7c4c4c407e314428085b
+configuration key restored; identical to the backup: True
+RESULT: FAIL

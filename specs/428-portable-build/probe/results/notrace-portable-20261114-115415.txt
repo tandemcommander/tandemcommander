@@ -1,0 +1,39 @@
+feature 428 no-trace probe, portable edition, 2026-11-14T11:52:56
+copy: C:\Users\pavel\AppData\Local\Temp\tc428\notrace\portable\TC
+configuration key of the installed edition: present, SHA-256 19c222e0a142bef9bf8496b2b217195ebbd940f85ce8dad955a74c6dfa2f7991
+noise in 5 s without the program: 0 registry keys, 0 profile entries
+start dialogs: ["[#32770 ''] ", "[SalamanderSaveBits 'Tandem Commander'] "]
+PASS   session folder created in %TEMP%             ['TandemCommander-portable-0bce0003b7953fe4']
+PASS   Configuration opened and closed with OK      Konfigurace; ["[#32770 'Konfigurace'] Obecné | &Před ukončením uložit konfiguraci | Při &kopírování z kompaktního disku odstranit atribut jen pro čtení | Povol&it pouze jednu instanci programu Tandem Commander | &Upozornit zvukovým signálem na dokončení operace v neaktivním okně | Za&vřít okno prostředí po vykonání příkazu (z příkazovéh"]
+viewers: []
+FAIL   WebView2 data in the session folder          a session folder had WebView2 while a viewer was open
+    at the timeout: (hidden) [Touch Tooltip Window 'Tooltip'] 
+    at the timeout: [UAC_InputIndicatorOverlayWnd ''] 
+    at the timeout: [UAC Input Indicator ''] 
+    at the timeout: [TandemCommanderMainWindowVer01 'docs - Tandem Commander 0.3.0 (x64) [portable] ST'] 
+    at the timeout: (hidden) [SocketsHiddenWindowClass 'HiddenSocketsWindow'] 
+    at the timeout: (hidden) [WorkerW ''] 
+    at the timeout: (hidden) [WorkerW ''] 
+    at the timeout: (hidden) [ComboLBox ''] 
+    at the timeout: (hidden) [CicLoaderWndClass ''] 
+    at the timeout: (hidden) [CiceroUIWndFrame 'CiceroUIWndFrame'] 
+    at the timeout: (hidden) [CiceroUIWndFrame 'TF_FloatingLangBar_WndTitle'] 
+    at the timeout: (hidden) [IME 'Default IME'] 
+    at the timeout: (hidden) [MSCTFIME UI 'MSCTFIME UI'] 
+    at the timeout: (hidden) [IME 'Default IME'] 
+    at the timeout: (hidden) [IME 'Default IME'] 
+FAIL   session 1 ended normally                     ["[SalamanderSaveBits 'Tandem Commander'] ", 'KILLED after 40 s']
+FAIL   session folder removed at exit               ['TandemCommander-portable-0bce0003b7953fe4']
+PASS   settings file written with the toggled value C:\Users\pavel\AppData\Local\Temp\tc428\notrace\portable\TC\settings\tandemcommander.reg = 1
+    registry change (not noise): HKCU\Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\SystemAppData\Microsoft.WindowsFeedbackHub_8wekyb3d8bbwe\HAM\AUI\App\V1\LU
+    registry change (not noise): HKCU\Software\Microsoft\Windows NT\CurrentVersion\HostActivityManager\CommitHistory\Microsoft.WindowsFeedbackHub_8wekyb3d8bbwe!App
+    registry change (not noise): HKCU\Software\Microsoft\Windows\CurrentVersion\Group Policy
+    profile change (not noise): C:\Users\pavel\AppData\Local\Temp
+PASS   no registry key of ours changed              3 changes outside the noise, 0 of them ours
+FAIL   no profile change                            1 entries
+PASS   installed edition's key unchanged            19c222e0a142bef9bf8496b2b217195ebbd940f85ce8dad955a74c6dfa2f7991
+PASS   second start: the setting is kept            value 1 -> 1
+PASS   second start: session folder removed         []
+PASS   second start: no window but the main one     ["[#32770 ''] "]
+configuration key restored; identical to the backup: True
+RESULT: FAIL

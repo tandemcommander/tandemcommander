@@ -294,6 +294,11 @@ HRESULT AddTasksToList(ICustomDestinationList* pcdl)
 
 void CreateJumpList()
 {
+#ifdef TC_PORTABLE
+    // feature 428: no jump list - Windows keeps it in the user's profile, and its entries would point to
+    // the folders of a USB stick that is gone (research R-09)
+    return;
+#endif
     ICustomDestinationList* pcdl;
     HRESULT hr = CoCreateInstance(
         CLSID_DestinationList,

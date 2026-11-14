@@ -305,7 +305,7 @@ static BOOL CfgImpReadRootInfo(const char* keyPath, CCfgImpSource* src)
         return FALSE;
     HKEY root;
     BOOL ok = FALSE;
-    if (RegOpenKeyExW(HKEY_CURRENT_USER, wPath, 0, KEY_READ, &root) == ERROR_SUCCESS)
+    if (RegOpenKeyExW(HKEY_CURRENT_USER, wPath, 0, KEY_READ, &root) == ERROR_SUCCESS) // portable: system read
     {
         HKEY cfg;
         if (RegOpenKeyExW(root, L"Configuration", 0, KEY_READ, &cfg) == ERROR_SUCCESS)
@@ -358,7 +358,7 @@ static void CfgImpForEachRoot(F fn)
     {
         WCHAR* w = SalU8ToWAlloc(testRoot);
         HKEY parent;
-        if (w != NULL && RegOpenKeyExW(HKEY_CURRENT_USER, w, 0, KEY_READ, &parent) == ERROR_SUCCESS)
+        if (w != NULL && RegOpenKeyExW(HKEY_CURRENT_USER, w, 0, KEY_READ, &parent) == ERROR_SUCCESS) // portable: system read
         {
             WCHAR name[256];
             DWORD i;
@@ -585,7 +585,7 @@ static CSalCfgKey* CfgImpReadSnapshot(const char* keyPath, BOOL* truncated, char
     if (w == NULL)
         return NULL;
     HKEY root;
-    LONG res = RegOpenKeyExW(HKEY_CURRENT_USER, w, 0, KEY_READ, &root);
+    LONG res = RegOpenKeyExW(HKEY_CURRENT_USER, w, 0, KEY_READ, &root); // portable: system read
     free(w);
     if (res != ERROR_SUCCESS)
     {
@@ -1027,10 +1027,19 @@ BOOL CCfgImpRun::NeedsConsent()
 // research R11: %APPDATA%\Tandem Commander\Settings backups\before-import-<stamp>[-n].reg (UTF-8 path)
 static BOOL CfgImpMakeBackupName(char* buf, int size)
 {
+    WCHAR dir[2 * MAX_PATH];
+#ifdef TC_PORTABLE
+    // feature 428: settings\Backups next to the program (never the user's profile); a path that
+    // does not fit is refused, never cut
+    int dl = _snwprintf_s(dir, _TRUNCATE, L"%s", PortableStore_SettingsDirW());
+    if (dl <= 0 || dl + 80 >= _countof(dir))
+        return FALSE;
+    CreateDirectoryW(dir, NULL);
+    wcscat_s(dir, L"\\Backups");
+#else
     PWSTR appData = NULL;
     if (FAILED(SHGetKnownFolderPath(FOLDERID_RoamingAppData, 0, NULL, &appData)) || appData == NULL)
         return FALSE;
-    WCHAR dir[2 * MAX_PATH];
     // a path that does not fit is refused, never cut (and never passed to a _s function that
     // would end the program on overflow)
     int dl = _snwprintf_s(dir, _TRUNCATE, L"%s\\Tandem Commander", appData);
@@ -1039,6 +1048,7 @@ static BOOL CfgImpMakeBackupName(char* buf, int size)
         return FALSE;
     CreateDirectoryW(dir, NULL);
     wcscat_s(dir, L"\\Settings backups");
+#endif
     CreateDirectoryW(dir, NULL);
     DWORD attr = GetFileAttributesW(dir);
     if (attr == INVALID_FILE_ATTRIBUTES || (attr & FILE_ATTRIBUTE_DIRECTORY) == 0)
@@ -3208,7 +3218,7 @@ static BOOL CfgImpApplyPluginSettings(CCfgImpRun* run, CCfgImpGroup* g, HWND par
     {
         LoadSaveToRegistryMutex.Enter();
         HKEY parentKey;
-        if (RegCreateKeyExW(HKEY_CURRENT_USER, wKeyPath, 0, NULL, 0, KEY_READ | KEY_WRITE, NULL, &parentKey, NULL) == ERROR_SUCCESS)
+        if (RegCreateKeyExW(SalCfgBaseKey(), wKeyPath, 0, NULL, 0, KEY_READ | KEY_WRITE, NULL, &parentKey, NULL) == ERROR_SUCCESS)
         {
             // all or nothing: the new settings are written to a side key first; only a complete
             // copy is swapped in by renaming (the current key is kept until then)

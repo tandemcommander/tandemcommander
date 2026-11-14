@@ -258,6 +258,18 @@ BOOL CTaskList::Init()
 {
     OK = FALSE;
 
+#ifdef TC_PORTABLE
+    // feature 428: the process list (Only one instance, break / terminate / highlight) and the
+    // configuration's load / save lock belong to this copy only - the installed program and copies
+    // from other folders never see or block it. FirstInstance stays per user: it guards the disk
+    // cache in %TEMP%, which every copy shares (research R-05).
+    AS_PROCESSLIST_NAME = PortableScopedName(AS_PROCESSLIST_NAME);
+    AS_PROCESSLIST_MUTEX_NAME = PortableScopedName(AS_PROCESSLIST_MUTEX_NAME);
+    AS_PROCESSLIST_EVENT_NAME = PortableScopedName(AS_PROCESSLIST_EVENT_NAME);
+    AS_PROCESSLIST_EVENT_PROCESSED_NAME = PortableScopedName(AS_PROCESSLIST_EVENT_PROCESSED_NAME);
+    LOADSAVE_REGISTRY_MUTEX_NAME = PortableScopedName(LOADSAVE_REGISTRY_MUTEX_NAME);
+#endif
+
     PSID psidEveryone;
     PACL paclNewDacl;
     SECURITY_ATTRIBUTES sa;
@@ -267,9 +279,9 @@ BOOL CTaskList::Init()
     //---  nejdrive takova bokovka: pod Vista+ vytvorime event pro komunikaci s copy-hookem (ceka se na nej v control-threadu)
     if (WindowsVistaAndLater)
     {
-        SalShExtDoPasteEvent = NOHANDLES(CreateEvent(saPtr, TRUE, FALSE, SALSHEXT_DOPASTEEVENTNAME));
+        SalShExtDoPasteEvent = NOHANDLES(CreateEvent(saPtr, TRUE, FALSE, PortableScopedName(SALSHEXT_DOPASTEEVENTNAME))); // 428: no copy hook reaches a portable copy
         if (SalShExtDoPasteEvent == NULL)
-            SalShExtDoPasteEvent = NOHANDLES(OpenEvent(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, SALSHEXT_DOPASTEEVENTNAME));
+            SalShExtDoPasteEvent = NOHANDLES(OpenEvent(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, PortableScopedName(SALSHEXT_DOPASTEEVENTNAME)));
         if (SalShExtDoPasteEvent == NULL)
             TRACE_E("CTaskList::Init(): unable to create event object for communicating with copy-hook shell extension!");
     }
