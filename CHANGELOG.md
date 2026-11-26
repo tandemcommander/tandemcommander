@@ -10,13 +10,39 @@ numbering*): a release with new features raises MINOR, a fixes-only release
 raises PATCH. Each release also carries an internal build number shared by the
 application and every plugin. Versions up to 0.1.10 raised only the third number.
 
-## [Unreleased]
+## [0.4.0] — 2026-11-26
+
+**Build 197.** Feature release. Tandem Commander now also comes as a portable
+edition: unpack the ZIP anywhere, run it, and it keeps all its settings in its
+own folder, never in the registry; it tells you about a new version but never
+installs one, and it has no Explorer integration. The reports made on GitHub
+are fixed: the Code Viewer and the Markdown Viewer fill their window after the
+display scaling changes, the drive menu's Desktop opens your real Desktop
+folder (the old shell view is now called Shell Folders), and in the Dark theme
+the toolbars of PictView and File Comparator are readable and no light-grey
+parts are left. Panel tabs are square by default; the rounded look is one
+setting away.
 
 - **A portable edition: Tandem Commander without installation, with everything in its own folder** (feature 428).
   - **Before:** Tandem Commander had to be installed and kept its settings in the Windows registry of the user; a copy unpacked elsewhere shared them with the installed program.
   - **Now:** every release also offers `tandemcommander-<version>-x64-portable.zip`. Unpack it anywhere you can write - a USB stick, a folder, a network share - and run `tandemcommander.exe`: it keeps nothing of its own in the registry - all settings, plug-in settings, histories and saved passwords are in the folder `settings` next to the program, so it can be carried to another PC by copying the folder. Paths to files inside the folder keep working when the drive letter changes. The title bar says `[portable]`, the icon carries a badge and the About box shows the settings folder with a link that opens it. The check for a new version tells you about a new release and opens its page; the portable edition never downloads or installs anything. Settings are saved so that an interruption never leaves them half-written, and the program also runs from a folder it cannot write to (it says so once and keeps no changes). Copies in different folders, and an installed Tandem Commander, run side by side without seeing each other.
   - **Limitation:** no Explorer integration - dragging or copying files out of an archive or an FTP / SFTP connection to Explorer is not available (copy or unpack them to a disk folder first); no jump list. Saved passwords travel with the folder: protect them with a master password if the folder can get lost (the program says so the first time a password is saved).
   - **For maintainers:** `build.cmd portable` builds the portable edition into `<Config>_x64_portable`, `build.cmd full release portable` also makes the ZIP, and **`build.cmd dist`** builds and signs the complete release - the installer and the portable ZIP - in one command. The plug-in interface is version 109 (`IsPortableEdition`, `GetUserDataFolderW`, `GetInstanceScopeSuffix`).
+- **Dark theme: readable toolbar icons in PictView and File Comparator, no light-grey parts left** (feature 427, GitHub #25).
+  - **Before:** in the Dark theme the toolbars of PictView and File Comparator kept their old icons with black outlines and dark blue arrows, nearly invisible on the dark strip; PictView's status bar stayed light grey with black icons, and File Comparator's toolbar strip, its list of differences, the strips under the toolbar, the scrollbars and the frames of the views stayed light grey or white.
+  - **Now:** the old toolbar icons get the same dark adaptation as the program's own Classic icons - light outlines, lightened dark blues - also for disabled buttons; PictView's status bar is dark with light icons; File Comparator's toolbar strip, list of differences, strips, scrollbars and frames are dark. Everything follows a switch between the Default and the Dark theme while the windows are open.
+  - **Limitation:** the toolbar icons are still the old pictures; the black checkbox labels reported on some Windows builds did not appear on Windows 11 and stay open.
+- **The drive menu's Desktop opened a strange "fld:" view instead of the Desktop folder** (feature 425, GitHub #31).
+  - **Before:** Alt+F1 / Alt+F2 had an item *Desktop* that belonged to the Folders plug-in: it opened the Windows shell namespace, where the items of the desktop are mixed with This PC, Libraries, Network and Control Panel, and the path line showed only `fld:`. A real folder opened there (Documents, a drive) stayed in that view, without the usual file operations.
+  - **Now:** the Change Drive menu and the drive bar have a real *Desktop* item right after *Documents* (hot key `'`): it opens your Desktop folder as an ordinary disk folder, also a redirected one (OneDrive, a network share - reconnected as a typed path is); a new check box *Desktop* on Configuration > Change Drive Menu and Drive Bar hides it. The plug-in's item is called *Shell Folders* (hot key `-`), and a real folder opened inside it switches the panel to its disk path; This PC, Control Panel, Network, the Recycle Bin and folder shortcuts stay in the shell view.
+  - **Limitation:** inside the shell view the path line still shows only `fld:`.
+- **The Code Viewer and the Markdown Viewer showed their page shifted right and down, larger and cut off** (feature 424, GitHub #29).
+  - **Before:** when the display scaling changed while Tandem Commander was running (in Settings, by docking or undocking a laptop, or through a remote-desktop session), the page of both viewers (F3 on a text or Markdown file) started far from the window's top-left corner, its text was larger and its right and bottom parts were cut off; on a second monitor with another scaling the viewers were drawn blurred.
+  - **Now:** both viewers and the engine that draws their page follow the scaling of the monitor they are on: the page fills the window whatever the scaling was when the program started, a viewer moved to another monitor takes that monitor's size and sharpness, and the status bar and the dark menus follow. The rest of Tandem Commander keeps its behaviour.
+  - **Limitation:** while an older version of Tandem Commander is running and has shown one of these viewers, the viewers of this version report that the engine is not available (and the other way round); close the older version first.
+- **Panel tabs are square by default; the rounded look is one click away** (feature 423).
+  - **Before:** the active tab had rounded top corners and rounded feet where it joined the Directory line, and in the default (light) theme the titles of the other tabs were a pale grey.
+  - **Now:** the active tab is a plain rectangle that runs straight into the Directory line, and the highlight under the mouse is a rectangle too. *Configuration → Appearance → Tab style* switches between **Square** and **Rounded** (the previous look); the choice applies at once. In the light theme the titles of the inactive tabs are darker and easier to read.
 
 ## [0.3.0] — 2026-11-08
 

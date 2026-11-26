@@ -35,7 +35,7 @@
 // Since feature 343 the numbers follow Semantic Versioning MAJOR.MINOR.PATCH (the rule:
 // backlog/RELEASE.md, "Version numbering"); the configuration root does not depend on them.
 #define VERSINFO_SALAMANDER_MAJOR 0
-#define VERSINFO_SALAMANDER_MINORA 3
+#define VERSINFO_SALAMANDER_MINORA 4
 #define VERSINFO_SALAMANDER_MINORB 0
 
 #define VERSINFO_SALAMANDER_VERSION VERSINFO_xstr(VERSINFO_SALAMANDER_MAJOR) "." VERSINFO_xstr(VERSINFO_SALAMANDER_MINORA) "." VERSINFO_xstr(VERSINFO_SALAMANDER_MINORB) VERSINFO_BETAVERSION_TXT
@@ -238,10 +238,18 @@
 //       (GitHub) - feature 407; Markdown Viewer code copy (GitHub) -
 //       feature 408; mask hints link (GitHub) - feature 409;
 //       see CHANGELOG.md)
+// 197 - Tandem Commander 0.4.0 (a portable edition: no installation,
+//       settings next to the program, build.cmd portable / dist, plugin
+//       interface 109 - feature 428; Dark theme: PictView and File
+//       Comparator toolbars, status bar and chrome (GitHub) - feature 427;
+//       a real Desktop drive item, Shell Folders, real folders of fld: as
+//       disk paths (GitHub) - feature 425; Code Viewer and Markdown Viewer
+//       per-monitor DPI aware (GitHub) - feature 424; square panel tabs by
+//       default, Rounded kept - feature 423; see CHANGELOG.md)
 
 // ! DULEZITE: nova cisla buildu je nutne zapsat do vetve "default", a pak
 //             teprve do vedlejsi vetve (kompletni seznam je jen v "default" vetvi)
-#define VERSINFO_BUILDNUMBER 196
+#define VERSINFO_BUILDNUMBER 197
 
 // VERSINFO_BETAVERSION_TXT:
 //
@@ -378,6 +386,6 @@
 //         specs/428-portable-build/contracts/plugin-api-109.md
 
 #define LAST_VERSION_OF_SALAMANDER 109
-#define REQUIRE_LAST_VERSION_OF_SALAMANDER "This plugin requires a newer version of Tandem Commander (" SAL_VER_PLATFORM "): plugin interface 109, first shipped after version 0.3.0."
+#define REQUIRE_LAST_VERSION_OF_SALAMANDER "This plugin requires a newer version of Tandem Commander (" SAL_VER_PLATFORM "): plugin interface 109, first shipped in version 0.4.0."
 
 #endif // __SPL_VERS_H

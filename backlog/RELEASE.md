@@ -9,18 +9,18 @@ publishing and the winget submission are the maintainer's steps; an agent
 session only prepares the tree. Steps that need a person and are not
 repeated per release are items in `BACKLOG.md` (*Person steps*).
 
-## Current release: 0.3.0 (build 196) — prepared, not published
+## Current release: 0.4.0 (build 197) — prepared, not published
 
-- The state to release is `main` at the commit "Version 0.3.0: the tree
-  prepared for the release (2026-11-08)" (prepared by `/tandem-release`). It
-  carries features 345–422 (everything since `v0.2.0`; 344 is backlog
-  tooling without a changelog entry). Its main change is that the program
-  updates itself (features 420–422): the first release that can be installed
-  by the previous one's in-app check is the one after 0.3.0, since 0.2.0 only
-  notifies.
-- The previous release, 0.2.0 (build 195), is published: tag `v0.2.0`, the
-  GitHub release with its installer, `microsoft/winget-pkgs#461652` merged;
-  the catalogue holds 0.1.7, 0.1.9, 0.1.10 and 0.2.0.
+- The state to release is `main` at the commit "Version 0.4.0: the tree
+  prepared for the release (2026-11-26)" (prepared by `/tandem-release`). It
+  carries features 423–428 (everything since `v0.3.0`; 426 is backlog
+  tooling without a changelog entry). Its main change is the portable
+  edition (feature 428): the first release with two assets, the installer
+  and `tandemcommander-0.4.0-x64-portable.zip`, both made by `build.cmd
+  dist`. It is also the first release that 0.3.0's in-app update can
+  download and install.
+- The previous release, 0.3.0 (build 196), is published: tag `v0.3.0`, the
+  GitHub release with its installer, `microsoft/winget-pkgs#475085` merged.
 - Branches that must not be tagged: `release-0.1.10` (on `origin`) —
   feature 132 without 135, whose *Update Thumbnail* damages the maker notes
   of real camera files; `release-0.1.10-final` (on `origin`) — features

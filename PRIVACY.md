@@ -555,26 +555,27 @@ project's repository.
 
 ---
 
-This statement describes Tandem Commander 0.3.0 (`CHANGELOG.md`). In 0.2.0,
-the version before it, the program downloads and installs nothing: it keeps
-no *Update Level*, *Install* and *Download Refused* values and no `Updates`
-folder, and *Download* always hands the address to your web browser. In
-0.1.10: the settings are kept in the subkey `0.1` (the
-`Update Check` values under `0.1\Update Check`) and no `Moved To Settings`
-value is written; the program offers no import of settings from Altap
-Salamander or Open Salamander, keeps no `Settings backups` folder, and does
-not read the names you gave mapped network drives in File Explorer. In 0.1.9:
-the program does not ask a server for the list of its shared folders. In
-0.1.8: there is no check for a new version, so the program never contacts the
-internet on its own and keeps no `Update Check` values; a password typed as
-part of an address is saved in history as plain text; a Markdown document can
-open a link without a click; remote images identify as `OpenSalamander-mdview`, and
-the viewer may answer a server's request for Windows sign-in with your Windows
-account; cancelling the Master Password prompt saves an SFTP password or
-passphrase scrambled; the viewer engine's crash reports follow your
-Windows diagnostic-data settings; and the placeholder sent on an anonymous
-FTP login is `name@someserver.com`; a crash that happens while the ZIP
-plugin is using a password can write that password into the crash report; and
-PictView's wallpaper commands wrote no picture file (*Restore Previous* and
-*None* did write the three `Prev...` values).
-Last updated 2026-11-08.
+This statement describes Tandem Commander 0.4.0 (`CHANGELOG.md`). In 0.3.0,
+the version before it, there is no portable edition: the program is offered
+only with its installer. In 0.2.0: the program downloads and installs nothing:
+it keeps no *Update Level*, *Install* and *Download Refused* values and no
+`Updates` folder, and *Download* always hands the address to your web browser.
+In 0.1.10: the settings are kept in the subkey `0.1` (the `Update Check`
+values under `0.1\Update Check`) and no `Moved To Settings` value is written;
+the program offers no import of settings from Altap Salamander or Open
+Salamander, keeps no `Settings backups` folder, and does not read the names
+you gave mapped network drives in File Explorer. In 0.1.9: the program does
+not ask a server for the list of its shared folders. In 0.1.8: there is no
+check for a new version, so the program never contacts the internet on its own
+and keeps no `Update Check` values; a password typed as part of an address is
+saved in history as plain text; a Markdown document can open a link without a
+click; remote images identify as `OpenSalamander-mdview`, and the viewer may
+answer a server's request for Windows sign-in with your Windows account;
+cancelling the Master Password prompt saves an SFTP password or passphrase
+scrambled; the viewer engine's crash reports follow your Windows
+diagnostic-data settings; and the placeholder sent on an anonymous FTP login
+is `name@someserver.com`; a crash that happens while the ZIP plugin is using a
+password can write that password into the crash report; and PictView's
+wallpaper commands wrote no picture file (*Restore Previous* and *None* did
+write the three `Prev...` values).
+Last updated 2026-11-26.
